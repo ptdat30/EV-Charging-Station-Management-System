@@ -1,0 +1,18 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: "file:///C:/Users/DAT/OneDrive - ut.edu.vn/Documents/Desktop/EV-Charging-Station-Management-System Java Web/backend/services/config-repo"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
