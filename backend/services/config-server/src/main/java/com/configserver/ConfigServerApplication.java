@@ -3,9 +3,16 @@ package com.configserver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.config.server.EnableConfigServer;
+// [1] Import thêm thư viện của Eureka Client
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
+/**
+ * Annotation @EnableConfigServer biến ứng dụng Spring Boot này
+ * thành một máy chủ cấu hình tập trung (Centralized Configuration Server).
+ */
 @SpringBootApplication
 @EnableConfigServer
+@EnableDiscoveryClient // [2] Thêm Annotation này
 public class ConfigServerApplication {
 
     public static void main(String[] args) {
