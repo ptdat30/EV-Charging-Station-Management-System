@@ -1,18 +1,20 @@
 server:
-  port: 8888
+  port: 8888 # [1]
 
 spring:
   application:
-    name: config-server
+    name: config-server # [2]
   profiles:
-    active: native
+    active: native # [3]
   cloud:
     config:
       server:
         native:
-          search-locations: "file:///C:/Users/DAT/OneDrive - ut.edu.vn/Documents/Desktop/EV-Charging-Station-Management-System Java Web/backend/services/config-repo"
+          # [4]
+          search-locations: "file:///C:/Users/DAT/OneDrive - ut.edu.vn/Documents/Desktop/EV-Charging-Station-Management-System---Project/backend/services/config-repo"
 
 eureka:
   client:
     service-url:
+      # [5]
       defaultZone: http://localhost:8761/eureka/
