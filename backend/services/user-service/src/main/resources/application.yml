@@ -1,0 +1,17 @@
+# [COMMAND]: ??nh ngh?a c�c thu?c t�nh c?a Spring Cloud.
+spring:
+  cloud:
+    # [COMMAND]: C?u h�nh cho Config Client.
+    config:
+      # [COMMAND]: ??a ch? c?a Config Server.
+      import: configserver:http://localhost:8888
+  application:
+    # [COMMAND]: T�n c?a service n�y. ?�y l� t�n QUAN TR?NG NH?T.
+    # Config Server s? d?a v�o t�n n�y ?? t�m file c?u h�nh user-service.yml.S
+    name: user-service
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/user_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@

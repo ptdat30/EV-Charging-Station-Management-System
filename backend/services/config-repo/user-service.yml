@@ -1,0 +1,19 @@
+# FILE: user-service.yml (đặt trong thư mục config-repo)
+server:
+  port: 8081 # Cổng mà user-service sẽ chạy
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/user_service_db?useSSL=false
+    username: root # Thay bằng username của bạn
+    password: your_password # Thay bằng mật khẩu của bạn
+  jpa:
+    hibernate:
+      ddl-auto: update # Tự động cập nhật schema, hữu ích khi phát triển
+    show-sql: true # Hiển thị câu lệnh SQL trong console
+
+# Cấu hình để user-service đăng ký với eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
