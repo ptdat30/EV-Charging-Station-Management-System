@@ -1,0 +1,24 @@
+# ===============================================================
+# FILE: application.yml (c?a d? án charging-service)
+# M?C ?ÍCH: K?t n?i t?i Config Server theo cách hi?n ??i
+# ===============================================================
+
+server:
+  port: 8082
+
+spring:
+  # [COMMAND]: ??t tên cho service. Tên này s? ???c dùng ?? l?y file charging-service.yml t? Config Server.
+  application:
+    name: charging-service
+  
+  # [COMMAND]: Import c?u hình t? Config Server.
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+# [COMMAND]: C?u hình k?t n?i t?i database.
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/charging_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@

@@ -1,13 +1,41 @@
+# ===============================================================
+# FILE: api-gateway.yml (trong thư mục config-repo)
+# MỤC ĐÍCH: Thêm quy tắc định tuyến cho charging-service
+# ===============================================================
+
 server:
   port: 8080
 
-spring:
-  main:
-    web-application-type: reactive
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
+spring:
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
-          lower-case-service-id: true
+
+      routes:
+        # --- Route cho User Service ---
+        - id: user-service-route
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**
+
+        # --- Route cho Station Service ---
+        - id: station-service-route
+          uri: lb://STATION-SERVICE
+          predicates:
+            - Path=/api/stations/**, /api/chargers/**
+
+        # ====================================================
+        # [COMMAND]: BỔ SUNG KHỐI NÀY VÀO
+        # --- Route cho Charging Service ---
+        - id: charging-service-route
+          uri: lb://CHARGING-SERVICE # Tên service trên Eureka
+          predicates:
+            - Path=/api/sessions/** # Đường dẫn mà client sẽ gọi
+        # ====================================================
