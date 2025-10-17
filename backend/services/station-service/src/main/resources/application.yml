@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+spring:
+  cloud:
+    config:
+      import: configserver:http://localhost:8888
+  application:
+    name: station-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/station_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@
