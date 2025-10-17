@@ -1,4 +1,7 @@
 # [COMMAND]: ??nh ngh?a c�c thu?c t�nh c?a Spring Cloud.
+server:
+  port: 9000
+
 spring:
   cloud:
     # [COMMAND]: C?u h�nh cho Config Client.

@@ -1,6 +1,6 @@
 # FILE: user-service.yml (đặt trong thư mục config-repo)
 server:
-  port: 8081 # Cổng mà user-service sẽ chạy
+  port: 9000 # Cổng mà user-service sẽ chạy
 
 spring:
   datasource:
