@@ -9,30 +9,32 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-    # [COMMAND]: Yêu cầu Gateway cập nhật danh bạ từ Eureka mỗi 5 giây
-    registry-fetch-interval-seconds: 5
-
-  # Cấu hình này đã được chuyển vào file application.yml chung
-  # instance:
-  #   prefer-ip-address: true
 
 spring:
   cloud:
     gateway:
       discovery:
         locator:
-          enabled: false
+          enabled: true
+
       routes:
+        # --- Route cho User Service ---
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**
+
+        # --- Route cho Station Service ---
         - id: station-service-route
           uri: lb://STATION-SERVICE
           predicates:
             - Path=/api/stations/**, /api/chargers/**
+
+        # ====================================================
+        # [COMMAND]: BỔ SUNG KHỐI NÀY VÀO
+        # --- Route cho Charging Service ---
         - id: charging-service-route
-          uri: lb://CHARGING-SERVICE
+          uri: lb://CHARGING-SERVICE # Tên service trên Eureka
           predicates:
             - Path=/api/sessions/**
         - id: payment-service-route
