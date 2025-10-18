@@ -1,0 +1,21 @@
+# ===============================================================
+# FILE: application.yml (c?a d? án payment-service)
+# M?C ?ÍCH: K?t n?i t?i Config Server
+# ===============================================================
+
+server:
+  port: 8083
+
+spring:
+  application:
+    # Tên c?a service, s? ???c ??ng ký trên Eureka là PAYMENT-SERVICE
+    name: payment-service
+  
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+# C?u hình k?t n?i t?i database
+  datasource:
+    url: jdbc:mysql://localhost:3306/payment_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@

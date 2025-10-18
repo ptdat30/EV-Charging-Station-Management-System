@@ -35,6 +35,10 @@ spring:
           uri: lb://CHARGING-SERVICE
           predicates:
             - Path=/api/sessions/**
+        - id: payment-service-route
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/payments/**, /api/wallets/**
 
     # [COMMAND]: Cấu hình cho Load Balancer của Gateway
     loadbalancer:
