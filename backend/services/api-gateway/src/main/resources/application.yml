@@ -1,12 +1,17 @@
+# ===============================================================
+# FILE: application.yml (trong api-gateway, phiên bản đã cập nhật)
+# ===============================================================
+
 spring:
   application:
     name: api-gateway
+
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+  # [COMMAND]: THÊM KHỐI NÀY VÀO
   cloud:
     config:
-      uri: http://localhost:8888
-      enabled: false
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+      # Dòng này sẽ buộc Gateway phải CRASH ngay lập tức
+      # nếu không kết nối được với Config Server khi khởi động.
+      fail-fast: true

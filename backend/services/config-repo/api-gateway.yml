@@ -1,6 +1,5 @@
 # ===============================================================
-# FILE: api-gateway.yml (trong thư mục config-repo)
-# MỤC ĐÍCH: Thêm quy tắc định tuyến cho charging-service
+# FILE: api-gateway.yml (Phiên bản cuối cùng, đã sửa lỗi)
 # ===============================================================
 
 server:
@@ -10,32 +9,35 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    # [COMMAND]: Yêu cầu Gateway cập nhật danh bạ từ Eureka mỗi 5 giây
+    registry-fetch-interval-seconds: 5
+
+  # Cấu hình này đã được chuyển vào file application.yml chung
+  # instance:
+  #   prefer-ip-address: true
 
 spring:
   cloud:
     gateway:
       discovery:
         locator:
-          enabled: true
-
+          enabled: false
       routes:
-        # --- Route cho User Service ---
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**
-
-        # --- Route cho Station Service ---
         - id: station-service-route
           uri: lb://STATION-SERVICE
           predicates:
             - Path=/api/stations/**, /api/chargers/**
-
-        # ====================================================
-        # [COMMAND]: BỔ SUNG KHỐI NÀY VÀO
-        # --- Route cho Charging Service ---
         - id: charging-service-route
-          uri: lb://CHARGING-SERVICE # Tên service trên Eureka
+          uri: lb://CHARGING-SERVICE
           predicates:
-            - Path=/api/sessions/** # Đường dẫn mà client sẽ gọi
-        # ====================================================
+            - Path=/api/sessions/**
+
+    # [COMMAND]: Cấu hình cho Load Balancer của Gateway
+    loadbalancer:
+      # Tắt cache để Gateway luôn lấy dữ liệu mới nhất từ Eureka (chỉ dùng khi dev)
+      cache:
+        enabled: false
