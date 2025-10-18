@@ -1,0 +1,11 @@
+# ===============================================================
+# FILE: application.yml (đặt trong thư mục config-repo)
+# MỤC ĐÍCH: Cấu hình chung cho TẤT CẢ các microservice
+# ===============================================================
+
+eureka:
+  instance:
+    # [COMMAND]: Dòng "vàng" đây rồi!
+    # Yêu cầu tất cả các service đăng ký với Eureka bằng địa chỉ IP của chúng
+    # thay vì hostname.
+    prefer-ip-address: true
