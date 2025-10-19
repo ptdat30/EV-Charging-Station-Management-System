@@ -42,7 +42,7 @@ The system serves 3 main user groups:
 ---
 
 ## ⚙️ 4. Technology Stack
-- **Backend**: Java (Spring Boot), PostgreSQL  
+- **Backend**: Java (Spring Boot), mySQL  
 - **Frontend**: ReactJS (responsive web)  
 - **Architecture**: Microservices  
 - **Deployment**: Docker, Docker Compose  
