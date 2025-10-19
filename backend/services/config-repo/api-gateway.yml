@@ -42,6 +42,8 @@ spring:
           predicates:
             - Path=/api/payments/**, /api/wallets/**
 
+            #test route
+
     # [COMMAND]: Cấu hình cho Load Balancer của Gateway
     loadbalancer:
       # Tắt cache để Gateway luôn lấy dữ liệu mới nhất từ Eureka (chỉ dùng khi dev)
