@@ -1,0 +1,12 @@
+# ===============================================================
+# FILE: application.yml (c?a d? án notification-service)
+# M?C ?ÍCH: K?t n?i t?i Config Server
+# ===============================================================
+
+spring:
+  application:
+    # Tên c?a service, s? ???c ??ng ký trên Eureka là NOTIFICATION-SERVICE
+    name: notification-service
+
+  config:
+    import: "optional:configserver:http://localhost:8888"
