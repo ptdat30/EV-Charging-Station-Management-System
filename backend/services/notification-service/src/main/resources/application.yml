@@ -1,17 +1,29 @@
-
+# ===============================================================
+# FILE: application.yml (in notification-service/src/main/resources)
+# PURPOSE: Connect to Config Server AND provide early mail config
+# ===============================================================
 
 spring:
   application:
-    # T�n c?a service, s? ???c ??ng k� tr�n Eureka l� NOTIFICATION-SERVICE
     name: notification-service
 
+  # Import configuration from Config Server (keeps other settings centralized)
   config:
     import: "optional:configserver:http://localhost:8888"
 
+  # --- Local Mail Configuration ---
+  # Properties needed early for JavaMailSender bean creation
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: huynhphongdat2005@gmail.com # Your email
+    password: dapp xywu xmag ahdh # Your App Password
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
   datasource:
     url: jdbc:mysql://localhost:3306/notification_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: huynhdat123@
-
 server:
-  port: 8084
+    port: 8085
