@@ -1,0 +1,19 @@
+# ===============================================================
+# FILE: bootstrap.yml
+# LOCATION: api-gateway/src/main/resources/bootstrap.yml
+# MỤC ĐÍCH: Load Config Server TRƯỚC khi application context khởi động
+# ===============================================================
+
+spring:
+  application:
+    name: api-gateway  # PHẢI KHỚP với tên file api-gateway.yml
+
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: false  # Không crash nếu Config Server chưa sẵn sàng
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        multiplier: 1.1
+        max-interval: 2000

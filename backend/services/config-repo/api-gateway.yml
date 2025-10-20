@@ -1,5 +1,6 @@
 # ===============================================================
-# FILE: api-gateway.yml (Phiên bản cuối cùng, đã sửa lỗi)
+# FILE: api-gateway.yml
+# LOCATION: config-repo/api-gateway.yml
 # ===============================================================
 
 server:
@@ -9,6 +10,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
 
 spring:
   cloud:
@@ -16,36 +19,76 @@ spring:
       discovery:
         locator:
           enabled: true
+          lower-case-service-id: true
 
       routes:
-        # --- Route cho User Service ---
+        # USER SERVICE
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**
 
-        # --- Route cho Station Service ---
-        - id: station-service-route
+        # STATION SERVICE - Stations
+        - id: station-route
           uri: lb://STATION-SERVICE
           predicates:
-            - Path=/api/stations/**, /api/chargers/**
+            - Path=/api/stations/**
 
-        # ====================================================
-        # [COMMAND]: BỔ SUNG KHỐI NÀY VÀO
-        # --- Route cho Charging Service ---
+        # STATION SERVICE - Chargers
+        - id: charger-route
+          uri: lb://STATION-SERVICE
+          predicates:
+            - Path=/api/chargers/**
+
+        # CHARGING SERVICE
         - id: charging-service-route
-          uri: lb://CHARGING-SERVICE # Tên service trên Eureka
+          uri: lb://CHARGING-SERVICE
           predicates:
             - Path=/api/sessions/**
-        - id: payment-service-route
+
+        # PAYMENT SERVICE - Payments
+        - id: payment-route
           uri: lb://PAYMENT-SERVICE
           predicates:
-            - Path=/api/payments/**, /api/wallets/**
+            - Path=/api/payments/**
 
-            #test route
+        # PAYMENT SERVICE - Wallets
+        - id: wallet-route
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/wallets/**
 
-    # [COMMAND]: Cấu hình cho Load Balancer của Gateway
-    loadbalancer:
-      # Tắt cache để Gateway luôn lấy dữ liệu mới nhất từ Eureka (chỉ dùng khi dev)
-      cache:
-        enabled: false
+      # Global CORS
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+      # Load Balancer
+      loadbalancer:
+        cache:
+          enabled: false
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.web: DEBUG
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health,info,routes,refresh
+  endpoint:
+    gateway:
+      enabled: true

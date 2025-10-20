@@ -1,12 +1,13 @@
-spring:
-  application:
-    name: api-gateway
-  cloud:
-    config:
-      uri: http://localhost:8888
-      enabled: false
+# ===============================================================
+# FILE: application.yml
+# LOCATION: api-gateway/src/main/resources/application.yml
+# MỤC ĐÍCH: Local overrides (ưu tiên thấp hơn Config Server)
+# ===============================================================
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+# Chỉ giữ những config CẦN override local
+# Phần lớn config sẽ lấy từ Config Server
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
