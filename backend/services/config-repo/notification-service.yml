@@ -2,10 +2,6 @@ server:
   port: 8085 # Chạy notification-service trên cổng mới
 
 spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/notification_service_db?useSSL=false
-    username: root # Thay bằng username của bạn
-    password: your_password # Thay bằng mật khẩu của bạn
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,8 +10,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: your-email@gmail.com # Email của bạn
-    password: your-app-password # Mật khẩu ứng dụng hoặc mật khẩu email
+    username: huynhphongdat2005@gmail.com
+    password: dapp xywu xmag ahdh
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
