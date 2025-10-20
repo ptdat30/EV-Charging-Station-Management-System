@@ -57,6 +57,11 @@ spring:
           uri: lb://PAYMENT-SERVICE
           predicates:
             - Path=/api/wallets/**
+      # NOTIFICATION SERVICE
+        - id: notification-service-route
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/notifications/**
 
       # Global CORS
       globalcors:
