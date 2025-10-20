@@ -6,7 +6,7 @@ import com.userservice.dtos.CreateChargerRequestDto;
 import com.userservice.dtos.UpdateChargerRequestDto;
 import com.userservice.entities.Charger;
 import com.userservice.entities.Station;
-import com.userservice.exceptions.ResourceNotFoundException;
+import com.paymentservice.exceptions.ResourceNotFoundException;
 import com.userservice.repositories.ChargerRepository;
 import com.userservice.repositories.StationRepository;
 import lombok.RequiredArgsConstructor;

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/station_service_db?useSSL=false
     username: root # Thay bằng username của bạn
-    password: your_password # Thay bằng mật khẩu của bạn
+    password: huynhdat123@ # Thay bằng mật khẩu của bạn
   jpa:
     hibernate:
       ddl-auto: update

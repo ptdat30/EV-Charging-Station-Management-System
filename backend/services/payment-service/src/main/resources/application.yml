@@ -1,14 +1,8 @@
-# ===============================================================
-# FILE: application.yml (c?a d? �n payment-service)
-# M?C ?�CH: K?t n?i t?i Config Server
-# ===============================================================
-
 server:
   port: 8083
 
 spring:
   application:
-    # T�n c?a service, s? ???c ??ng k� tr�n Eureka l� PAYMENT-SERVICE
     name: payment-service
   
   config:

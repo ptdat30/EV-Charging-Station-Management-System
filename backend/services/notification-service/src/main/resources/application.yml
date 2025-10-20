@@ -1,12 +1,17 @@
-# ===============================================================
-# FILE: application.yml (c?a d? án notification-service)
-# M?C ?ÍCH: K?t n?i t?i Config Server
-# ===============================================================
+
 
 spring:
   application:
-    # Tên c?a service, s? ???c ??ng ký trên Eureka là NOTIFICATION-SERVICE
+    # Tï¿½n c?a service, s? ???c ??ng kï¿½ trï¿½n Eureka lï¿½ NOTIFICATION-SERVICE
     name: notification-service
 
   config:
     import: "optional:configserver:http://localhost:8888"
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/notification_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@
+
+server:
+  port: 8084

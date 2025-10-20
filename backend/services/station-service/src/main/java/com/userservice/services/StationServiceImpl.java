@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 // Tái sử dụng ResourceNotFoundException từ user-service hoặc tạo mới
 // Giả sử bạn tạo mới nó trong package com.stationservice.exceptions
-import com.userservice.exceptions.ResourceNotFoundException;
+import com.paymentservice.exceptions.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
