@@ -1,101 +1,136 @@
 // ===============================================================
-// FILE: UserServiceImpl.java (Phiên bản đã sửa lỗi và hợp nhất)
+// FILE: UserServiceImpl.java (Đã cập nhật - Mã hóa mật khẩu & Thêm phương thức mới)
 // PACKAGE: com.userservice.services
-// MỤC ĐÍCH: Triển khai toàn bộ logic CRUD cho User.
 // ===============================================================
 package com.userservice.services;
 
 import com.userservice.dtos.RegisterRequestDto;
 import com.userservice.dtos.UpdateUserRequestDto;
+import com.userservice.dtos.UserDetailDto; // Import DTO mới
 import com.userservice.dtos.UserResponseDto;
 import com.userservice.entities.User;
 import com.userservice.exceptions.ResourceNotFoundException;
 import com.userservice.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger; // Import Logger
+import org.slf4j.LoggerFactory; // Import LoggerFactory
+import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-// [COMMAND]: @Service đánh dấu đây là một Spring component thuộc tầng Service.
 @Service
-// [COMMAND]: @RequiredArgsConstructor của Lombok tự động tạo constructor cho các trường final.
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    // [COMMAND]: Tiêm (inject) UserRepository để thao tác với database.
-    private final UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class); // Thêm Logger
 
-    // --- CREATE ---
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+
+    // --- CREATE (Register User with Password Encoding) ---
     @Override
     public User registerUser(RegisterRequestDto registerRequestDto) {
-        // [COMMAND]: Kiểm tra xem email đã tồn tại chưa.
+        log.info("Attempting to register user with email: {}", registerRequestDto.getEmail());
         if (userRepository.findByEmail(registerRequestDto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
+            log.warn("Registration failed: Email already exists - {}", registerRequestDto.getEmail());
+            throw new RuntimeException("Email already exists"); // Nên tạo Exception cụ thể hơn
         }
-        // [COMMAND]: Tạo và lưu người dùng mới.
         User newUser = new User();
         newUser.setEmail(registerRequestDto.getEmail());
         newUser.setFullName(registerRequestDto.getFullName());
         newUser.setPhone(registerRequestDto.getPhone());
         newUser.setUserType(registerRequestDto.getUserType());
-        newUser.setPasswordHash(registerRequestDto.getPassword()); // Tạm thời vẫn lưu plaintext
-        return userRepository.save(newUser);
+
+        // Mã hóa mật khẩu trước khi lưu
+        newUser.setPasswordHash(passwordEncoder.encode(registerRequestDto.getPassword()));
+        log.debug("Password encoded for user: {}", registerRequestDto.getEmail());
+
+        User savedUser = userRepository.save(newUser);
+        log.info("User registered successfully with ID: {}", savedUser.getUserId());
+        return savedUser; // Vẫn trả về User entity (bao gồm hash) cho register
     }
 
     // --- READ (SINGLE) ---
     @Override
     public UserResponseDto getUserById(Long userId) {
-        // [COMMAND]: Tìm user trong DB bằng ID, nếu không thấy sẽ ném ra ResourceNotFoundException.
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-        // [COMMAND]: Chuyển đổi từ Entity sang DTO và trả về.
+        log.debug("Fetching user by ID: {}", userId);
+        User user = findUserByIdInternal(userId);
         return convertToDto(user);
     }
 
     // --- READ (ALL) ---
     @Override
     public List<UserResponseDto> getAllUsers() {
-        // [COMMAND]: Lấy tất cả user từ DB.
+        log.debug("Fetching all users");
         List<User> users = userRepository.findAll();
-        // [COMMAND]: Dùng Stream API để chuyển đổi cả danh sách sang DTO.
         return users.stream()
-                .map(this::convertToDto) // Tái sử dụng phương thức convertToDto
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
     // --- UPDATE ---
     @Override
     public UserResponseDto updateUser(Long userId, UpdateUserRequestDto updateUserRequestDto) {
-        // [COMMAND]: Tìm user cần cập nhật.
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        log.info("Updating user with ID: {}", userId);
+        User existingUser = findUserByIdInternal(userId);
 
-        // [COMMAND]: Cập nhật các trường thông tin từ DTO.
         existingUser.setFullName(updateUserRequestDto.getFullName());
         existingUser.setPhone(updateUserRequestDto.getPhone());
 
-        // [COMMAND]: Lưu lại user đã được cập nhật vào DB.
         User updatedUser = userRepository.save(existingUser);
-
-        // [COMMAND]: Chuyển đổi sang DTO để trả về.
+        log.info("User {} updated successfully", userId);
         return convertToDto(updatedUser);
     }
 
     // --- DELETE ---
     @Override
     public void deleteUser(Long userId) {
-        // [COMMAND]: Kiểm tra xem user có tồn tại không trước khi xóa.
+        log.info("Deleting user with ID: {}", userId);
         if (!userRepository.existsById(userId)) {
+            log.warn("Delete failed: User not found with ID: {}", userId);
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
-        // [COMMAND]: Nếu user tồn tại, tiến hành xóa.
         userRepository.deleteById(userId);
+        log.info("User {} deleted successfully", userId);
     }
 
-    // [COMMAND]: Phương thức private helper để chuyển đổi User Entity sang UserResponseDto.
-    // Giúp tránh lặp lại code ở nhiều nơi (DRY - Don't Repeat Yourself).
+    // --- Internal Method for Auth Service ---
+    @Override
+    public UserDetailDto getUserDetailsByEmail(String email) {
+        log.debug("Fetching user details by email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("User details fetch failed: User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
+                });
+
+        // Chuyển đổi sang DTO chứa cả password hash
+        UserDetailDto detailDto = new UserDetailDto();
+        detailDto.setUserId(user.getUserId());
+        detailDto.setEmail(user.getEmail());
+        detailDto.setPasswordHash(user.getPasswordHash()); // Quan trọng
+        detailDto.setUserType(user.getUserType());
+        detailDto.setStatus(user.getStatus());
+
+        log.debug("Found user details for email: {}", email);
+        return detailDto;
+    }
+
+
+    // --- PRIVATE HELPER METHODS ---
+
+    // Tìm user theo ID (dùng nội bộ)
+    private User findUserByIdInternal(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User lookup failed: User not found with ID: {}", userId);
+                    return new ResourceNotFoundException("User not found with id: " + userId);
+                });
+    }
+
+    // Chuyển User sang UserResponseDto (không chứa password hash)
     private UserResponseDto convertToDto(User user) {
         UserResponseDto dto = new UserResponseDto();
         dto.setUserId(user.getUserId());
