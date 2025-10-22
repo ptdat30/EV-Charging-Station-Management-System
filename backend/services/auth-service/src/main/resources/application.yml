@@ -1,0 +1,12 @@
+# FILE: application.yml (in auth-service/src/main/resources)
+
+spring:
+  application:
+    name: auth-service # Name registered on Eureka
+
+  config:
+    import: "optional:configserver:http://localhost:8888" # Connect to Config Server
+
+# Default local port (can be overridden by Config Server)
+server:
+  port: 8086
