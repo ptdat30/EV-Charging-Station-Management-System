@@ -1,14 +1,16 @@
-// FILE: AuthServiceApplication.java
 package com.authservice;
 
 import org.springframework.boot.SpringApplication;
+// Import thêm lớp cần exclude
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.openfeign.EnableFeignClients; // Enable Feign for calling user-service
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
-@EnableDiscoveryClient // Register with Eureka
-@EnableFeignClients // Enable calling other services
+// [COMMAND]: Thêm exclude = {DataSourceAutoConfiguration.class} vào đây
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@EnableDiscoveryClient
+@EnableFeignClients
 public class AuthServiceApplication {
 
 	public static void main(String[] args) {

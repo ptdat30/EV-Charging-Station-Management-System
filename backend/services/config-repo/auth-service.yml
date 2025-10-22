@@ -1,14 +1,15 @@
-# FILE: auth-service.yml (in config-repo)
+# FILE: auth-service.yml (trong thư mục config-repo)
 
 server:
-  port: 8086 # Port for auth-service
+  port: 8086 # Cổng chạy của auth-service (Đã đúng)
 
 eureka:
   client:
     service-url:
+      # Địa chỉ của Eureka Server (Đã đúng)
       defaultZone: http://localhost:8761/eureka/
 
-# --- JWT Configuration ---
+# --- Cấu hình JWT ---
 jwt:
-  secret: ReplaceThisWithARandomLongSecureSecretKeyPreferablyFromEnv # IMPORTANT: Change this!
-  expirationMs: 86400000 # Token validity: 24 hours (in milliseconds)
+  secret: f4f54e19a4e3b5e1b2e6a3d7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7
+  expirationMs: 86400000
