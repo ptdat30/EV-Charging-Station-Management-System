@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext"; // Giả sử AuthContext nằm ở src/context/
+import { useAuth } from "@/context/AuthContext"; // Giả sử AuthContext nằm ở src/context/
 import "./LoginPage.css";
 
 const LoginPage = () => {
