@@ -1,6 +1,6 @@
 /* ===========================
-   EV Finder Map Page Styles
-   =========================== */
+    EV Finder Styles (Cập nhật)
+    =========================== */
 
 /* === Toàn trang === */
 .app-container {
@@ -30,7 +30,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 900px;
+    max-width: 1200px; /* Tăng max-width để trông hiện đại hơn */
 }
 
 .logo {
@@ -61,7 +61,7 @@
     border-radius: 25px;
     padding: 6px 12px;
     width: 100%;
-    max-width: 320px;
+    max-width: 400px; /* Tăng độ rộng thanh search */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -70,6 +70,16 @@
     outline: none;
     width: 100%;
     font-size: 14px;
+    padding: 2px 5px;
+}
+
+.filter-btn {
+    background: none;
+    border: none;
+    color: #0d253f;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
 }
 
 /* === Nội dung chính === */
@@ -79,63 +89,137 @@
     flex-direction: column;
     position: relative;
     background-color: #e9eef3;
+    overflow-y: auto; /* Cho phép cuộn nội dung chính */
+}
+
+/* --- Hero Section --- */
+.hero-section {
+    background: linear-gradient(135deg, #0d253f 0%, #1a3c5a 100%);
+    color: #fff;
+    padding: 40px 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #00ffae;
+}
+
+.hero-content p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.cta-button {
+    background-color: #00ffae;
+    color: #0d253f;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cta-button:hover {
+    background-color: #00d691;
+    transform: translateY(-2px);
+}
+
+/* --- Map and List Container --- */
+.map-and-list-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    flex: 1;
+    overflow: hidden; /* Quan trọng để quản lý chiều cao */
 }
 
 /* === Bản đồ === */
 .map-section {
-    flex: 1;
+    flex: 2.5; /* Bản đồ chiếm phần lớn không gian */
+    min-width: 300px;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    padding: 10px;
+    flex-direction: column;
 }
 
 .map-container {
     width: 100%;
-    height: calc(100vh - 180px); /* Giảm chiều cao để trông thoáng hơn */
+    height: 100%; /* Đảm bảo bản đồ chiếm hết chiều cao còn lại */
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* === Nút điều khiển bản đồ === */
-.map-controls {
-    position: absolute;
-    top: 20px;
-    right: 15px;
+/* --- Station List Section --- */
+.station-list-section {
+    flex: 1; /* Danh sách trạm sạc */
+    min-width: 280px;
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    max-height: 100%; /* Giới hạn chiều cao cho scroll */
+    overflow-y: auto;
 }
 
-.control-btn {
-    background-color: #fff;
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.section-header h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0d253f;
+}
+
+.view-all-btn {
+    background: none;
     border: none;
-    border-radius: 10px;
-    padding: 8px;
+    color: #00ffae;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
 }
 
-.control-btn:hover {
-    background-color: #00ffae;
-    color: #fff;
+.view-all-btn:hover {
+    color: #00d691;
 }
 
-/* === Bottom Navigation === */
+.station-list p {
+    color: #777;
+    text-align: center;
+    padding: 20px;
+}
+
+/* === Bottom Navigation (Footer) === */
 .bottom-nav {
     background: #0d253f;
     display: flex;
     justify-content: space-around;
     align-items: center;
     padding: 10px 0;
-    position: fixed;
+    position: sticky; /* Đặt là sticky để cố định ở cuối trang main-content khi cuộn */
     bottom: 0;
     width: 100%;
     box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.15);
     border-top: 2px solid rgba(255, 255, 255, 0.1);
+    z-index: 20;
 }
 
 .nav-item {
@@ -163,24 +247,39 @@
 
 /* === Responsive Mobile === */
 @media (max-width: 768px) {
-    .map-container {
-        height: calc(100vh - 210px);
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
     }
 
-    .logo span {
-        font-size: 1rem;
+    .search-container {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .search-box {
-        max-width: 240px;
+        max-width: 100%;
     }
 
-    .map-controls {
-        top: 10px;
-        right: 10px;
+    .hero-content h1 {
+        font-size: 2rem;
     }
 
-    .control-btn {
-        padding: 6px;
+    .map-and-list-container {
+        flex-direction: column; /* Xếp chồng bản đồ và danh sách trên mobile */
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .map-section {
+        height: 300px; /* Cố định chiều cao bản đồ trên mobile */
+        flex: none;
+    }
+
+    .station-list-section {
+        flex: 1;
+        max-height: 400px; /* Cho phép cuộn danh sách trạm sạc */
     }
 }
