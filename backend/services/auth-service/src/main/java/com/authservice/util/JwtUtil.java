@@ -1,11 +1,10 @@
 package com.authservice.util;
 
-import io.jsonwebtoken.*; // Import thêm
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException; // Import thêm exception
 import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger; // Import logger
-import org.slf4j.LoggerFactory; // Import logger factory
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +14,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class); // Thêm logger
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -23,13 +22,20 @@ public class JwtUtil {
     @Value("${jwt.expirationMs}")
     private int jwtExpirationMs;
 
-    private Key key;
+    private Key key; // The signing key object
 
+    // Initialize the signing key once after properties are set
     @PostConstruct
     public void init() {
+        // Creates a secure key object from the secret string
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
+    /**
+     * Generates a JWT token for a given username (subject).
+     * @param username The subject of the token (e.g., user's email).
+     * @return The compact JWT string.
+     */
     public String generateToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -42,12 +48,11 @@ public class JwtUtil {
                 .compact();
     }
 
-    // --- CÁC PHƯƠƠNG THỨC MỚI ---
-
     /**
-     * Lấy username (subject) từ JWT token.
-     * @param token Chuỗi JWT.
-     * @return Username.
+     * Extracts the username (subject) from the JWT token.
+     * @param token The JWT string.
+     * @return The username.
+     * @throws JwtException if the token cannot be parsed or verified.
      */
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -59,24 +64,27 @@ public class JwtUtil {
     }
 
     /**
-     * Kiểm tra xem JWT token có hợp lệ không (chưa hết hạn, chữ ký đúng).
-     * @param token Chuỗi JWT.
-     * @return true nếu hợp lệ, false nếu không.
+     * Validates the JWT token (checks signature and expiration).
+     * @param token The JWT string.
+     * @return true if the token is valid, false otherwise.
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
-        } catch (SignatureException ex) {
-            log.error("Invalid JWT signature: {}", ex.getMessage());
-        } catch (MalformedJwtException ex) {
-            log.error("Invalid JWT token: {}", ex.getMessage());
+        } catch (SecurityException | MalformedJwtException ex) {
+            log.error("Invalid JWT signature or token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
             log.error("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
             log.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty: {}", ex.getMessage());
+            log.error("JWT claims string is empty or null: {}", ex.getMessage());
+        } catch (JwtException ex) {
+            log.error("JWT validation error: {}", ex.getMessage());
         }
         return false;
     }
