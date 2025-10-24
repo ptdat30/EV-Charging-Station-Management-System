@@ -1,10 +1,10 @@
 # ===============================================================
-# FILE: api-gateway.yml
+# FILE: api-gateway.yml (Phiên bản đã sửa lỗi và thêm Filter)
 # LOCATION: config-repo/api-gateway.yml
 # ===============================================================
 
 server:
-  port: 8080
+  port: 8080 # Cổng Gateway
 
 eureka:
   client:
@@ -16,58 +16,60 @@ eureka:
 spring:
   cloud:
     gateway:
+      # [COMMAND]: TẮT discovery locator để chỉ dùng route tường minh
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: false
 
+      # [COMMAND]: Các quy tắc định tuyến tường minh
       routes:
-        # USER SERVICE
+        # --- Route cho Auth Service (KHÔNG cần filter) ---
+        - id: auth-service-route
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/** # Cho phép login, validate
+
+        # --- Các route cần bảo vệ ---
         - id: user-service-route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/users/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER
 
-        # STATION SERVICE - Stations
-        - id: station-route
+        - id: station-service-routes
           uri: lb://STATION-SERVICE
           predicates:
-            - Path=/api/stations/**
+            - Path=/api/stations/**, /api/chargers/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER
 
-        # STATION SERVICE - Chargers
-        - id: charger-route
-          uri: lb://STATION-SERVICE
-          predicates:
-            - Path=/api/chargers/**
-
-        # CHARGING SERVICE
         - id: charging-service-route
           uri: lb://CHARGING-SERVICE
           predicates:
             - Path=/api/sessions/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER
 
-        # PAYMENT SERVICE - Payments
-        - id: payment-route
+        - id: payment-service-routes
           uri: lb://PAYMENT-SERVICE
           predicates:
-            - Path=/api/payments/**
+            - Path=/api/payments/**, /api/wallets/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER
 
-        # PAYMENT SERVICE - Wallets
-        - id: wallet-route
-          uri: lb://PAYMENT-SERVICE
-          predicates:
-            - Path=/api/wallets/**
-      # NOTIFICATION SERVICE
         - id: notification-service-route
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/notifications/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER
 
-      # Global CORS
+      # Global CORS (Nhớ thu hẹp origins cho production)
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOrigins: "*" # Chỉ dùng "*" khi dev
             allowedMethods:
               - GET
               - POST
@@ -81,14 +83,14 @@ spring:
         cache:
           enabled: false
 
-# Logging
+# Logging (Giữ DEBUG khi dev để dễ dò lỗi)
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    com.netflix.discovery: DEBUG
-    org.springframework.web: DEBUG
+    com.netflix.discovery: INFO
+    org.springframework.web: INFO
 
-# Actuator
+# Actuator (Giữ nguyên)
 management:
   endpoints:
     web:

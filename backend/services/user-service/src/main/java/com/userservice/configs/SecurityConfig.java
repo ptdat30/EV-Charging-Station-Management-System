@@ -3,8 +3,10 @@ package com.userservice.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // Import HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -13,21 +15,23 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Bean để mã hóa mật khẩu
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Cấu hình cơ bản cho phép truy cập API đăng ký và lấy user theo email
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Tắt CSRF cho API
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/register").permitAll() // Cho phép đăng ký
-                        .requestMatchers("/api/users/by-email").permitAll() // Cho phép auth-service gọi nội bộ
-                        .anyRequest().authenticated() // Các request khác cần xác thực (sẽ cấu hình sau)
+                        // Cho phép API đăng ký và API nội bộ cho auth-service
+                        .requestMatchers("/api/users/register", "/api/users/by-email").permitAll()
+                        // [COMMAND]: TẠM THỜI cho phép tất cả các request GET đến /api/users/**
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        // Mọi request khác (POST, PUT, DELETE không được liệt kê ở trên) cần xác thực
+                        .anyRequest().authenticated()
                 );
         return http.build();
     }

@@ -1,7 +1,3 @@
-// ===============================================================
-// FILE: UserController.java (Đã cập nhật - Thêm endpoint mới)
-// PACKAGE: com.userservice.controllers
-// ===============================================================
 package com.userservice.controllers;
 
 import com.userservice.dtos.RegisterRequestDto;
