@@ -1,32 +1,32 @@
 // ===============================================================
-// FILE: NotificationServiceImpl.java (Updated to send email)
+// FILE: NotificationServiceImpl.java (Updated to fetch user email)
 // PACKAGE: com.notificationservice.services
 // ===============================================================
 package com.notificationservice.services;
 
+import com.notificationservice.clients.UserServiceClient; // Import User Service Client
 import com.notificationservice.dtos.CreateNotificationRequestDto;
 import com.notificationservice.dtos.NotificationResponseDto;
+import com.notificationservice.dtos.internal.UserEmailDto; // Import User Email DTO
 import com.notificationservice.entities.Notification;
 import com.notificationservice.repositories.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.env.Environment; // Import Environment
-import org.springframework.mail.SimpleMailMessage; // Import Mail classes
+import org.springframework.core.env.Environment;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor // Automatically creates constructor for final fields
+@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
     private final NotificationRepository notificationRepository;
-    private final JavaMailSender mailSender; // Inject Mail Sender
-    private final Environment environment; // Inject Environment to read config properties
-
-    // TODO: Inject UserServiceClient later to fetch real user emails
-    // private final UserServiceClient userServiceClient;
+    private final JavaMailSender mailSender;
+    private final Environment environment;
+    private final UserServiceClient userServiceClient; // Inject User Service Client
 
     @Override
     public NotificationResponseDto createNotification(CreateNotificationRequestDto requestDto) {
@@ -44,13 +44,13 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Notification {} created successfully.", savedNotification.getNotificationId());
 
         // --- Activate Email Sending ---
-        sendEmailNotification(savedNotification); // Call the email sending method
+        sendEmailNotification(savedNotification);
 
         return convertToDto(savedNotification);
     }
 
-    // --- Helper method to convert Entity to DTO ---
     private NotificationResponseDto convertToDto(Notification notification) {
+        // ... (this method remains the same) ...
         NotificationResponseDto dto = new NotificationResponseDto();
         dto.setNotificationId(notification.getNotificationId());
         dto.setUserId(notification.getUserId());
@@ -63,27 +63,34 @@ public class NotificationServiceImpl implements NotificationService {
         return dto;
     }
 
-    /**
-     * Sends the notification via Email.
-     * @param notification The notification details to send.
-     */
     private void sendEmailNotification(Notification notification) {
-        // Get the 'From' email address from configuration
         String fromEmail = environment.getProperty("spring.mail.username");
         if (fromEmail == null || fromEmail.isBlank()) {
-            log.error("Email 'From' address is not configured (spring.mail.username). Cannot send email for notification {}.", notification.getNotificationId());
+            log.error("Email 'From' address not configured. Cannot send email for notification {}.", notification.getNotificationId());
             return;
         }
 
-        // --- Get Recipient Email ('To') ---
-        // TODO: Replace this hardcoded email by calling UserServiceClient to get the actual user's email based on notification.getUserId()
-        String toEmail = "your-real-test-email@example.com"; // <-- IMPORTANT: REPLACE WITH YOUR ACTUAL TEST EMAIL ADDRESS
-        if (toEmail == null || toEmail.isBlank()) {
-            log.error("Could not determine recipient email for user ID {}. Cannot send email for notification {}.", notification.getUserId(), notification.getNotificationId());
-            return;
+        // --- Get Recipient Email ('To') using Feign Client ---
+        String toEmail = null;
+        try {
+            log.debug("Fetching email for userId {}", notification.getUserId());
+            // Call user-service via Feign to get user details including email
+            UserEmailDto userDetails = userServiceClient.getUserById(notification.getUserId());
+            if (userDetails != null && userDetails.getEmail() != null) {
+                toEmail = userDetails.getEmail();
+                log.debug("Found email {} for userId {}", toEmail, notification.getUserId());
+            } else {
+                log.error("Could not retrieve email for userId {} from user-service.", notification.getUserId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch email for userId {} from user-service. Error: {}", notification.getUserId(), e.getMessage());
         }
         // --- End Recipient Email ---
 
+        if (toEmail == null || toEmail.isBlank()) {
+            log.error("Recipient email is missing. Cannot send email for notification {}.", notification.getNotificationId());
+            return; // Stop if we don't have a recipient
+        }
 
         log.info("Attempting to send email notification {} from {} to {}", notification.getNotificationId(), fromEmail, toEmail);
 
@@ -97,11 +104,8 @@ public class NotificationServiceImpl implements NotificationService {
             mailSender.send(mailMessage);
             log.info("Email sent successfully for notification {}", notification.getNotificationId());
 
-            // Optional: Update notification status in DB (e.g., add an 'email_sent_at' timestamp)
-
         } catch (Exception e) {
             log.error("Failed to send email for notification {}: {}", notification.getNotificationId(), e.getMessage(), e);
-            // Optional: Implement retry logic or dead-letter queue for failed emails
         }
     }
 }
