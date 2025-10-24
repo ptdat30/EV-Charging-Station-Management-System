@@ -15,7 +15,15 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
-
+  rabbitmq:
+    host: localhost # Địa chỉ RabbitMQ broker (đang chạy trên Docker)
+    port: 5672     # Cổng AMQP mặc định
+    username: guest  # Username mặc định
+    password: guest  # Password mặc định
+app:
+  rabbitmq:
+    exchange: charging_events # Tên exchange sẽ lắng nghe
+    queue: notification_queue # Tên queue sẽ lắng nghe
 eureka:
   client:
     service-url:

@@ -8,7 +8,25 @@ spring:
   config:
     import: "optional:configserver:http://localhost:8888"
 
+  docker:
+    compose:
+      enabled: false
+
   datasource:
-    url: jdbc:mysql://localhost:3306/charging_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/charging_service_db?useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: huynhdat123@
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest

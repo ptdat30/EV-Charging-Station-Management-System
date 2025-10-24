@@ -1,29 +1,46 @@
 # ===============================================================
-# FILE: application.yml (in notification-service/src/main/resources)
-# PURPOSE: Connect to Config Server AND provide early mail config
+# FILE: application.yml (trong notification-service - ĐÃ SỬA LỖI)
 # ===============================================================
 
 spring:
   application:
+    # Đặt lại tên đúng cho service này
     name: notification-service
 
-  # Import configuration from Config Server (keeps other settings centralized)
+  # Chỉ dùng cách import mới để kết nối Config Server
   config:
-    import: "optional:configserver:http://localhost:8888"
+    import: "optional:configserver:http://localhost:8088" # Đảm bảo cổng Config Server đúng
 
   # --- Local Mail Configuration ---
-  # Properties needed early for JavaMailSender bean creation
   mail:
     host: smtp.gmail.com
     port: 587
-    username: huynhphongdat2005@gmail.com # Your email
-    password: dapp xywu xmag ahdh # Your App Password
+    username: huynhphongdat2005@gmail.com
+    password: dapp xywu xmag ahdh
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+
+  # --- Database Configuration ---
   datasource:
     url: jdbc:mysql://localhost:3306/notification_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: huynhdat123@
+
+  # --- RabbitMQ Configuration ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    connection-timeout: 5s # Có thể giữ hoặc bỏ timeout này
+
+# --- Application-specific RabbitMQ Configuration ---
+app:
+  rabbitmq:
+    exchange: notification-exchange # Xem lại tên này có khớp với charging_events không?
+    queue: notification-queue
+    routing-key: notification-routing-key # Xem lại routing key binding
+
 server:
-    port: 8085
+  port: 8085
