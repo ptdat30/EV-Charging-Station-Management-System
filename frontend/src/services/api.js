@@ -1,35 +1,51 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Tạo một instance Axios với cấu hình cơ bản
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8080/api', // Base URL của API Gateway
+    baseURL: 'http://localhost:8080/api', // API Gateway base URL
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
+// Function to set the auth token for subsequent requests
+const setAuthToken = (token) => {
+    if (token) {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete apiClient.defaults.headers.common['Authorization'];
+    }
+};
+
 // --- Authentication ---
-export const loginUser = (credentials) => {
-    // credentials object: { email: "...", password: "..." }
-    return apiClient.post('/auth/login', credentials);
+export const loginUser = async (credentials) => {
+    const response = await apiClient.post('/auth/login', credentials);
+    // Set token after successful login
+    if (response.data.token) {
+        setAuthToken(response.data.token);
+    }
+    return response;
 };
 
 // --- User Management ---
 export const registerUser = (userData) => {
-    // userData object: { email: "...", password: "...", fullName: "...", phone: "..." }
     return apiClient.post('/users/register', userData);
 };
 
-// Hàm để lấy danh sách users (ví dụ)
-export const getAllUsers = (token) => {
-    return apiClient.get('/users/getall', {
-        headers: {
-            Authorization: `Bearer ${token}` // Gắn token vào header
-        }
-    });
+export const getAllUsers = () => { // Removed token argument, relies on default header
+    return apiClient.get('/users/getall');
 };
 
-// --- Thêm các hàm gọi API khác ở đây (stations, chargers, sessions,...) ---
+// --- Charging Sessions ---
+export const startChargingSession = (sessionData) => {
+    // sessionData: { userId, stationId, chargerId }
+    return apiClient.post('/sessions/start', sessionData);
+};
 
-export default apiClient; // Xuất instance để có thể dùng trực tiếp nếu cần
+export const stopChargingSession = (sessionId) => {
+    return apiClient.post(`/sessions/${sessionId}/stop`);
+};
+
+// --- Add other API functions here ---
+
+export default apiClient;

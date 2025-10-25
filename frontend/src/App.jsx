@@ -1,25 +1,42 @@
 // src/App.jsx
 import React from 'react';
-import { Outlet } from 'react-router-dom'; // Import Outlet
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
 function App() {
+    const { isLoggedIn, logout } = useAuth();
+    const location = useLocation();
+
     return (
         <div className="App">
-            {/* Có thể thêm Header, Navbar, Footer chung ở đây */}
-            <header>
+            <header className="app-header">
                 <h1>EV Charging Management</h1>
-                {/* Navigation links (sẽ thêm sau) */}
+                <nav className="app-nav">
+                    {isLoggedIn ? (
+                        <>
+                            <Link to="/dashboard" className={location.pathname === '/dashboard' ? 'active' : ''}>
+                                Dashboard
+                            </Link>
+                            <Link to="/charging" className={location.pathname === '/charging' ? 'active' : ''}>
+                                Charging Test
+                            </Link>
+                            <Link to="/station/1" className={location.pathname.includes('/station') ? 'active' : ''}>
+                                Station Details
+                            </Link>
+                            <button onClick={logout} className="logout-btn">
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <span>Please log in</span>
+                    )}
+                </nav>
             </header>
 
-            <main>
-                {/* Outlet sẽ render component tương ứng với route con hiện tại */}
-                {/* Ví dụ: Nếu URL là "/", nó render LoginPage */}
-                {/* Nếu URL là "/dashboard", nó render DashboardPage */}
+            <main className="app-main">
                 <Outlet />
             </main>
-
-            {/* <footer>Footer content</footer> */}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-// FILE: AuthServiceImpl.java
+// FILE: AuthServiceImpl.java (trong auth-service)
 package com.authservice.services;
 
 import com.authservice.clients.UserServiceClient;
@@ -18,45 +18,45 @@ public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    private final UserServiceClient userServiceClient; // Feign client gọi user-service
-    private final PasswordEncoder passwordEncoder;   // Bean từ SecurityConfig
-    private final JwtUtil jwtUtil;                   // Bean tiện ích JWT
+    private final UserServiceClient userServiceClient;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Override
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
         log.info("Attempting login for email: {}", loginRequestDto.getEmail());
 
-        // 1. Gọi user-service để lấy thông tin user bằng email
+        // 1. Lấy thông tin user từ user-service
         UserDetailDto userDetails;
         try {
             userDetails = userServiceClient.getUserByEmail(loginRequestDto.getEmail());
+            // UserDetailDto có thể null nếu Feign client cấu hình trả về Optional hoặc xử lý 404
             if (userDetails == null) {
-                log.warn("User not found for email: {}", loginRequestDto.getEmail());
-                throw new RuntimeException("Invalid credentials"); // Hoặc exception cụ thể hơn
+                log.warn("User not found via Feign client for email: {}", loginRequestDto.getEmail());
+                throw new RuntimeException("Invalid credentials");
             }
-        } catch (Exception e) {
-            // Xử lý lỗi nếu user-service không phản hồi hoặc không tìm thấy user
-            log.error("Error fetching user details for email {}: {}", loginRequestDto.getEmail(), e.getMessage());
-            throw new RuntimeException("Authentication failed");
+        } catch (Exception e) { // Bắt lỗi chung chung từ Feign hoặc RuntimeException
+            log.error("Error fetching user details or user not found for email {}: {}", loginRequestDto.getEmail(), e.getMessage());
+            // Không nên tiết lộ lỗi chi tiết, trả về lỗi chung
+            throw new RuntimeException("Authentication failed due to internal error or invalid credentials.");
         }
 
         // 2. Kiểm tra trạng thái tài khoản
-        if (userDetails.getStatus() != UserDetailDto.Status.active) {
-            log.warn("Login attempt for inactive/suspended user: {}", loginRequestDto.getEmail());
+        if (userDetails.getStatus() == null || userDetails.getStatus() != UserDetailDto.Status.active) {
+            log.warn("Login attempt for non-active user: {} (Status: {})", loginRequestDto.getEmail(), userDetails.getStatus());
             throw new RuntimeException("User account is not active");
         }
 
-        // 3. So sánh mật khẩu người dùng nhập với mật khẩu đã mã hóa trong DB
-        if (!passwordEncoder.matches(loginRequestDto.getPassword(), userDetails.getPasswordHash())) {
+        // 3. So sánh mật khẩu
+        if (userDetails.getPasswordHash() == null || !passwordEncoder.matches(loginRequestDto.getPassword(), userDetails.getPasswordHash())) {
             log.warn("Invalid password attempt for email: {}", loginRequestDto.getEmail());
             throw new RuntimeException("Invalid credentials");
         }
 
-        // 4. Nếu mật khẩu khớp, tạo JWT token
-        String token = jwtUtil.generateToken(userDetails.getEmail()); // Dùng email làm subject
+        // 4. Tạo JWT token (SỬ DỤNG userDetails)
+        String token = jwtUtil.generateToken(userDetails);
         log.info("Login successful for email: {}", loginRequestDto.getEmail());
 
-        // 5. Trả về token cho client
         return new LoginResponseDto(token);
     }
 }

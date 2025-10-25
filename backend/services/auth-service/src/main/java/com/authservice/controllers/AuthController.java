@@ -1,47 +1,59 @@
-// FILE: AuthController.java (Thêm endpoint validate)
+// FILE: AuthController.java (trong auth-service)
 package com.authservice.controllers;
 
 import com.authservice.dtos.LoginRequestDto;
 import com.authservice.dtos.LoginResponseDto;
 import com.authservice.services.AuthService;
-import com.authservice.util.JwtUtil; // Import JwtUtil
+import com.authservice.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger; // Import Logger
+import org.slf4j.LoggerFactory; // Import LoggerFactory
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*; // Import thêm
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class); // Thêm Logger
     private final AuthService authService;
-    private final JwtUtil jwtUtil; // Inject JwtUtil
+    private final JwtUtil jwtUtil;
 
-    // POST /api/auth/login (Giữ nguyên)
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
+        log.info("Received login request for email: {}", loginRequestDto.getEmail());
+        // Service sẽ xử lý lỗi và ném exception nếu đăng nhập thất bại
         LoginResponseDto response = authService.login(loginRequestDto);
         return ResponseEntity.ok(response);
     }
 
-    // [COMMAND]: Thêm endpoint mới để xác thực token
-    // GET /api/auth/validate?token=...
     @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestParam("token") String token) {
+    public ResponseEntity<Map<String, Object>> validateToken(@RequestParam("token") String token) {
+        log.debug("Received validation request for token"); // Không log token
         try {
             boolean isValid = jwtUtil.validateToken(token);
             if (isValid) {
-                // Nếu hợp lệ, trả về thông tin user (ví dụ: username) từ token
                 String username = jwtUtil.getUsernameFromToken(token);
-                // Trả về đối tượng chứa username hoặc chỉ cần status OK
-                return ResponseEntity.ok().body(username); // Hoặc ResponseEntity.ok().build();
+                String role = jwtUtil.getRoleFromToken(token);
+                Long userId = jwtUtil.getUserIdFromToken(token);
+                log.debug("Token validation successful for user {}", username);
+                // Trả về Map chứa các thông tin cần thiết
+                return ResponseEntity.ok(Map.of(
+                        "isValid", true,
+                        "username", username,
+                        "role", role != null ? role : "UNKNOWN", // Tránh trả về null
+                        "userId", userId != null ? userId : -1L   // Tránh trả về null
+                ));
             } else {
-                // Nếu không hợp lệ (ví dụ hết hạn, sai chữ ký)
-                return ResponseEntity.status(401).body("Invalid Token");
+                log.warn("Token validation failed (invalid/expired)");
+                return ResponseEntity.status(401).body(Map.of("isValid", false, "error", "Invalid or Expired Token"));
             }
         } catch (Exception e) {
-            // Lỗi khác khi parse token
-            return ResponseEntity.status(401).body("Token validation error: " + e.getMessage());
+            // Lỗi khi parse hoặc lỗi không mong muốn khác
+            log.error("Token validation error: {}", e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("isValid", false, "error", "Token validation error"));
         }
     }
 }

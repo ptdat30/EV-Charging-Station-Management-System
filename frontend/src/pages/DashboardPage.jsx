@@ -1,28 +1,25 @@
 // src/pages/DashboardPage.jsx
 import React, { useEffect, useState } from 'react';
-// import { useNavigate } from 'react-router-dom'; // No longer need useNavigate here
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import { useAuth } from '../contexts/AuthContext';
 import { getAllUsers } from '../services/api';
+import './DashboardPage.css';
 
 function DashboardPage() {
-    // const navigate = useNavigate(); // Remove
-    const { token, logout, isLoggedIn } = useAuth(); // Get state and functions from contexts
+    const { token, logout, isLoggedIn } = useAuth();
     const [userData, setUserData] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // Check login status on mount
     useEffect(() => {
         if (!isLoggedIn) {
-            logout(); // Use contexts's logout which handles navigation
+            logout();
         } else {
-            fetchUserData(token); // Fetch data if logged in
+            fetchUserData(token);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoggedIn, token]); // Depend on isLoggedIn and token
+    }, [isLoggedIn, token, logout]);
 
     const fetchUserData = async (currentToken) => {
-        if (!currentToken) return; // Don't fetch if token is somehow null
+        if (!currentToken) return;
         setLoading(true);
         setError(null);
         try {
@@ -32,27 +29,37 @@ function DashboardPage() {
             console.error('Failed to fetch user data:', err);
             setError('Failed to load dashboard data.');
             if (err.response?.status === 401 || err.response?.status === 403) {
-                logout(); // Use contexts's logout
+                logout();
             }
         } finally {
             setLoading(false);
         }
     };
 
-    // Logout button now just calls the contexts's logout function
     return (
-        <div>
-            <h2>Dashboard</h2>
-            <p>Welcome! You are logged in.</p>
-            {loading && <p>Loading data...</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+        <div className="dashboard-page">
+            <div className="dashboard-header">
+                <h2>Dashboard</h2>
+                <p>Welcome! You are logged in.</p>
+            </div>
+
+            {loading && <div className="loading">Loading data...</div>}
+            {error && <div className="error-message">{error}</div>}
+
             {userData && (
-                <div>
+                <div className="user-data-section">
                     <h3>User List (Example Data):</h3>
-                    <pre>{JSON.stringify(userData, null, 2)}</pre>
+                    <div className="data-container">
+                        <pre>{JSON.stringify(userData, null, 2)}</pre>
+                    </div>
                 </div>
             )}
-            <button onClick={logout}>Logout</button> {/* Use contexts's logout */}
+
+            <div className="dashboard-actions">
+                <button onClick={logout} className="btn btn-secondary">
+                    Logout
+                </button>
+            </div>
         </div>
     );
 }
