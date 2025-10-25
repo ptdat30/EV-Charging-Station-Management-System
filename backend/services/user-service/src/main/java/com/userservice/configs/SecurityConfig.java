@@ -3,7 +3,9 @@ package com.userservice.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Import HttpMethod
+import org.springframework.http.HttpMethod;
+// Import @EnableMethodSecurity
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -13,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // [COMMAND]: Bật tính năng @PreAuthorize
 public class SecurityConfig {
 
     @Bean
@@ -26,11 +29,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép API đăng ký và API nội bộ cho auth-service
+                        // API công khai
                         .requestMatchers("/api/users/register", "/api/users/by-email").permitAll()
-                        // [COMMAND]: TẠM THỜI cho phép tất cả các request GET đến /api/users/**
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
-                        // Mọi request khác (POST, PUT, DELETE không được liệt kê ở trên) cần xác thực
+                        // Tạm thời cho phép GET (sẽ dùng @PreAuthorize để kiểm soát)
+                        // .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                        // Mọi request khác cần được xác thực (ít nhất là có token hợp lệ)
                         .anyRequest().authenticated()
                 );
         return http.build();
