@@ -1,7 +1,7 @@
 // FILE: StationRepository.java
-package com.userservice.repositories;
+package com.stationservice.repositories;
 
-import com.userservice.entities.Station;
+import com.stationservice.entities.Station;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

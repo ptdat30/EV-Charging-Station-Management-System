@@ -1,7 +1,7 @@
 // FILE: StationResponseDto.java
-package com.userservice.dtos;
+package com.stationservice.dtos;
 
-import com.userservice.entities.Station;
+import com.stationservice.entities.Station;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

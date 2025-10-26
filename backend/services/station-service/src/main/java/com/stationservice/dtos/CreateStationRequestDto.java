@@ -1,5 +1,5 @@
 // FILE: CreateStationRequestDto.java
-package com.userservice.dtos;
+package com.stationservice.dtos;
 
 import lombok.Data;
 

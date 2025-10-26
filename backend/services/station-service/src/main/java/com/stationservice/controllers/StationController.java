@@ -1,10 +1,10 @@
 // FILE: StationController.java
-package com.userservice.controllers;
+package com.stationservice.controllers;
 
-import com.userservice.dtos.CreateStationRequestDto;
-import com.userservice.dtos.StationResponseDto;
-import com.userservice.dtos.UpdateStationRequestDto;
-import com.userservice.services.StationService;
+import com.stationservice.dtos.CreateStationRequestDto;
+import com.stationservice.dtos.StationResponseDto;
+import com.stationservice.dtos.UpdateStationRequestDto;
+import com.stationservice.services.StationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

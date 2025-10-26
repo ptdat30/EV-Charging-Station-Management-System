@@ -1,7 +1,7 @@
 // FILE: ChargerResponseDto.java
-package com.userservice.dtos;
+package com.stationservice.dtos;
 
-import com.userservice.entities.Charger;
+import com.stationservice.entities.Charger;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

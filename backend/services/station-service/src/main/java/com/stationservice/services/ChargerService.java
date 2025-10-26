@@ -1,9 +1,9 @@
 // FILE: ChargerService.java
-package com.userservice.services;
+package com.stationservice.services;
 
-import com.userservice.dtos.ChargerResponseDto;
-import com.userservice.dtos.CreateChargerRequestDto;
-import com.userservice.dtos.UpdateChargerRequestDto;
+import com.stationservice.dtos.ChargerResponseDto;
+import com.stationservice.dtos.CreateChargerRequestDto;
+import com.stationservice.dtos.UpdateChargerRequestDto;
 import java.util.List;
 
 public interface ChargerService {
