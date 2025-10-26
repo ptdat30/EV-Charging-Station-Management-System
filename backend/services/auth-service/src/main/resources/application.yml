@@ -1,0 +1,49 @@
+# ===============================================================
+# FILE: application.yml (in notification-service/src/main/resources)
+# PURPOSE: Connect to Config Server AND provide early mail config
+# ===============================================================
+
+spring:
+  application:
+    name: auth-service
+  cloud:
+    config:
+      uri: http://localhost:8888
+      fail-fast: true
+  config:
+    import: "optional:configserver:http://localhost:8888"
+
+  # --- Local Mail Configuration ---
+  # Properties needed early for JavaMailSender bean creation
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: huynhphongdat2005@gmail.com # Your email
+    password: dapp xywu xmag ahdh # Your App Password
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+  # --- Database Configuration ---
+  datasource:
+    url: jdbc:mysql://localhost:3306/notification_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@
+
+  # --- RabbitMQ Configuration ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    connection-timeout: 5s
+
+# --- Application-specific RabbitMQ Configuration ---
+app:
+  rabbitmq:
+    exchange: notification-exchange
+    queue: notification-queue
+    routing-key: notification-routing-key
+
+server:
+  port: 8085

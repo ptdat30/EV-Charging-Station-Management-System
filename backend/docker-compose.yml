@@ -1,0 +1,26 @@
+# ===============================================================
+# FILE: docker-compose.yml
+# PURPOSE: Định nghĩa và chạy RabbitMQ container
+# ===============================================================
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Cổng AMQP
+      - "15672:15672" # Cổng giao diện web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ev_network
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  ev_network:
+    driver: bridge
