@@ -1,14 +1,14 @@
 // FILE: ChargerServiceImpl.java
-package com.userservice.services;
+package com.stationservice.services;
 
-import com.userservice.dtos.ChargerResponseDto;
-import com.userservice.dtos.CreateChargerRequestDto;
-import com.userservice.dtos.UpdateChargerRequestDto;
-import com.userservice.entities.Charger;
-import com.userservice.entities.Station;
+import com.stationservice.dtos.ChargerResponseDto;
+import com.stationservice.dtos.CreateChargerRequestDto;
+import com.stationservice.dtos.UpdateChargerRequestDto;
+import com.stationservice.entities.Charger;
+import com.stationservice.entities.Station;
 import com.paymentservice.exceptions.ResourceNotFoundException;
-import com.userservice.repositories.ChargerRepository;
-import com.userservice.repositories.StationRepository;
+import com.stationservice.repositories.ChargerRepository;
+import com.stationservice.repositories.StationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

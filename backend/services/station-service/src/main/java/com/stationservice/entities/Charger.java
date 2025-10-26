@@ -1,5 +1,5 @@
 // FILE: Charger.java
-package com.userservice.entities;
+package com.stationservice.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;

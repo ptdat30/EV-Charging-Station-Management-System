@@ -1,11 +1,11 @@
 // FILE: StationServiceImpl.java
-package com.userservice.services;
+package com.stationservice.services;
 
-import com.userservice.dtos.CreateStationRequestDto;
-import com.userservice.dtos.StationResponseDto;
-import com.userservice.dtos.UpdateStationRequestDto;
-import com.userservice.entities.Station;
-import com.userservice.repositories.StationRepository;
+import com.stationservice.dtos.CreateStationRequestDto;
+import com.stationservice.dtos.StationResponseDto;
+import com.stationservice.dtos.UpdateStationRequestDto;
+import com.stationservice.entities.Station;
+import com.stationservice.repositories.StationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 // Tái sử dụng ResourceNotFoundException từ user-service hoặc tạo mới
