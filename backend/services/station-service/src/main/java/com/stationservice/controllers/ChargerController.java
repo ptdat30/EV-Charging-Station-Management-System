@@ -1,10 +1,10 @@
 // FILE: ChargerController.java
-package com.userservice.controllers;
+package com.stationservice.controllers;
 
-import com.userservice.dtos.ChargerResponseDto;
-import com.userservice.dtos.CreateChargerRequestDto;
-import com.userservice.dtos.UpdateChargerRequestDto;
-import com.userservice.services.ChargerService;
+import com.stationservice.dtos.ChargerResponseDto;
+import com.stationservice.dtos.CreateChargerRequestDto;
+import com.stationservice.dtos.UpdateChargerRequestDto;
+import com.stationservice.services.ChargerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

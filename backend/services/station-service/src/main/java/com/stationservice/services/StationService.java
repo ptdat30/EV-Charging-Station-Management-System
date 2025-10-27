@@ -1,9 +1,9 @@
 // FILE: StationService.java
-package com.userservice.services;
+package com.stationservice.services;
 
-import com.userservice.dtos.CreateStationRequestDto;
-import com.userservice.dtos.StationResponseDto;
-import com.userservice.dtos.UpdateStationRequestDto;
+import com.stationservice.dtos.CreateStationRequestDto;
+import com.stationservice.dtos.StationResponseDto;
+import com.stationservice.dtos.UpdateStationRequestDto;
 import java.util.List;
 
 public interface StationService {

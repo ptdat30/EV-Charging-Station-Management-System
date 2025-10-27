@@ -1,4 +1,4 @@
-package com.userservice;
+package com.stationservice;
 
 import org.junit.Test;
 import org.springframework.boot.test.context.SpringBootTest;
