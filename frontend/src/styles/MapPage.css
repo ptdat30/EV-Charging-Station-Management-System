@@ -1,0 +1,229 @@
+/* src/styles/MapPage.css */
+.map-page {
+    background: #f8f9fa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .map-header {
+    background: #27ae60;
+    color: white;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  
+  .map-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .map-header p {
+    opacity: 0.9;
+    font-size: 0.95rem;
+  }
+  
+  .search-bar {
+    background: white;
+    padding: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin: -2rem 1rem 2rem;
+    position: relative;
+    z-index: 10;
+    border-radius: 12px;
+  }
+  
+  .search-input-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .search-input-wrapper i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+  }
+  
+  .search-input-wrapper input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.8rem;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  
+  .search-bar select,
+  .toggle {
+    padding: 0.8rem 1rem;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: white;
+  }
+  
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+  }
+  
+  .btn-search {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .map-content {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .station-list {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .station-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1rem;
+    display: flex;
+    transition: transform 0.3s ease;
+  }
+  
+  .station-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .station-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+  }
+  
+  .station-info {
+    flex: 1;
+    padding: 1rem;
+  }
+  
+  .station-info h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    color: #333;
+  }
+  
+  .distance {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+  
+  .rating {
+    color: #f39c12;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+  }
+  
+  .tag {
+    background: #e8f5e9;
+    color: #27ae60;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .price {
+    font-weight: 600;
+    color: #27ae60;
+    font-size: 1.1rem;
+  }
+  
+  .station-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+  }
+  
+  .btn-book,
+  .btn-detail {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  
+  .btn-book {
+    background: #27ae60;
+    color: white;
+  }
+  
+  .btn-detail {
+    background: #f8f9fa;
+    color: #333;
+    border: 1.5px solid #ddd;
+  }
+  
+  .map-container {
+    flex: 1.2;
+    min-width: 300px;
+    height: 600px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  
+  /* Responsive */
+  @media (max-width: 992px) {
+    .map-content {
+      flex-direction: column;
+    }
+    .map-container {
+      height: 400px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .search-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .search-input-wrapper {
+      min-width: auto;
+    }
+  }
