@@ -1,5 +1,5 @@
 # ===============================================================
-# FILE: api-gateway.yml (Phiên bản đã sửa lỗi và thêm Filter)
+# FILE: api-gateway.yml (Phiên bản đã sửa lỗi routing và filter)
 # LOCATION: config-repo/api-gateway.yml
 # ===============================================================
 
@@ -16,12 +16,12 @@ eureka:
 spring:
   cloud:
     gateway:
-      # [COMMAND]: TẮT discovery locator để chỉ dùng route tường minh
+      # [COMMAND]: TẮT discovery locator
       discovery:
         locator:
           enabled: false
 
-      # [COMMAND]: Các quy tắc định tuyến tường minh
+      # [COMMAND]: Các route tường minh
       routes:
         # --- Route cho Auth Service (KHÔNG cần filter) ---
         - id: auth-service-route
@@ -35,60 +35,65 @@ spring:
           predicates:
             - Path=/api/users/**
           filters:
-            - AuthenticationFilter # <-- ÁP DỤNG FILTER
+            # XÓA BỎ "- StripPrefix=1"
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
         - id: station-service-routes
           uri: lb://STATION-SERVICE
           predicates:
             - Path=/api/stations/**, /api/chargers/**
           filters:
-            - AuthenticationFilter # <-- ÁP DỤNG FILTER
+            # XÓA BỎ "- StripPrefix=1"
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
         - id: charging-service-route
           uri: lb://CHARGING-SERVICE
           predicates:
             - Path=/api/sessions/**
           filters:
-            - AuthenticationFilter # <-- ÁP DỤNG FILTER
+            # XÓA BỎ "- StripPrefix=1"
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
         - id: payment-service-routes
           uri: lb://PAYMENT-SERVICE
           predicates:
             - Path=/api/payments/**, /api/wallets/**
           filters:
-            - AuthenticationFilter # <-- ÁP DỤNG FILTER
+            # XÓA BỎ "- StripPrefix=1"
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
         - id: notification-service-route
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/notifications/**
           filters:
-            - AuthenticationFilter # <-- ÁP DỤNG FILTER
+            # XÓA BỎ "- StripPrefix=1"
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
-      # Global CORS (Nhớ thu hẹp origins cho production)
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*" # Chỉ dùng "*" khi dev
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
+      # [COMMAND]: XÓA BỎ HOẶC COMMENT LẠI globalcors
+      # globalcors:
+      #   corsConfigurations:
+      #     '[/**]':
+      #       allowedOrigins: "*"
+      #       allowedMethods:
+      #         - GET
+      #         - POST
+      #         - PUT
+      #         - DELETE
+      #         - OPTIONS
+      #       allowedHeaders: "*"
 
-      # Load Balancer
+      # Load Balancer (Giữ nguyên)
       loadbalancer:
         cache:
           enabled: false
 
-# Logging (Giữ DEBUG khi dev để dễ dò lỗi)
+# Logging (Giữ nguyên)
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    com.netflix.discovery: INFO
-    org.springframework.web: INFO
+    # com.netflix.discovery: INFO # Có thể giảm bớt log Eureka nếu muốn
+    # org.springframework.web: INFO
 
 # Actuator (Giữ nguyên)
 management:

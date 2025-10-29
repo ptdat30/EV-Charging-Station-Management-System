@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+<h1>CORS Test - EV Charging System</h1>
+
+<button onclick="testCORS()">Test CORS</button>
+<button onclick="testLogin()">Test Login</button>
+
+<div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+<script>
+    function log(message) {
+        document.getElementById('result').innerHTML += message + '<br>';
+        console.log(message);
+    }
+
+    async function testCORS() {
+        try {
+            log('Testing OPTIONS request...');
+            const response = await fetch('http://localhost:8080/api/auth/login', {
+                method: 'OPTIONS',
+                headers: {
+                    'Origin': 'http://localhost:5173',
+                    'Access-Control-Request-Method': 'POST',
+                    'Access-Control-Request-Headers': 'content-type',
+                }
+            });
+
+            log(`OPTIONS Status: ${response.status}`);
+            log(`OPTIONS Headers: ${JSON.stringify(Object.fromEntries(response.headers))}`);
+
+        } catch (error) {
+            log(`OPTIONS Error: ${error.message}`);
+        }
+    }
+
+    async function testLogin() {
+        try {
+            log('Testing POST login...');
+            const response = await fetch('http://localhost:8080/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Origin': 'http://localhost:5173',
+                },
+                body: JSON.stringify({
+                    email: 'ptdat3000@gmail.com',
+                    password: '123123123'
+                })
+            });
+
+            log(`POST Status: ${response.status}`);
+            const text = await response.text();
+            log(`POST Response: ${text}`);
+
+        } catch (error) {
+            log(`POST Error: ${error.message}`);
+        }
+    }
+</script>
+</body>
+</html>

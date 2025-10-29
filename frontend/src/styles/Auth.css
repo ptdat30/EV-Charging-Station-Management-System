@@ -1,158 +1,64 @@
-/* src/styles/Auth.css */
-.auth-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1e9c6e 0%, #2ecc71 50%, #27ae60 100%),
-                url('car_banner.png') center/cover no-repeat;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  
-  .auth-container {
-    width: 100%;
-    max-width: 420px;
-  }
-  
-  .auth-card {
-    background: white;
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-    animation: auth-slide-up 0.6s ease-out;
-  }
-  
-  @keyframes auth-slide-up {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* Header */
-  .auth-header {
-    text-align: center;
-    padding: 2rem 1.5rem 1.5rem;
-    background: white;
-  }
-  
-  .auth-logo-icon {
-    width: 50px;
-    height: 50px;
-    background: #27ae60;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.1rem;
-    margin: 0 auto 1rem;
-  }
-  
-  .auth-header h1 {
-    font-size: 1.6rem;
-    color: #27ae60;
-    margin-bottom: 0.3rem;
-    font-weight: 700;
-  }
-  
-  .auth-header p {
-    color: #666;
-    font-size: 0.9rem;
-  }
-  
-  /* Form */
-  .auth-form {
-    padding: 0 1.5rem 2rem;
-  }
-  
-  .auth-form h2 {
-    font-size: 1.4rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-    text-align: center;
-  }
-  
-  .auth-subtitle {
-    color: #888;
-    font-size: 0.9rem;
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  .auth-input-group {
-    position: relative;
-    margin-bottom: 1.2rem;
-  }
-  
-  .auth-input-group.icon i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
-    font-size: 1rem;
-    z-index: 2;
-  }
-  
-  .auth-input-group input {
-    width: 100%;
-    padding: 0.9rem 1rem 0.9rem 2.8rem;
-    border: 1.5px solid #eee;
-    border-radius: 12px;
-    font-size: 1rem;
-    background: #f8f9fa;
-    transition: all 0.3s ease;
-    outline: none;
-  }
-  
-  .auth-input-group input:focus {
-    border-color: #27ae60;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
-  }
-  
-  /* Buttons */
-  .auth-btn-register,
-  .auth-btn-login {
-    width: 100%;
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 1rem;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    margin-top: 0.5rem;
-  }
-  
-  .auth-btn-register:hover,
-  .auth-btn-login:hover {
-    background: #219653;
-  }
-  
-  /* Link */
-  .auth-login-link {
-    text-align: center;
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
-    color: #666;
-  }
-  
-  .auth-login-link a {
-    color: #27ae60;
-    text-decoration: none;
-    font-weight: 500;
-  }
-  
-  .auth-login-link a:hover {
-    text-decoration: underline;
-  }
-  
-  /* Responsive */
-  @media (max-width: 480px) {
-    .auth-card { border-radius: 18px; }
-    .auth-header, .auth-form { padding-left: 1rem; padding-right: 1rem; }
-  }
+/* Loading states */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.loading-spinner {
+  text-align: center;
+}
+
+.loading-spinner i {
+  font-size: 2rem;
+  color: #007bff;
+}
+
+.loading-spinner p {
+  margin-top: 1rem;
+  color: #666;
+}
+
+/* Error message */
+.auth-error-message {
+  background-color: #fee;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-error-message i {
+  color: #dc3545;
+}
+
+/* Test credentials */
+.auth-test-credentials {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.auth-test-credentials p {
+  margin: 4px 0;
+}
+
+/* Disabled states */
+.auth-input-group input:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.auth-btn-login:disabled,
+.auth-btn-register:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

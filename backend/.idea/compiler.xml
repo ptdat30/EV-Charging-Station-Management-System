@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="config-server" />
+        <module name="auth-service" />
+        <module name="loyalty-service" />
+        <module name="payment-service" />
+        <module name="station-service" />
+        <module name="api-gateway" />
+        <module name="analytics-service" />
+        <module name="user-service" />
+        <module name="charging-service" />
+        <module name="notification-service" />
+      </profile>
+      <profile name="Annotation profile for eureka-service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="eureka-service" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="analytics-service" options="-parameters" />
+      <module name="api-gateway" options="-parameters" />
+      <module name="auth-service" options="-parameters" />
+      <module name="charging-service" options="-parameters" />
+      <module name="config-server" options="-parameters" />
+      <module name="eureka-service" options="-parameters" />
+      <module name="loyalty-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
+      <module name="payment-service" options="-parameters" />
+      <module name="station-service" options="-parameters" />
+      <module name="user-service" options="-parameters" />
+    </option>
+  </component>
+</project>
