@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charging Station Finder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+<div class="app-container">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-charging-station"></i>
+                <span>EV Finder</span>
+            </div>
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm trạm sạc, địa điểm..." id="searchInput">
+                    <button class="filter-btn" id="filterBtn">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="location-btn" id="locationBtn">
+                <i class="fas fa-location-crosshairs"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Map Section -->
+        <div class="map-section">
+            <div id="map" class="map-container"></div>
+            <div class="map-controls">
+                <button class="control-btn" id="centerLocation">
+                    <i class="fas fa-location-dot"></i>
+                </button>
+                <button class="control-btn" id="layerControl">
+                    <i class="fas fa-layer-group"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Station List Section -->
+        <div class="station-list-section">
+            <div class="section-header">
+                <h2>Trạm sạc gần bạn</h2>
+                <button class="view-all-btn">Xem tất cả</button>
+            </div>
+            <div class="station-list" id="stationList">
+                <!-- Station cards will be dynamically generated -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item active">
+            <i class="fas fa-map"></i>
+            <span>Bản đồ</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-heart"></i>
+            <span>Yêu thích</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-clock"></i>
+            <span>Lịch sử</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Tài khoản</span>
+        </a>
+    </nav>
+
+    <!-- Filter Modal -->
+    <div class="modal" id="filterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Bộ lọc tìm kiếm</h3>
+                <button class="modal-close" id="closeFilter">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="filter-group">
+                    <label>Loại đầu sạc</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="CCS"> CCS
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="Type2"> Type 2
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="CHAdeMO"> CHAdeMO
+                        </label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Công suất sạc</label>
+                    <div class="range-slider">
+                        <input type="range" min="7" max="350" value="50" id="powerRange">
+                        <span id="powerValue">50 kW</span>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Khoảng cách</label>
+                    <div class="range-slider">
+                        <input type="range" min="1" max="50" value="10" id="distanceRange">
+                        <span id="distanceValue">10 km</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="clearFilter">Xóa bộ lọc</button>
+                <button class="btn btn-primary" id="applyFilter">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

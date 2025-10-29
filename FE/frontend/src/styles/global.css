@@ -1,0 +1,106 @@
+/* ========================================
+   CSS RESET + BASE STYLES
+   Dùng cho mọi dự án React/Vite
+   ======================================== */
+
+/* 1. Reset Box Model + Font */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* 2. Loại bỏ margin mặc định */
+  html, body,
+  h1, h2, h3, h4, h5, h6,
+  p, ol, ul, li,
+  figure, figcaption, blockquote,
+  dl, dd, pre {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* 3. Căn bản cho body */
+  html {
+    -webkit-text-size-adjust: 100%;
+    font-size: 100%; /* 16px */
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #f5f5f5;
+    color: #333;
+  }
+  
+  /* 4. Cải thiện hình ảnh */
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* 5. Input, button, textarea – loại bỏ style mặc định */
+  input, button, textarea, select {
+    font: inherit;
+    color: inherit;
+    border: none;
+    background: none;
+    outline: none;
+  }
+  
+  /* 6. Button – cursor pointer */
+  button {
+    cursor: pointer;
+  }
+  
+  /* 7. Link – loại bỏ underline */
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  /* 8. List – loại bỏ bullet */
+  ul, ol {
+    list-style: none;
+  }
+  
+  /* 9. Table – collapse border */
+  table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  
+  /* 10. Focus visible (accessibility) */
+  :focus-visible {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+  }
+  
+  /* 11. Scrollbar (tùy chọn – đẹp hơn) */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+  
+  /* 12. Utility classes (tùy chọn) */
+  .text-center { text-align: center; }
+  .mt-1 { margin-top: 1rem; }
+  .mb-1 { margin-bottom: 1rem; }
+  .d-flex { display: flex; }
+  .flex-column { flex-direction: column; }
+  .justify-center { justify-content: center; }
+  .align-center { align-items: center; }

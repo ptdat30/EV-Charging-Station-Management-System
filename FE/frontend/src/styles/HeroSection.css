@@ -1,0 +1,114 @@
+/* src/styles/HeroSection.css */
+.hero {
+  position: relative;
+  height: 80vh;
+  min-height: 500px;
+  background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.5)),
+              url('car_banner.png') center/cover no-repeat;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.hero-content {
+  max-width: 800px;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 46px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.highlight {
+  color: #4CAF50;
+}
+
+.hero-description {
+  font-size: 18px;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+/* Ô TÌM KIẾM – ĐẸP NHƯ ẢNH */
+.hero-search {
+  display: flex;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-radius: 50px;
+  overflow: hidden;
+  background: white;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 1.1rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3.2rem;
+  border: none;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  border-radius: 50px 0 0 50px;
+}
+
+.search-btn_hero {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.search-btn:hover {
+  background: #45a049;
+}
+
+.search-btn i {
+  font-size: 1.1rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .hero { height: 70vh; }
+  .hero-title { font-size: 2.2rem; }
+  .hero-search {
+    flex-direction: column;
+    border-radius: 12px;
+  }
+  .search-input {
+    border-radius: 12px 12px 0 0;
+    padding-left: 3.2rem;
+  }
+  .search-btn {
+    border-radius: 0 0 12px 12px;
+    justify-content: center;
+    padding: 1rem;
+  }
+}
