@@ -1,16 +1,27 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, loading } = useAuth();
+    const location = useLocation();
 
-    if (!isAuthenticated) {
-        // Nếu chưa đăng nhập, chuyển hướng về trang login
-        return <Navigate to="/login" replace />;
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <div className="loading-spinner">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    <p>Đang tải...</p>
+                </div>
+            </div>
+        );
     }
 
-    // Nếu đã đăng nhập, cho phép truy cập vào trang con (component con)
+    if (!isAuthenticated) {
+        // Lưu trang hiện tại để redirect back sau khi login
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
     return <Outlet />;
 };
 
