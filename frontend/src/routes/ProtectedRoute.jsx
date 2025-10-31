@@ -39,8 +39,9 @@ const ProtectedRoute = ({ requireAdmin = false, requireStaff = false, roles = nu
 
     // Kiểm tra đăng nhập
     if (!isAuthenticated) {
-        // Lưu trang hiện tại để redirect back sau khi login
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        // Luôn redirect về homepage khi không authenticated (kể cả khi logout)
+        // Thay vì redirect về login để user có thể thấy homepage và quyết định đăng nhập lại
+        return <Navigate to="/" replace />;
     }
 
     // Lấy role của user (hỗ trợ nhiều format)

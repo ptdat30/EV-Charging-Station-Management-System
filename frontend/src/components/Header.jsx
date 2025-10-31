@@ -4,14 +4,32 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Header.css';
 
-const Header = () => {
+const Header = ({ onLoginClick, onRegisterClick }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate('/');
+    // Navigate trước để tránh ProtectedRoute redirect về login
+    navigate('/', { replace: true });
+    // Sau đó mới logout để clear state
+    setTimeout(() => {
+      logout();
+    }, 0);
+  };
+
+  const handleLoginClick = (e) => {
+    if (onLoginClick) {
+      e.preventDefault();
+      onLoginClick();
+    }
+  };
+
+  const handleRegisterClick = (e) => {
+    if (onRegisterClick) {
+      e.preventDefault();
+      onRegisterClick();
+    }
   };
 
   return (
@@ -34,8 +52,8 @@ const Header = () => {
         <div className="auth-buttons">
           {!isAuthenticated ? (
             <>
-              <Link to="/login" className="btn-login">Đăng nhập</Link>
-              <Link to="/register" className="btn-register">Đăng ký</Link>
+              <Link to="/login" className="btn-login" onClick={handleLoginClick}>Đăng nhập</Link>
+              <Link to="/register" className="btn-register" onClick={handleRegisterClick}>Đăng ký</Link>
             </>
           ) : (
             <div className="user-area">
@@ -69,8 +87,26 @@ const Header = () => {
         )}
         {!isAuthenticated && (
           <div className="mobile-auth">
-            <Link to="/login" className="btn-login mobile" onClick={() => setIsMobileMenuOpen(false)}>Đăng nhập</Link>
-            <Link to="/register" className="btn-register mobile" onClick={() => setIsMobileMenuOpen(false)}>Đăng ký</Link>
+            <Link 
+              to="/login" 
+              className="btn-login mobile" 
+              onClick={(e) => {
+                setIsMobileMenuOpen(false);
+                handleLoginClick(e);
+              }}
+            >
+              Đăng nhập
+            </Link>
+            <Link 
+              to="/register" 
+              className="btn-register mobile" 
+              onClick={(e) => {
+                setIsMobileMenuOpen(false);
+                handleRegisterClick(e);
+              }}
+            >
+              Đăng ký
+            </Link>
           </div>
         )}
       </div>

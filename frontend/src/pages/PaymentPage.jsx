@@ -1,243 +1,291 @@
 // src/pages/PaymentPage.jsx
-import React, { useState } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import '../styles/Payment.css';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { getBalance, topUpWallet } from '../services/walletService';
+import { getMyPayments } from '../services/paymentService';
+import TopUpModal from '../components/TopUpModal';
+import '../styles/PaymentPage.css';
 
 const PaymentPage = () => {
-  const [selectedPlan, setSelectedPlan] = useState('professional');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
-  const [name, setName] = useState('');
+    const { user } = useAuth();
+    const [balance, setBalance] = useState(0);
+    const [payments, setPayments] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+    const [filter, setFilter] = useState('all'); // all, completed, pending, failed, refunded
 
-  const plans = [
-    {
-      id: 'basic',
-      name: 'Gói Cơ bản',
-      price: '299.000',
-      period: '/tháng',
-      features: ['5 cổng sạc', 'Báo cáo cơ bản', 'Hỗ trợ email'],
-      saving: null
-    },
-    {
-      id: 'professional',
-      name: 'Gói Chuyên nghiệp',
-      price: '799.000',
-      period: '/tháng',
-      features: ['20 cổng sạc', 'Báo cáo nâng cao', 'Hỗ trợ 24/7', 'API'],
-      saving: 'Tiết kiệm 20%',
-      popular: true
-    },
-    {
-      id: 'enterprise',
-      name: 'Gói Doanh nghiệp',
-      price: 'Liên hệ',
-      period: '',
-      features: ['Không giới hạn', 'Tùy biến', 'Hỗ trợ VIP'],
-      saving: null
-    }
-  ];
+    const loadBalance = async () => {
+        try {
+            const data = await getBalance();
+            setBalance(data.balance || 0);
+        } catch (err) {
+            console.error('Error loading balance:', err);
+            setError(err.response?.data?.message || 'Không thể tải số dư ví');
+        }
+    };
 
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
-    }
-  };
+    const loadPayments = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const data = await getMyPayments(0, 50);
+            // Handle different response formats
+            const paymentList = data.content || data.data || data || [];
+            setPayments(Array.isArray(paymentList) ? paymentList : []);
+        } catch (err) {
+            console.error('Error loading payments:', err);
+            setError(err.response?.data?.message || 'Không thể tải lịch sử thanh toán');
+            setPayments([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const formatExpiry = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return v.slice(0, 2) + '/' + v.slice(2, 4);
-    }
-    return v;
-  };
+    useEffect(() => {
+        loadBalance();
+        loadPayments();
+    }, []);
 
-  return (
-    <>
-      <Header />
-      <main className="payment-page">
-        {/* Hero */}
-        <section className="payment-hero">
-          <div className="container">
-            <h1>Thanh toán an toàn & nhanh chóng</h1>
-            <p className="subtitle">
-              Hoàn tất thanh toán trong 30 giây. Bảo mật 100% với mã hóa SSL.
-            </p>
-            <div className="secure-badges">
-              <img src="https://cdn-icons-png.flaticon.com/32/5968/5968756.png" alt="SSL" />
-              <img src="https://cdn-icons-png.flaticon.com/32/5968/5968332.png" alt="Visa" />
-              <img src="https://cdn-icons-png.flaticon.com/32/5968/5968346.png" alt="Mastercard" />
-              <img src="https://cdn-icons-png.flaticon.com/32/888/888870.png" alt="Momo" />
-            </div>
-          </div>
-        </section>
+    const handleTopUpSuccess = () => {
+        loadBalance();
+        loadPayments();
+    };
 
-        <section className="payment-content">
-          <div className="container">
-            <div className="payment-grid">
-              {/* Order Summary */}
-              <div className="order-summary">
-                <h2>Tóm tắt đơn hàng</h2>
-                <div className="plan-selection">
-                  {plans.map(plan => (
-                    <div
-                      key={plan.id}
-                      className={`plan-card ${plan.id === selectedPlan ? 'selected' : ''} ${plan.popular ? 'popular' : ''}`}
-                      onClick={() => setSelectedPlan(plan.id)}
-                    >
-                      {plan.popular && <div className="popular-tag">Phổ biến</div>}
-                      {plan.saving && <div className="saving-tag">{plan.saving}</div>}
-                      <div className="plan-info">
-                        <h3>{plan.name}</h3>
-                        <div className="price">
-                          <span className="amount">{plan.price}</span>
-                          <span className="period">{plan.period}</span>
+    const getStatusLabel = (status) => {
+        const labels = {
+            pending: 'Chờ xử lý',
+            processing: 'Đang xử lý',
+            completed: 'Thành công',
+            failed: 'Thất bại',
+            refunded: 'Đã hoàn tiền',
+            cancelled: 'Đã hủy'
+        };
+        return labels[status] || status;
+    };
+
+    const getStatusClass = (status) => {
+        const classes = {
+            pending: 'status-pending',
+            processing: 'status-processing',
+            completed: 'status-completed',
+            failed: 'status-failed',
+            refunded: 'status-refunded',
+            cancelled: 'status-cancelled'
+        };
+        return classes[status] || 'status-default';
+    };
+
+    const getPaymentMethodLabel = (method) => {
+        const labels = {
+            wallet: 'Ví điện tử',
+            e_wallet: 'Ví điện tử',
+            banking: 'Chuyển khoản',
+            credit_card: 'Thẻ tín dụng',
+            debit_card: 'Thẻ ghi nợ',
+            cash: 'Tiền mặt',
+            qr_payment: 'QR Code'
+        };
+        return labels[method] || method;
+    };
+
+    const formatDateTime = (dateTimeStr) => {
+        if (!dateTimeStr) return '-';
+        try {
+            const date = new Date(dateTimeStr);
+            return date.toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch {
+            return dateTimeStr;
+        }
+    };
+
+    const filteredPayments = payments.filter(p => {
+        if (filter === 'all') return true;
+        return p.paymentStatus === filter;
+    });
+
+    const paymentStats = {
+        total: payments.length,
+        completed: payments.filter(p => p.paymentStatus === 'completed').length,
+        pending: payments.filter(p => p.paymentStatus === 'pending' || p.paymentStatus === 'processing').length,
+        totalAmount: payments
+            .filter(p => p.paymentStatus === 'completed')
+            .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0)
+    };
+
+    return (
+        <div className="payment-page">
+            <div className="payment-page-container">
+                {/* Header */}
+                <div className="payment-page-header">
+                    <div>
+                        <h1>
+                            <i className="fas fa-wallet"></i>
+                            Ví điện tử
+                        </h1>
+                        <p>Quản lý số dư và lịch sử thanh toán</p>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="payment-error">
+                        <i className="fas fa-exclamation-circle"></i>
+                        {error}
+                    </div>
+                )}
+
+                {/* Balance Card */}
+                <div className="payment-balance-card">
+                    <div className="balance-content">
+                        <div className="balance-label">Số dư hiện tại</div>
+                        <div className="balance-amount">
+                            {balance.toLocaleString('vi-VN')} <span className="currency">₫</span>
                         </div>
-                      </div>
-                      <ul className="features">
-                        {plan.features.map((f, i) => (
-                          <li key={i}><i className="fas fa-check"></i> {f}</li>
-                        ))}
-                      </ul>
-                      {plan.id === selectedPlan && (
-                        <div className="selected-check">
-                          <i className="fas fa-check-circle"></i>
+                    </div>
+                    <div className="balance-actions">
+                        <button
+                            className="btn-topup"
+                            onClick={() => setTopUpModalOpen(true)}
+                        >
+                            <i className="fas fa-plus-circle"></i>
+                            Nạp tiền
+                        </button>
+                    </div>
+                </div>
+
+                {/* Statistics Cards */}
+                <div className="payment-stats">
+                    <div className="stat-card">
+                        <div className="stat-icon completed">
+                            <i className="fas fa-check-circle"></i>
                         </div>
-                      )}
+                        <div className="stat-info">
+                            <div className="stat-value">{paymentStats.completed}</div>
+                            <div className="stat-label">Giao dịch thành công</div>
+                        </div>
                     </div>
-                  ))}
+                    <div className="stat-card">
+                        <div className="stat-icon pending">
+                            <i className="fas fa-clock"></i>
+                        </div>
+                        <div className="stat-info">
+                            <div className="stat-value">{paymentStats.pending}</div>
+                            <div className="stat-label">Đang xử lý</div>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-icon total">
+                            <i className="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div className="stat-info">
+                            <div className="stat-value">
+                                {paymentStats.totalAmount.toLocaleString('vi-VN')} ₫
+                            </div>
+                            <div className="stat-label">Tổng đã thanh toán</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="summary-total">
-                  <div className="total-row">
-                    <span>Tạm tính</span>
-                    <strong>799.000 VNĐ</strong>
-                  </div>
-                  <div className="total-row discount">
-                    <span>Giảm giá (20%)</span>
-                    <strong>-159.800 VNĐ</strong>
-                  </div>
-                  <div className="total-row final">
-                    <span>Tổng cộng</span>
-                    <strong className="final-price">639.200 VNĐ</strong>
-                  </div>
+                {/* Payment History */}
+                <div className="payment-history-section">
+                    <div className="payment-history-header">
+                        <h2>
+                            <i className="fas fa-history"></i>
+                            Lịch sử thanh toán
+                        </h2>
+                        <div className="payment-filters">
+                            {['all', 'completed', 'pending', 'processing', 'failed', 'refunded'].map(status => (
+                                <button
+                                    key={status}
+                                    className={`filter-btn ${filter === status ? 'active' : ''}`}
+                                    onClick={() => setFilter(status)}
+                                >
+                                    {getStatusLabel(status)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="payment-loading">
+                            <div className="spinner"></div>
+                            <p>Đang tải lịch sử thanh toán...</p>
+                        </div>
+                    ) : filteredPayments.length === 0 ? (
+                        <div className="payment-empty">
+                            <i className="fas fa-receipt"></i>
+                            <h3>Chưa có giao dịch nào</h3>
+                            <p>
+                                {filter === 'all'
+                                    ? 'Bạn chưa có giao dịch thanh toán nào. Hãy sử dụng dịch vụ để tạo giao dịch đầu tiên!'
+                                    : `Không có giao dịch với trạng thái "${getStatusLabel(filter)}"`}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="payments-list">
+                            {filteredPayments.map((payment) => (
+                                <div key={payment.paymentId || payment.id} className={`payment-item ${getStatusClass(payment.paymentStatus)}`}>
+                                    <div className="payment-item-header">
+                                        <div className="payment-id">
+                                            <i className="fas fa-receipt"></i>
+                                            <span>
+                                                Mã: {payment.paymentId || payment.id || 'N/A'}
+                                            </span>
+                                        </div>
+                                        <span className={`payment-status ${getStatusClass(payment.paymentStatus)}`}>
+                                            {getStatusLabel(payment.paymentStatus)}
+                                        </span>
+                                    </div>
+                                    <div className="payment-item-body">
+                                        <div className="payment-info-row">
+                                            <span className="info-icon">💰</span>
+                                            <span className="info-label">Số tiền:</span>
+                                            <span className="payment-amount">
+                                                {new Intl.NumberFormat('vi-VN').format(payment.amount || 0)} ₫
+                                            </span>
+                                        </div>
+                                        <div className="payment-info-row">
+                                            <span className="info-icon">💳</span>
+                                            <span className="info-label">Phương thức:</span>
+                                            <span>{getPaymentMethodLabel(payment.paymentMethod)}</span>
+                                        </div>
+                                        {payment.sessionId && (
+                                            <div className="payment-info-row">
+                                                <span className="info-icon">🔌</span>
+                                                <span className="info-label">Phiên sạc:</span>
+                                                <span>ID {payment.sessionId}</span>
+                                            </div>
+                                        )}
+                                        {payment.paymentTime && (
+                                            <div className="payment-info-row">
+                                                <span className="info-icon">🕐</span>
+                                                <span className="info-label">Thời gian:</span>
+                                                <span>{formatDateTime(payment.paymentTime)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                <div className="promo-code">
-                  <input type="text" placeholder="Mã giảm giá" />
-                  <button>Áp dụng</button>
-                </div>
-              </div>
-
-              {/* Payment Form */}
-              <div className="payment-form-card">
-                <h2>Thông tin thanh toán</h2>
-                <form className="payment-form">
-                  <div className="form-group">
-                    <label>Số thẻ</label>
-                    <div className="input-wrapper card-input">
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        value={formatCardNumber(cardNumber)}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        maxLength="19"
-                      />
-                      <i className="fas fa-credit-card"></i>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Hết hạn</label>
-                      <div className="input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          value={formatExpiry(expiry)}
-                          onChange={(e) => setExpiry(e.target.value)}
-                          maxLength="5"
-                        />
-                        <i className="fas fa-calendar-alt"></i>
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>CVC</label>
-                      <div className="input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="123"
-                          value={cvc}
-                          onChange={(e) => setCvc(e.target.value)}
-                          maxLength="3"
-                        />
-                        <i className="fas fa-lock"></i>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Họ tên chủ thẻ</label>
-                    <div className="input-wrapper">
-                      <input
-                        type="text"
-                        placeholder="NGUYEN VAN A"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                      <i className="fas fa-user"></i>
-                    </div>
-                  </div>
-
-                  <div className="payment-methods">
-                    <p>Chọn phương thức:</p>
-                    <div className="methods">
-                      <label className="method active">
-                        <input type="radio" name="method" defaultChecked />
-                        <img src="https://cdn-icons-png.flaticon.com/32/5968/5968332.png" alt="Visa" />
-                        <span>Thẻ tín dụng</span>
-                      </label>
-                      <label className="method">
-                        <input type="radio" name="method" />
-                        <img src="https://cdn-icons-png.flaticon.com/32/888/888870.png" alt="Momo" />
-                        <span>Momo</span>
-                      </label>
-                      <label className="method">
-                        <input type="radio" name="method" />
-                        <img src="https://cdn-icons-png.flaticon.com/32/5968/5968756.png" alt="Bank" />
-                        <span>Chuyển khoản</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="pay-btn">
-                    <i className="fas fa-lock"></i>
-                    Thanh toán 639.200 VNĐ
-                  </button>
-
-                  <p className="secure-note">
-                    <i className="fas fa-shield-alt"></i>
-                    Giao dịch được mã hóa SSL 256-bit. Chúng tôi không lưu thông tin thẻ.
-                  </p>
-                </form>
-              </div>
+                {/* Top Up Modal */}
+                <TopUpModal
+                    isOpen={topUpModalOpen}
+                    onClose={() => setTopUpModalOpen(false)}
+                    onSuccess={handleTopUpSuccess}
+                />
             </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </>
-  );
+        </div>
+    );
 };
 
 export default PaymentPage;
+

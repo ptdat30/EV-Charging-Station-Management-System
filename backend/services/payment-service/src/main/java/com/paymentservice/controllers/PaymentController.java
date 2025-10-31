@@ -47,4 +47,15 @@ public class PaymentController {
         PaymentResponseDto response = paymentService.refundDeposit(requestDto);
         return ResponseEntity.ok(response);
     }
+
+    // GET /api/payments/my-transactions
+    @GetMapping("/my-transactions")
+    public ResponseEntity<org.springframework.data.domain.Page<PaymentResponseDto>> getMyTransactions(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<PaymentResponseDto> payments = paymentService.getMyPayments(userId, pageable);
+        return ResponseEntity.ok(payments);
+    }
 }

@@ -4,23 +4,61 @@
   width: 100%;
   height: 100vh;
   min-height: 600px;
-  background: linear-gradient(var(--color-bg-overlay), rgba(0,0,0,0.5)),
-              url('car_banner.png') center/cover no-repeat;
-  background-size: cover;
-  background-position: center;
   color: var(--color-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 0;
+  overflow: hidden;
+}
+
+/* Video Background */
+.hero-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  object-fit: cover;
+}
+
+/* Fallback background nếu video không load */
+@supports not (object-fit: cover) {
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(var(--color-bg-overlay), rgba(0,0,0,0.5)),
+                url('car_banner.png') center/cover no-repeat;
+    z-index: 0;
+  }
+}
+
+/* Overlay để làm tối video và tăng độ tương phản */
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(var(--color-bg-overlay), rgba(0,0,0,0.5));
+  z-index: 1;
 }
 
 .hero-content {
+  position: relative;
   width: 100%;
   max-width: var(--container-max-width);
   padding: 0 var(--container-padding);
-  z-index: 1;
+  z-index: 2;
 }
 
 .hero-title {
@@ -38,13 +76,266 @@
 
 .hero-description {
   font-size: var(--font-size-xl);
-  margin-bottom: var(--spacing-12);
+  margin-bottom: var(--spacing-8);
   opacity: 0.95;
   font-weight: var(--font-weight-normal);
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
   line-height: var(--line-height-relaxed);
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Hero Brand */
+.hero-brand {
+  text-align: center;
+  margin-bottom: var(--spacing-10);
+  animation: fadeInDown 0.8s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-brand-logo {
+  position: relative;
+  width: 200px;
+  height: 250px;
+  margin: 0 auto var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-svg {
+  width: 180px;
+  height: 180px;
+  filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.6));
+  animation: logoFloat 3s ease-in-out infinite;
+  overflow: visible;
+  background: transparent;
+}
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Hiệu ứng lấp lánh cho icon tia sét ⚡ */
+.logo-lightning {
+  animation: sparkle 2s ease-in-out infinite;
+  filter: url(#lightning-glow) hue-rotate(70deg) saturate(2);
+  transform-origin: center;
+  text-rendering: optimizeLegibility;
+  shape-rendering: geometricPrecision;
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  will-change: transform, opacity;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    opacity: 0.95;
+    transform: scale(1.05) rotate(-2deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(0deg);
+  }
+  75% {
+    opacity: 0.95;
+    transform: scale(1.05) rotate(2deg);
+  }
+}
+
+/* Hiệu ứng lấp lánh cho vòng tròn */
+.logo-circle {
+  animation: circleGlow 3s ease-in-out infinite;
+}
+
+@keyframes circleGlow {
+  0%, 100% {
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 5px rgba(26, 77, 107, 0.5));
+  }
+  50% {
+    stroke-opacity: 0.8;
+    filter: drop-shadow(0 0 15px rgba(26, 77, 107, 0.8));
+  }
+}
+
+/* Hiệu ứng cho xe */
+.logo-car {
+  animation: carShine 4s ease-in-out infinite;
+}
+
+@keyframes carShine {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.95;
+    filter: brightness(1.1);
+  }
+}
+
+/* Hiệu ứng cho phích cắm */
+.logo-plug {
+  animation: plugPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes plugPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Text container cho logo */
+.logo-text-container {
+  margin-top: var(--spacing-2);
+  text-align: center;
+}
+
+.logo-text-echarge {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-extrabold);
+  color: #ffffff;
+  letter-spacing: 2px;
+  text-shadow: 
+    0 0 15px rgba(26, 77, 107, 0.8),
+    0 0 25px rgba(26, 77, 107, 0.6),
+    2px 2px 8px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(26, 77, 107, 0.4);
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+.logo-text-station {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  margin-top: -4px;
+  text-shadow: 
+    0 0 15px rgba(76, 175, 80, 0.9),
+    0 0 25px rgba(76, 175, 80, 0.7),
+    2px 2px 8px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(76, 175, 80, 0.5);
+  animation: textGlow 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 
+      0 0 15px rgba(76, 175, 80, 0.7),
+      0 0 25px rgba(76, 175, 80, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8),
+      0 0 40px rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    text-shadow: 
+      0 0 25px rgba(76, 175, 80, 1),
+      0 0 40px rgba(76, 175, 80, 0.8),
+      0 0 60px rgba(76, 175, 80, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.hero-brand-title {
+  font-size: var(--font-size-7xl);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--color-white);
+  margin: 0 0 var(--spacing-2);
+  text-shadow: 
+    2px 2px 8px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(76, 175, 80, 0.5);
+  letter-spacing: 2px;
+}
+
+.hero-brand-tagline {
+  font-size: var(--font-size-xl);
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Hero Auth Buttons */
+.hero-auth-buttons {
+  display: flex;
+  gap: var(--spacing-4);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-6);
+}
+
+.hero-btn-login,
+.hero-btn-register {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) var(--spacing-8);
+  min-width: 180px;
+  height: 50px;
+  border-radius: var(--border-radius-full);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: none;
+  text-decoration: none;
+}
+
+.hero-btn-login {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--color-white);
+  border: var(--border-width-medium) solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.hero-btn-login:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.hero-btn-register {
+  background: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow-primary);
+}
+
+.hero-btn-register:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.hero-btn-login i,
+.hero-btn-register i {
+  font-size: var(--font-size-base);
 }
 
 /* Hero Actions - Login/Register Buttons */
@@ -160,34 +451,81 @@
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .hero { 
-    height: 100vh;
+    height: 70vh;
     min-height: 500px;
   }
   .hero-content {
     padding: 0 1.5rem;
   }
-  .hero-title { 
-    font-size: 2.5rem; 
-    margin-bottom: 1rem;
-  }
   .hero-description {
     font-size: 1.1rem;
-    margin-bottom: 2rem;
+    margin-bottom: var(--spacing-6);
   }
-  .hero-search {
+  .hero-brand-logo {
+    width: 160px;
+    height: 200px;
+  }
+  
+  .logo-svg {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .logo-text-echarge {
+    font-size: var(--font-size-xl);
+  }
+  
+  .logo-text-station {
+    font-size: var(--font-size-lg);
+  }
+  .hero-brand-title {
+    font-size: var(--font-size-5xl);
+  }
+  .hero-brand-tagline {
+    font-size: var(--font-size-lg);
+  }
+  .hero-auth-buttons {
     flex-direction: column;
-    border-radius: 20px;
-    max-width: 100%;
-  }
-  .search-input {
-    border-radius: 20px 20px 0 0;
-    padding: 1rem 1rem 1rem 3.5rem;
-    font-size: 1rem;
-  }
-  .search-btn_hero {
-    border-radius: 0 0 20px 20px;
-    justify-content: center;
-    padding: 1.25rem;
     width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-btn-login,
+  .hero-btn-register {
+    width: 100%;
+    min-width: auto;
+    height: 48px;
+    justify-content: center;
+    padding: var(--spacing-4) var(--spacing-6);
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-brand-logo {
+    width: 140px;
+    height: 180px;
+  }
+  
+  .logo-svg {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .logo-text-echarge {
+    font-size: var(--font-size-lg);
+  }
+  
+  .logo-text-station {
+    font-size: var(--font-size-base);
+  }
+  
+  .hero-brand-title {
+    font-size: var(--font-size-4xl);
+  }
+  
+  .hero-brand-tagline {
+    font-size: var(--font-size-base);
   }
 }

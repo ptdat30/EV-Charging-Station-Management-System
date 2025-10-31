@@ -9,6 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
+@org.springframework.scheduling.annotation.EnableScheduling // Enable scheduled tasks
 public class PaymentServiceApplication {
 
 	public static void main(String[] args) {

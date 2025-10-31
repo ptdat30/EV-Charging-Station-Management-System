@@ -5,6 +5,86 @@
     color: var(--color-gray-400);
     font-size: var(--font-size-base);
     margin-top: auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animation Section - Xe điện chạy */
+  .footer-car-animation {
+    width: 100%;
+    height: 80px;
+    background: linear-gradient(180deg, 
+      rgba(20, 30, 40, 0.9) 0%, 
+      rgba(30, 40, 50, 0.8) 100%
+    );
+    position: relative;
+    overflow: hidden;
+    border-bottom: 2px solid rgba(76, 175, 80, 0.3);
+  }
+
+  .car-track {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .moving-car {
+    width: 120px;
+    height: 72px;
+    position: absolute;
+    left: -120px;
+    animation: driveCar 15s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(76, 175, 80, 0.6));
+  }
+
+  .car-1 {
+    animation: driveCar 15s linear infinite;
+  }
+
+  .car-2 {
+    animation: driveCar 15s linear infinite;
+    animation-delay: -7.5s;
+  }
+
+  @keyframes driveCar {
+    0% {
+      left: -120px;
+      transform: translateX(0);
+    }
+    100% {
+      left: calc(100% + 120px);
+      transform: translateX(0);
+    }
+  }
+
+  /* Đường chạy - đường kẻ mờ */
+  .footer-car-animation::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: repeating-linear-gradient(
+      to right,
+      rgba(76, 175, 80, 0.3) 0px,
+      rgba(76, 175, 80, 0.3) 30px,
+      transparent 30px,
+      transparent 60px
+    );
+    transform: translateY(-50%);
+    animation: roadLine 2s linear infinite;
+  }
+
+  @keyframes roadLine {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 60px 0;
+    }
   }
   
   .footer-container {

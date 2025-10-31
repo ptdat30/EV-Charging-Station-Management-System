@@ -1,19 +1,50 @@
-import React from 'react';
-import Header from './Header';
+import React, { useState } from 'react';
 import HeroSection from './HeroSection';
 import Footer from './Footer';
-import FeaturesSection from './FeaturesSection';
+import HomePageMap from './HomePageMap';
+import LoginModal from './LoginModal';
+import RegisterModal from './RegisterModal';
 
 const HomePage = () => {
-  // HomePage luôn hiển thị với Header (navbar) ở trên
-  // Header có nút "Đăng nhập" và "Đăng ký" nếu chưa đăng nhập
-  // Redirect chỉ xảy ra khi user click đăng nhập và login thành công (trong Login component)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  const handleOpenLoginModal = () => {
+    setIsRegisterModalOpen(false);
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCloseLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleOpenRegisterModal = () => {
+    setIsLoginModalOpen(false);
+    setIsRegisterModalOpen(true);
+  };
+
+  const handleCloseRegisterModal = () => {
+    setIsRegisterModalOpen(false);
+  };
+
   return (
     <main>
-      <Header />
-      <HeroSection />
-      <FeaturesSection />
+      <HeroSection 
+        onLoginClick={handleOpenLoginModal} 
+        onRegisterClick={handleOpenRegisterModal}
+      />
+      <HomePageMap />
       <Footer />
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={handleCloseLoginModal}
+        onSwitchToRegister={handleOpenRegisterModal}
+      />
+      <RegisterModal 
+        isOpen={isRegisterModalOpen} 
+        onClose={handleCloseRegisterModal}
+        onSwitchToLogin={handleOpenLoginModal}
+      />
     </main>
   );
 };
