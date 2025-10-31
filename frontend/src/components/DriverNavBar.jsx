@@ -1,5 +1,5 @@
 // src/components/DriverNavBar.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './DriverNavBar.css';
@@ -9,15 +9,38 @@ const DriverNavBar = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
     const handleLogout = () => {
-        logout();
-        navigate('/login');
+        // Navigate trước để tránh ProtectedRoute redirect về login
+        navigate('/', { replace: true });
+        // Sau đó mới logout để clear state
+        setTimeout(() => {
+            logout();
+        }, 0);
     };
 
     const isActive = (path) => {
         return location.pathname === path || location.pathname.startsWith(path);
     };
+
+    // Đóng dropdown khi click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsUserDropdownOpen(false);
+            }
+        };
+
+        if (isUserDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isUserDropdownOpen]);
 
     // Lấy role của user
     const userRole = (user?.role || user?.roles?.[0] || '').toUpperCase();
@@ -42,23 +65,9 @@ const DriverNavBar = () => {
         {
             path: '/stations/booking',
             icon: 'fas fa-calendar-check',
-            label: 'Đặt chỗ',
+            label: 'Quản lý sạc',
             description: 'Reservations',
             roles: ['DRIVER'] // Chỉ driver
-        },
-        {
-            path: '/driver/profile/history',
-            icon: 'fas fa-history',
-            label: 'Lịch sử',
-            description: 'Transactions',
-            roles: ['DRIVER'] // Chỉ driver
-        },
-        {
-            path: '/driver/profile/info',
-            icon: 'fas fa-user-circle',
-            label: 'Hồ sơ',
-            description: 'Profile',
-            roles: ['DRIVER', 'STAFF']
         },
         {
             path: '/payment',
@@ -102,18 +111,70 @@ const DriverNavBar = () => {
 
                     {/* User Section */}
                     <div className="driver-navbar-user">
-                        <div className="user-info">
+                        <div 
+                            className="user-info" 
+                            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <i className="fas fa-user"></i>
                             <span className="user-name">{user?.fullName || user?.email || 'Driver'}</span>
+                            <i className={`fas fa-chevron-down ${isUserDropdownOpen ? 'rotate' : ''}`} style={{ fontSize: '12px', marginLeft: '8px' }}></i>
                         </div>
-                        <button 
-                            className="btn-logout-nav"
-                            onClick={handleLogout}
-                            title="Đăng xuất"
-                        >
-                            <i className="fas fa-sign-out-alt"></i>
-                            <span>Đăng xuất</span>
-                        </button>
+
+                        {/* Profile Dropdown */}
+                        {isUserDropdownOpen && (
+                            <div className="user-profile-dropdown" ref={dropdownRef}>
+                                <div className="dropdown-header">
+                                    <div className="dropdown-user-info">
+                                        <i className="fas fa-user-circle"></i>
+                                        <div>
+                                            <div className="dropdown-user-name">{user?.fullName || 'Driver'}</div>
+                                            <div className="dropdown-user-email">{user?.email || ''}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <nav className="dropdown-nav">
+                                    <Link 
+                                        to="/driver/profile/info" 
+                                        className={`dropdown-nav-item ${/\/info\b/.test(location.pathname) ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-user"></i>
+                                        <span>Thông tin cá nhân</span>
+                                    </Link>
+                                    <Link 
+                                        to="/driver/profile/vehicles" 
+                                        className={`dropdown-nav-item ${/\/vehicles\b/.test(location.pathname) ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-car"></i>
+                                        <span>Quản lý xe</span>
+                                    </Link>
+                                    <Link 
+                                        to="/driver/profile/history" 
+                                        className={`dropdown-nav-item ${/\/history\b/.test(location.pathname) ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-history"></i>
+                                        <span>Lịch sử giao dịch</span>
+                                    </Link>
+                                </nav>
+
+                                <div className="dropdown-footer">
+                                    <button 
+                                        className="dropdown-logout-btn"
+                                        onClick={() => {
+                                            setIsUserDropdownOpen(false);
+                                            handleLogout();
+                                        }}
+                                    >
+                                        <i className="fas fa-sign-out-alt"></i>
+                                        <span>Đăng xuất</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile Menu Toggle */}

@@ -6,6 +6,65 @@ import { Phone, Mail } from 'lucide-react'; // Dùng lucide-react (cài: npm i l
 const Footer = () => {
   return (
     <footer className="footer">
+      {/* Animation Section - Xe điện chạy */}
+      <div className="footer-car-animation">
+        <div className="car-track">
+          {/* Xe 1 */}
+          <svg 
+            className="moving-car car-1" 
+            viewBox="0 0 100 60" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Thân xe */}
+            <path 
+              d="M 10 35 Q 10 30 15 28 L 25 26 L 35 25 L 50 26 L 60 28 Q 65 30 65 35 L 65 42 L 60 45 L 55 44 L 45 44 L 40 44 L 30 44 L 25 44 L 20 45 L 15 42 Z" 
+              fill="#4caf50"
+            />
+            {/* Cửa sổ */}
+            <path 
+              d="M 25 26 L 35 25 L 50 26 L 50 34 L 35 34 L 25 34 Z" 
+              fill="#2e7d32"
+              opacity="0.4"
+            />
+            {/* Bánh xe trái */}
+            <circle cx="30" cy="44" r="6" fill="none" stroke="#1a4d6b" strokeWidth="1.5" />
+            <circle cx="30" cy="44" r="3" fill="#1a4d6b" />
+            {/* Bánh xe phải */}
+            <circle cx="55" cy="44" r="6" fill="none" stroke="#1a4d6b" strokeWidth="1.5" />
+            <circle cx="55" cy="44" r="3" fill="#1a4d6b" />
+            {/* Đèn pha */}
+            <ellipse cx="15" cy="28" rx="2" ry="1.5" fill="#ffffff" opacity="0.9" />
+          </svg>
+          
+          {/* Xe 2 - cách xa để tạo hiệu ứng liên tục */}
+          <svg 
+            className="moving-car car-2" 
+            viewBox="0 0 100 60" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            {/* Thân xe */}
+            <path 
+              d="M 10 35 Q 10 30 15 28 L 25 26 L 35 25 L 50 26 L 60 28 Q 65 30 65 35 L 65 42 L 60 45 L 55 44 L 45 44 L 40 44 L 30 44 L 25 44 L 20 45 L 15 42 Z" 
+              fill="#4caf50"
+            />
+            {/* Cửa sổ */}
+            <path 
+              d="M 25 26 L 35 25 L 50 26 L 50 34 L 35 34 L 25 34 Z" 
+              fill="#2e7d32"
+              opacity="0.4"
+            />
+            {/* Bánh xe trái */}
+            <circle cx="30" cy="44" r="6" fill="none" stroke="#1a4d6b" strokeWidth="1.5" />
+            <circle cx="30" cy="44" r="3" fill="#1a4d6b" />
+            {/* Bánh xe phải */}
+            <circle cx="55" cy="44" r="6" fill="none" stroke="#1a4d6b" strokeWidth="1.5" />
+            <circle cx="55" cy="44" r="3" fill="#1a4d6b" />
+            {/* Đèn pha */}
+            <ellipse cx="15" cy="28" rx="2" ry="1.5" fill="#ffffff" opacity="0.9" />
+          </svg>
+        </div>
+      </div>
+
       <div className="footer-container">
         
         {/* Cột 1: Logo & Mô tả */}

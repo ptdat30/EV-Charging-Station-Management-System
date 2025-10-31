@@ -5,8 +5,7 @@ import { getMyProfile, updateMyProfile } from '../../../services/userService';
 import './UserProfile.css';
 import VehiclesManager from './VehiclesManager';
 import TransactionsHistory from './TransactionsHistory';
-import QuickStats from './QuickStats';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 function UserProfileScreen({ tab }) {
     const { user, token, isAuthenticated } = useAuth();
@@ -142,15 +141,6 @@ function UserProfileScreen({ tab }) {
     // Render
     return (
         <div className="profile-screen">
-            <aside className="profile-sidebar">
-                <div className="sidebar-title">Tài khoản</div>
-                <nav>
-                    <Link to="/driver/profile/info" className={/\/info\b/.test(pathname) ? 'active':''}>👤 Thông tin cá nhân</Link>
-                    <Link to="/driver/profile/vehicles" className={/\/vehicles\b/.test(pathname) ? 'active':''}>🚗 Quản lý xe</Link>
-                    <Link to="/driver/profile/history" className={/\/history\b/.test(pathname) ? 'active':''}>📊 Lịch sử giao dịch</Link>
-                </nav>
-                <QuickStats />
-            </aside>
             <main className="profile-container">
                 <h2>
                   {/\/info\b/.test(pathname) ? 'Thông tin cá nhân' :

@@ -71,7 +71,7 @@ spring:
         - id: payment-service-routes
           uri: lb://PAYMENT-SERVICE
           predicates:
-            - Path=/api/payments/**, /api/wallets/**
+            - Path=/api/payments/**, /api/wallet/**, /api/wallets/**
           filters:
             # XÓA BỎ "- StripPrefix=1"
             - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC

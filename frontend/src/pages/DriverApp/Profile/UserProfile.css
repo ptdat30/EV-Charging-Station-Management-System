@@ -6,23 +6,9 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.profile-screen { display: flex; gap: 1.5rem; }
-
-.profile-sidebar {
-    width: 300px;
-    background: #fff;
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    height: fit-content;
-}
-.profile-sidebar .sidebar-title { font-weight: 700; margin-bottom: 0.5rem; }
-.profile-sidebar nav { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
-.profile-sidebar nav button { text-align: left; padding: .6rem .8rem; border-radius: 8px; border: 1px solid #eee; background: #fafafa; cursor: pointer; }
-.profile-sidebar nav button.active { background: #eef2ff; border-color: #c7d2fe; }
-
 .profile-container {
-    flex: 1;
+    max-width: 900px;
+    margin: 0 auto;
     background: white;
     border-radius: 12px;
     padding: 2rem;

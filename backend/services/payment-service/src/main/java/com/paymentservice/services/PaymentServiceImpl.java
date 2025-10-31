@@ -14,11 +14,14 @@ import com.paymentservice.repositories.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -191,6 +194,20 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("Deposit refunded successfully for reservation {}. Payment ID: {}, Amount: {}", 
                 requestDto.getReservationId(), refundedPayment.getPaymentId(), refundedPayment.getAmount());
         return convertToDto(refundedPayment);
+    }
+
+    @Override
+    public List<PaymentResponseDto> getMyPayments(Long userId) {
+        List<Payment> payments = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return payments.stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    @Override
+    public Page<PaymentResponseDto> getMyPayments(Long userId, Pageable pageable) {
+        Page<Payment> paymentsPage = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        return paymentsPage.map(this::convertToDto);
     }
 
     private PaymentResponseDto convertToDto(Payment payment) {

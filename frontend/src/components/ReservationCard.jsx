@@ -124,24 +124,37 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     }
   };
 
-  const handleCancel = async () => {
-    const reason = prompt('Lý do hủy đặt chỗ:');
-    if (!reason) return;
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
+  const [cancelReason, setCancelReason] = React.useState('');
 
-    if (!confirm('Xác nhận hủy đặt chỗ? Tiền cọc có thể không được hoàn lại.')) return;
+  const handleCancelClick = () => {
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
 
+  const handleCancelConfirm = async () => {
+    if (!cancelReason.trim()) {
+      alert('Vui lòng nhập lý do hủy đặt chỗ.');
+      return;
+    }
+
+    setShowCancelModal(false);
     setActionLoading('cancel');
+    
     try {
-      await cancelReservation(reservation.reservationId, reason);
-      alert('✅ Đã hủy đặt chỗ');
+      await cancelReservation(reservation.reservationId, cancelReason.trim());
+      alert('✅ Đã hủy đặt chỗ thành công!');
       onUpdate && onUpdate();
     } catch (err) {
       alert(`❌ ${err.response?.data?.message || err.message || 'Không thể hủy đặt chỗ'}`);
       onError && onError(err.message);
     } finally {
       setActionLoading('');
+      setCancelReason('');
     }
   };
+
+  const handleCancel = handleCancelClick;
 
   return (
     <div className={`reservation-card ${getStatusClass(reservation.status)}`}>
@@ -275,11 +288,14 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
           </button>
         )}
 
-        {reservation.status === 'confirmed' && !reservation.isCheckedIn && (
+        {/* Hiển thị nút hủy cho pending và confirmed (chưa check-in) */}
+        {(reservation.status === 'pending' || 
+          (reservation.status === 'confirmed' && !reservation.isCheckedIn)) && (
           <button
             className="btn-cancel"
             onClick={handleCancel}
             disabled={loading || actionLoading === 'cancel'}
+            title="Hủy đặt chỗ này"
           >
             {actionLoading === 'cancel' ? (
               <>
@@ -287,7 +303,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
               </>
             ) : (
               <>
-                <i className="fas fa-times"></i> Hủy đặt chỗ
+                <i className="fas fa-times-circle"></i> Hủy đặt chỗ
               </>
             )}
           </button>
@@ -303,6 +319,98 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
           </button>
         )}
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="cancel-modal-overlay" onClick={() => setShowCancelModal(false)}>
+          <div className="cancel-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cancel-modal-header">
+              <h3>
+                <i className="fas fa-exclamation-triangle"></i>
+                Xác nhận hủy đặt chỗ
+              </h3>
+              <button 
+                className="cancel-modal-close"
+                onClick={() => setShowCancelModal(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="cancel-modal-body">
+              <p className="cancel-warning">
+                Bạn có chắc chắn muốn hủy đặt chỗ này?
+              </p>
+              <div className="cancel-info-box">
+                <div className="cancel-info-item">
+                  <span className="cancel-info-label">Mã đặt chỗ:</span>
+                  <span className="cancel-info-value">
+                    {reservation.confirmationCode || reservation.reservationId}
+                  </span>
+                </div>
+                {reservation.depositAmount && (
+                  <div className="cancel-info-item">
+                    <span className="cancel-info-label">Tiền cọc:</span>
+                    <span className="cancel-info-value deposit">
+                      {new Intl.NumberFormat('vi-VN').format(reservation.depositAmount)} ₫
+                    </span>
+                  </div>
+                )}
+                <div className="cancel-info-item">
+                  <span className="cancel-info-label">Thời gian đặt:</span>
+                  <span className="cancel-info-value">
+                    {formatDateTime(reservation.reservedStartTime)}
+                  </span>
+                </div>
+              </div>
+              <div className="cancel-reason-input">
+                <label htmlFor="cancel-reason">
+                  <i className="fas fa-comment"></i>
+                  Lý do hủy đặt chỗ <span className="required">*</span>
+                </label>
+                <textarea
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Nhập lý do hủy đặt chỗ (ví dụ: Thay đổi kế hoạch, Không còn cần sạc...)"
+                  rows="3"
+                  className="cancel-reason-textarea"
+                />
+              </div>
+              <div className="cancel-notice">
+                <i className="fas fa-info-circle"></i>
+                <span>Lưu ý: Tiền cọc có thể không được hoàn lại tùy thuộc vào thời điểm hủy.</span>
+              </div>
+            </div>
+            <div className="cancel-modal-footer">
+              <button
+                className="btn-cancel-secondary"
+                onClick={() => setShowCancelModal(false)}
+                disabled={actionLoading === 'cancel'}
+              >
+                <i className="fas fa-arrow-left"></i>
+                Quay lại
+              </button>
+              <button
+                className="btn-cancel-primary"
+                onClick={handleCancelConfirm}
+                disabled={!cancelReason.trim() || actionLoading === 'cancel'}
+              >
+                {actionLoading === 'cancel' ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Đang hủy...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-times-circle"></i>
+                    Xác nhận hủy
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
