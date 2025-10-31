@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,10 +27,25 @@ public class UserController {
     // --- CREATE ---
     // POST /api/users/register
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody RegisterRequestDto requestDto) {
+    public ResponseEntity<Map<String,Object>> registerUser(@RequestBody RegisterRequestDto requestDto) {
         log.info("Received request to register user: {}", requestDto.getEmail());
         User createdUser = userService.registerUser(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "userId", createdUser.getId(),
+                "email", createdUser.getEmail()
+        ));
+    }
+
+    // GET /api/users/verify?token=...
+    @GetMapping("/verify")
+    public ResponseEntity<Map<String,Object>> verifyAccount(@RequestParam("token") String token) {
+        log.info("Verifying account by token");
+        UserResponseDto user = userService.verifyByToken(token);
+        return ResponseEntity.ok(Map.of(
+                "userId", user.getUserId(),
+                "email", user.getEmail(),
+                "status", user.getStatus().name()
+        ));
     }
 
     // --- READ (SINGLE) ---

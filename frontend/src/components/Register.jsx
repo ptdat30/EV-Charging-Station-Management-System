@@ -9,7 +9,11 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    vehicleName: '',
+    vehicleBatteryKwh: '',
+    preferredChargerType: 'AC',
+    defaultPaymentMethod: 'WALLET'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,18 +46,31 @@ const Register = () => {
     }
 
     try {
-      // Prepare data for BE (remove confirmPassword)
-      const {  ...registerData } = formData;
+      // Prepare data for BE
+      const registerData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        userType: 'driver'
+      };
 
       const result = await register(registerData);
 
       if (result.success) {
         console.log('Đăng ký thành công:', result.data);
-        navigate('/login', {
-          state: {
-            message: 'Đăng ký thành công! Vui lòng đăng nhập.'
-          }
-        });
+        // Điều hướng sang trang xác minh (tự động xác minh/demo)
+        navigate('/verify', { state: {
+          email: formData.email,
+          password: formData.password,
+          vehicle: {
+            name: formData.vehicleName,
+            batteryCapacityKwh: formData.vehicleBatteryKwh ? Number(formData.vehicleBatteryKwh) : null,
+            preferredChargerType: formData.preferredChargerType,
+            isDefault: true,
+          },
+          defaultPaymentMethod: formData.defaultPaymentMethod
+        }});
       } else {
         setError(result.message || 'Đăng ký thất bại');
       }
@@ -150,6 +167,45 @@ const Register = () => {
                     required
                     disabled={loading}
                 />
+              </div>
+
+              {/* Vehicle Info */}
+              <h3 style={{marginTop:'1rem'}}>Thông tin xe</h3>
+              <div className="auth-input-group">
+                <input
+                    type="text"
+                    name="vehicleName"
+                    placeholder="Tên xe (VD: VinFast VF e34)"
+                    value={formData.vehicleName}
+                    onChange={handleChange}
+                />
+              </div>
+              <div className="auth-input-group">
+                <input
+                    type="number"
+                    name="vehicleBatteryKwh"
+                    placeholder="Dung lượng pin (kWh)"
+                    value={formData.vehicleBatteryKwh}
+                    onChange={handleChange}
+                    min="0"
+                />
+              </div>
+              <div className="auth-input-group">
+                <select name="preferredChargerType" value={formData.preferredChargerType} onChange={handleChange}>
+                  <option value="AC">AC</option>
+                  <option value="DC">DC</option>
+                </select>
+              </div>
+
+              {/* Default Payment */}
+              <h3 style={{marginTop:'1rem'}}>Phương thức thanh toán mặc định</h3>
+              <div className="auth-input-group">
+                <select name="defaultPaymentMethod" value={formData.defaultPaymentMethod} onChange={handleChange}>
+                  <option value="WALLET">Ví điện tử</option>
+                  <option value="BANK">Ngân hàng</option>
+                  <option value="MOMO">Momo</option>
+                  <option value="VISA">Visa/MasterCard</option>
+                </select>
               </div>
 
               <button

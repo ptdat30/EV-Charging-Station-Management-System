@@ -1,216 +1,209 @@
 // src/components/Dashboard.jsx
-import React from 'react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  // Dữ liệu mẫu cho dashboard driver (sẽ được thay thế bằng API thực tế)
   const energyData = [
-    { day: 'T2', usage: 120, sessions: 45 },
-    { day: 'T3', usage: 180, sessions: 68 },
-    { day: 'T4', usage: 150, sessions: 52 },
-    { day: 'T5', usage: 220, sessions: 78 },
-    { day: 'T6', usage: 280, sessions: 95 },
-    { day: 'T7', usage: 190, sessions: 72 },
-    { day: 'CN', usage: 160, sessions: 60 }
+    { day: 'T2', usage: 45 },
+    { day: 'T3', usage: 68 },
+    { day: 'T4', usage: 52 },
+    { day: 'T5', usage: 78 },
+    { day: 'T6', usage: 95 },
+    { day: 'T7', usage: 72 },
+    { day: 'CN', usage: 60 }
   ];
 
-  const stationStatus = [
-    { name: 'Hoạt động', value: 68, color: '#10b981' },
-    { name: 'Đang sạc', value: 25, color: '#3b82f6' },
-    { name: 'Bảo trì', value: 7, color: '#f59e0b' }
-  ];
+  useEffect(() => {
+    // Simulate loading
+    setTimeout(() => setLoading(false), 500);
+  }, []);
 
-  const revenueData = [
-    { month: 'Th1', revenue: 4.5 },
-    { month: 'Th2', revenue: 5.2 },
-    { month: 'Th3', revenue: 6.8 },
-    { month: 'Th4', revenue: 7.2 },
-    { month: 'Th5', revenue: 8.9 },
-    { month: 'Th6', revenue: 9.5 }
-  ];
-
-  const topStations = [
-    { name: 'Vincom Đồng Khởi', usage: 285, revenue: 12.4 },
-    { name: 'Saigon Centre', usage: 242, revenue: 10.8 },
-    { name: 'Petrolimex Nguyễn Huệ', usage: 198, revenue: 8.9 },
-    { name: 'Lotte Mart Q7', usage: 175, revenue: 7.6 }
-  ];
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard-pro">
-      {/* Hero Header */}
-      <div className="dashboard-hero">
-        <div className="hero-content">
-          <h1>Bảng Điều Khiển Trạm Sạc EV</h1>
-          <p>Quản lý thông minh - Tối ưu hiệu suất - Tăng trưởng bền vững</p>
-          <div className="hero-stats">
-            <span><i className="fas fa-bolt"></i> 1.420 kWh hôm nay</span>
-            <span><i className="fas fa-users"></i> 342 người dùng</span>
-          </div>
+    <div className="driver-dashboard">
+      {/* Welcome Header */}
+      <div className="dashboard-welcome">
+        <div className="welcome-content">
+          <h1>Xin chào, {user?.fullName || user?.email || 'Driver'}! 👋</h1>
+          <p>Chào mừng bạn đến với EVCharge Dashboard</p>
         </div>
-        <div className="hero-bg"></div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Driver Stats Cards */}
       <div className="kpi-grid">
-        <div className="kpi-card glass">
+        <Link to="/driver/profile/history" className="kpi-card glass driver-card">
           <div className="kpi-icon">
-            <i className="fas fa-charging-station"></i>
+            <i className="fas fa-history"></i>
           </div>
           <div className="kpi-content">
-            <h3>85</h3>
-            <p>Trạm hoạt động</p>
-            <span className="kpi-change up">+12%</span>
+            <h3>24</h3>
+            <p>Tổng số phiên sạc</p>
+            <span className="kpi-link">Xem lịch sử →</span>
+          </div>
+        </Link>
+
+        <div className="kpi-card glass driver-card">
+          <div className="kpi-icon">
+            <i className="fas fa-bolt"></i>
+          </div>
+          <div className="kpi-content">
+            <h3>1,245</h3>
+            <p>kWh đã sạc (tháng này)</p>
+            <span className="kpi-change up">+15% so với tháng trước</span>
           </div>
         </div>
 
-        <div className="kpi-card glass">
+        <Link to="/payment" className="kpi-card glass driver-card">
           <div className="kpi-icon">
-            <i className="fas fa-coins"></i>
+            <i className="fas fa-wallet"></i>
           </div>
           <div className="kpi-content">
-            <h3>24.5 triệu</h3>
-            <p>Doanh thu tháng</p>
-            <span className="kpi-change up">+18%</span>
+            <h3>850,000</h3>
+            <p>VNĐ trong ví</p>
+            <span className="kpi-link">Nạp tiền →</span>
           </div>
-        </div>
+        </Link>
 
-        <div className="kpi-card glass">
+        <div className="kpi-card glass driver-card">
           <div className="kpi-icon">
-            <i className="fas fa-battery-full"></i>
+            <i className="fas fa-star"></i>
           </div>
           <div className="kpi-content">
-            <h3>98.2%</h3>
-            <p>Hiệu suất trung bình</p>
-            <span className="kpi-change up">+2.1%</span>
-          </div>
-        </div>
-
-        <div className="kpi-card glass">
-          <div className="kpi-icon">
-            <i className="fas fa-clock"></i>
-          </div>
-          <div className="kpi-content">
-            <h3>4.2 phút</h3>
-            <p>Thời gian chờ trung bình</p>
-            <span className="kpi-change down">-0.8 phút</span>
+            <h3>4.8</h3>
+            <p>Đánh giá trung bình</p>
+            <span className="kpi-change">Tuyệt vời!</span>
           </div>
         </div>
       </div>
 
       {/* Main Charts */}
       <div className="charts-section">
-        {/* Energy + Sessions */}
+        {/* Energy Usage Chart */}
         <div className="chart-dual glass">
           <div className="chart-header">
-            <h3>Năng lượng & Phiên sạc (7 ngày)</h3>
+            <h3>Năng lượng đã sạc (7 ngày qua)</h3>
             <select className="chart-filter">
               <option>Tuần này</option>
               <option>Tuần trước</option>
+              <option>Tháng này</option>
             </select>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={energyData}>
               <CartesianGrid strokeDasharray="4 4" stroke="#f0f0f0" />
               <XAxis dataKey="day" stroke="#666" />
-              <YAxis yAxisId="left" stroke="#10b981" />
-              <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" />
+              <YAxis stroke="#10b981" />
               <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="usage" stroke="#10b981" strokeWidth={3} name="Năng lượng (kWh)" dot={{ fill: '#10b981', r: 6 }} />
-              <Line yAxisId="right" type="monotone" dataKey="sessions" stroke="#3b82f6" strokeWidth={3} name="Phiên sạc" dot={{ fill: '#3b82f6', r: 6 }} />
+              <Line type="monotone" dataKey="usage" stroke="#10b981" strokeWidth={3} name="kWh" dot={{ fill: '#10b981', r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Station Status */}
-        <div className="chart-pie glass">
+        {/* Quick Actions */}
+        <div className="quick-actions-driver glass">
           <div className="chart-header">
-            <h3>Trạng thái trạm sạc</h3>
-            <div className="pie-total">85 trạm</div>
+            <h3>Hành động nhanh</h3>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={stationStatus}
-                cx="50%"
-                cy="50%"
-                innerRadius={70}
-                outerRadius={110}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {stationStatus.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="pie-legend-pro">
-            {stationStatus.map((item) => (
-              <div key={item.name} className="legend-item-pro">
-                <div className="legend-dot" style={{ backgroundColor: item.color }}></div>
-                <span>{item.name}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
+          <div className="action-buttons-driver">
+            <Link to="/map" className="action-btn-driver primary">
+              <i className="fas fa-map-marker-alt"></i>
+              <span>Tìm trạm sạc</span>
+            </Link>
+            <Link to="/stations/booking" className="action-btn-driver secondary">
+              <i className="fas fa-calendar-check"></i>
+              <span>Đặt chỗ sạc</span>
+            </Link>
+            <Link to="/driver/profile/history" className="action-btn-driver tertiary">
+              <i className="fas fa-history"></i>
+              <span>Lịch sử</span>
+            </Link>
+            <Link to="/payment" className="action-btn-driver quaternary">
+              <i className="fas fa-wallet"></i>
+              <span>Nạp ví</span>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Bottom Row */}
+      {/* Bottom Row - Recent Activity */}
       <div className="bottom-grid">
-        {/* Revenue */}
-        <div className="chart-bar glass">
+        {/* Recent Sessions */}
+        <div className="recent-sessions glass">
           <div className="chart-header">
-            <h3>Doanh thu 6 tháng</h3>
-            <span className="chart-total">57.1 triệu VNĐ</span>
+            <h3>Phiên sạc gần đây</h3>
+            <Link to="/driver/profile/history" className="view-all">Xem tất cả →</Link>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => `${value} triệu`} />
-              <Bar dataKey="revenue" fill="#8b5cf6" radius={[12, 12, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="sessions-list">
+            <div className="session-item">
+              <div className="session-icon"><i className="fas fa-charging-station"></i></div>
+              <div className="session-info">
+                <div className="session-name">Vincom Đồng Khởi</div>
+                <div className="session-details">45 kWh • Hoàn thành</div>
+              </div>
+              <div className="session-date">Hôm nay</div>
+            </div>
+            <div className="session-item">
+              <div className="session-icon"><i className="fas fa-charging-station"></i></div>
+              <div className="session-info">
+                <div className="session-name">Saigon Centre</div>
+                <div className="session-details">52 kWh • Hoàn thành</div>
+              </div>
+              <div className="session-date">2 ngày trước</div>
+            </div>
+            <div className="session-item">
+              <div className="session-icon"><i className="fas fa-charging-station"></i></div>
+              <div className="session-info">
+                <div className="session-name">Petrolimex Nguyễn Huệ</div>
+                <div className="session-details">38 kWh • Hoàn thành</div>
+              </div>
+              <div className="session-date">5 ngày trước</div>
+            </div>
+          </div>
         </div>
 
-        {/* Top Stations */}
-        <div className="top-stations glass">
+        {/* Favorite Stations */}
+        <div className="favorite-stations glass">
           <div className="chart-header">
-            <h3>Trạm hiệu suất cao</h3>
-            <button className="view-all">Xem tất cả</button>
+            <h3>Trạm yêu thích</h3>
+            <Link to="/map" className="view-all">Tìm thêm →</Link>
           </div>
-          <div className="stations-list">
-            {topStations.map((station, i) => (
-              <div key={i} className="station-rank">
-                <div className="rank-badge">#{i + 1}</div>
-                <div className="station-name">{station.name}</div>
-                <div className="station-metrics">
-                  <span>{station.usage} kWh</span>
-                  <span className="revenue">{station.revenue} triệu</span>
+          <div className="stations-list-driver">
+            {[
+              { name: 'Vincom Đồng Khởi', rating: 4.9, distance: '2.5 km' },
+              { name: 'Saigon Centre', rating: 4.8, distance: '3.2 km' },
+              { name: 'Petrolimex Nguyễn Huệ', rating: 4.7, distance: '5.1 km' }
+            ].map((station, i) => (
+              <div key={i} className="station-item-driver">
+                <div className="station-icon-driver">
+                  <i className="fas fa-star"></i>
                 </div>
+                <div className="station-info-driver">
+                  <div className="station-name-driver">{station.name}</div>
+                  <div className="station-metrics-driver">
+                    <span><i className="fas fa-star"></i> {station.rating}</span>
+                    <span><i className="fas fa-map-marker-alt"></i> {station.distance}</span>
+                  </div>
+                </div>
+                <Link to="/map" className="station-action">
+                  <i className="fas fa-arrow-right"></i>
+                </Link>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="quick-actions glass">
-          <h3>Hành động nhanh</h3>
-          <div className="action-buttons">
-            <button className="action-btn primary">
-              <i className="fas fa-plus"></i> Thêm trạm mới
-            </button>
-            <button className="action-btn secondary">
-              <i className="fas fa-file-export"></i> Xuất báo cáo
-            </button>
-            <button className="action-btn tertiary">
-              <i className="fas fa-bell"></i> Cảnh báo hệ thống
-            </button>
           </div>
         </div>
       </div>

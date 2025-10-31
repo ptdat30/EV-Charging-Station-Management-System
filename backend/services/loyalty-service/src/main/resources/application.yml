@@ -1,0 +1,59 @@
+# ===============================================================
+# FILE: user-service/src/main/resources/application.yml
+# ===============================================================
+
+server:
+  port: 8088
+
+spring:
+  application:
+    name: LOYALTY-SERVICE  # PH?I VI?T HOA, kh?p v?i api-gateway.yml
+  cloud:
+    config:
+      enabled: true
+      uri: http://localhost:8888
+      fail-fast: false
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/loyalty_service_db?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password: huynhdat123@
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# ===== QUAN TR?NG: Eureka Client Configuration =====
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5  # T?ng t?n su?t fetch
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+# Logging ?? debug
+logging:
+  level:
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud: DEBUG
+
+# App-specific configuration
+app:
+  rabbitmq:
+    queue: payment.success

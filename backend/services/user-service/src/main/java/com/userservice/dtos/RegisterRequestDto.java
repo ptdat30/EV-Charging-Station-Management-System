@@ -21,4 +21,11 @@ public class RegisterRequestDto {
 
     // [COMMAND]: Chỉ định loại người dùng là 'driver' khi đăng ký.
     private User.UserType userType = User.UserType.driver;
+
+    // --- Optional: Additional onboarding fields ---
+    private String vehicleName;
+    private String plateNumber;
+    private Double batteryCapacityKwh;
+    private String preferredChargerType; // AC/DC
+    private String defaultPaymentMethod; // wallet, banking, momo, visa
 }

@@ -1,7 +1,10 @@
 /* ========================================
-   CSS RESET + BASE STYLES
+   CSS RESET + BASE STYLES + VARIABLES
    Dùng cho mọi dự án React/Vite
    ======================================== */
+
+/* Import Variables */
+@import './variables.css';
 
 /* 1. Reset Box Model + Font */
 *, *::before, *::after {
@@ -29,12 +32,33 @@
   
   body {
     min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.5;
+    font-family: var(--font-family-primary);
+    line-height: var(--line-height-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #f5f5f5;
-    color: #333;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-base);
+  }
+  
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--color-text-primary);
+  }
+  
+  h1 { font-size: var(--font-size-5xl); }
+  h2 { font-size: var(--font-size-4xl); }
+  h3 { font-size: var(--font-size-3xl); }
+  h4 { font-size: var(--font-size-2xl); }
+  h5 { font-size: var(--font-size-xl); }
+  h6 { font-size: var(--font-size-lg); }
+  
+  p {
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-secondary);
   }
   
   /* 4. Cải thiện hình ảnh */
@@ -77,23 +101,25 @@
   
   /* 10. Focus visible (accessibility) */
   :focus-visible {
-    outline: 2px solid #4CAF50;
-    outline-offset: 2px;
+    outline: var(--border-width-medium) solid var(--color-primary);
+    outline-offset: var(--spacing-1);
+    border-radius: var(--border-radius-sm);
   }
   
   /* 11. Scrollbar (tùy chọn – đẹp hơn) */
   ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--color-gray-100);
   }
   ::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
+    background: var(--color-gray-400);
+    border-radius: var(--border-radius-full);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: var(--color-gray-500);
   }
   
   /* 12. Utility classes (tùy chọn) */

@@ -18,7 +18,9 @@ public class CreateNotificationRequestDto {
     // Enum phải khớp với NotificationType bên notification-service
     public enum NotificationType {
         charging_started, charging_complete, charging_failed,
-        payment_success, payment_failed // Thêm các loại khác nếu cần
-        // ... thêm các loại khác từ notification-service/entities/Notification.java
+        reservation_confirmed, reservation_reminder, reservation_cancelled,
+        payment_success, payment_failed, wallet_low_balance,
+        promotion, system_maintenance, station_offline,
+        review_request, account_update
     }
 }

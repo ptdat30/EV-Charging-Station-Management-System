@@ -1,30 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login, isAuthenticated, user, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Lấy redirect path từ location state hoặc mặc định là '/driver/profile'
-  const from = location.state?.from?.pathname || '/driver/profile';
+  const from = location.state?.from?.pathname || '/';
 
-  console.log('🔐 Login Component Rendered ==========');
-  console.log('📍 Redirect path:', from);
-  console.log('📊 Current auth state - isAuthenticated:', isAuthenticated, 'user:', user, 'token:', token);
+  // Debug chỉ trong dev
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('Login Render | Auth:', { isAuthenticated, user, token });
+    }
+  }, [isAuthenticated, user, token]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // Clear error when user starts typing
+    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -32,117 +32,127 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    console.log('🚀 LOGIN PROCESS STARTED ==========');
-    console.log('📝 Form data:', formData);
-    console.log('🎯 Target redirect:', from);
-
     try {
-      console.log('📤 Calling login function from AuthContext...');
       const result = await login(formData.email, formData.password);
-      console.log('📥 Login function returned:', result);
 
       if (result.success) {
-        console.log('✅ LOGIN SUCCESS!');
-        console.log('👤 User data:', result.user);
-        console.log('🔄 Navigating to:', from);
+        // Redirect theo role của user
+        const userRole = (result.user?.role || result.user?.roles?.[0] || '').toUpperCase();
+        let redirectPath = from;
 
-        // Kiểm tra lại auth state trước khi navigate
-        console.log('📊 Re-checking auth state after login:');
-        console.log('   - isAuthenticated:', isAuthenticated);
-        console.log('   - user:', user);
-        console.log('   - token:', token);
+        // Nếu đang ở homepage hoặc login page, redirect theo role
+        if (from === '/' || from === '/login') {
+          switch (userRole) {
+            case 'DRIVER':
+              redirectPath = '/dashboard';
+              break;
+            case 'ADMIN':
+              redirectPath = '/admin';
+              break;
+            case 'STAFF':
+              redirectPath = '/dashboard'; // Staff có thể dùng dashboard chung hoặc tạo riêng sau
+              break;
+            default:
+              redirectPath = '/dashboard';
+          }
+        }
 
-        navigate(from, { replace: true });
+        navigate(redirectPath, { replace: true });
       } else {
-        console.log('❌ LOGIN FAILED:', result.message);
-        setError(result.message || 'Đăng nhập thất bại');
+        setError(result.message || 'Email hoặc mật khẩu không đúng');
       }
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      console.log('💥 LOGIN CATCH ERROR:', err);
-      console.log('🔍 Error details:');
-      console.log('   - Error name:', err.name);
-      console.log('   - Error message:', err.message);
-      console.log('   - Error stack:', err.stack);
-      setError('Lỗi kết nối đến server. Vui lòng thử lại.');
+      setError('Không thể kết nối đến máy chủ. Vui lòng thử lại.');
     } finally {
-      console.log('🏁 Login process finished');
-      console.log('⏳ Loading state set to false');
       setLoading(false);
     }
   };
 
   return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-card">
-            <div className="auth-header">
-              <div className="auth-logo-icon">EV</div>
+      <div className="login-page">
+        <div className="login-container">
+          <div className="login-card">
+            {/* Logo & Header */}
+            <div className="login-header">
+              <div className="logo-circle">
+                <span>EV</span>
+              </div>
               <h1>EV Station</h1>
-              <p>Hi chào bạn! Đăng nhập để tiếp tục</p>
+              <p className="welcome-text">Chào mừng bạn trở lại!</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="auth-form">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="login-form">
               <h2>Đăng nhập</h2>
 
-              {/* Debug Info Panel - chỉ hiển thị trong development */}
+              {/* Debug Panel (Dev Only) */}
               {import.meta.env.DEV && (
-                  <div style={{
-                    background: '#f0f8ff',
-                    border: '1px solid #d1ecf1',
-                    borderRadius: '5px',
-                    padding: '10px',
-                    marginBottom: '15px',
-                    fontSize: '12px'
-                  }}>
-                    <strong>🔧 Debug Info:</strong>
-                    <div>isAuthenticated: {isAuthenticated ? 'true' : 'false'}</div>
-                    <div>Loading: {loading ? 'true' : 'false'}</div>
-                    <div>User: {user ? 'exists' : 'null'}</div>
-                    <div>Token: {token ? 'exists' : 'null'}</div>
+                  <div className="debug-panel">
+                    <small>
+                      <strong>Debug:</strong> Auth: {isAuthenticated ? '✓' : '✗'} |
+                      User: {user ? '✓' : '✗'} |
+                      Loading: {loading ? '⏳' : '○'}
+                    </small>
                   </div>
               )}
 
+              {/* Error Message */}
               {error && (
-                  <div className="auth-error-message">
-                    <i className="fas fa-exclamation-circle"></i>
+                  <div className="error-message">
+                    <i className="fas fa-exclamation-triangle"></i>
                     {error}
                   </div>
               )}
 
-              <div className="auth-input-group icon">
-                <i className="fas fa-envelope"></i>
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="admin@evstation.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                />
+              {/* Email Field */}
+              <div className="input-group">
+                <div className="input-wrapper">
+                  <i className="fas fa-envelope icon"></i>
+                  <input
+                      type="email"
+                      name="email"
+                      placeholder="admin@evstation.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                      autoComplete="email"
+                  />
+                </div>
               </div>
 
-              <div className="auth-input-group icon">
-                <i className="fas fa-lock"></i>
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Nhập mật khẩu"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                />
+              {/* Password Field */}
+              <div className="input-group">
+                <div className="input-wrapper">
+                  <i className="fas fa-lock icon"></i>
+                  <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      placeholder="Mật khẩu"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={loading}
+                      autoComplete="current-password"
+                  />
+                  <button
+                      type="button"
+                      className="toggle-password"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex="-1"
+                      aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  </button>
+                </div>
               </div>
 
-              <button
-                  type="submit"
-                  className="auth-btn-login"
-                  disabled={loading}
-              >
+              {/* Submit Button */}
+              <button type="submit" className="login-btn" disabled={loading}>
                 {loading ? (
                     <>
-                      <i className="fas fa-spinner fa-spin"></i>
+                      <span className="spinner"></span>
                       Đang đăng nhập...
                     </>
                 ) : (
@@ -150,15 +160,19 @@ const Login = () => {
                 )}
               </button>
 
-              <p className="auth-login-link">
-                Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+              {/* Register Link */}
+              <p className="register-link">
+                Chưa có tài khoản?{' '}
+                <Link to="/register" className="link">
+                  Đăng ký ngay
+                </Link>
               </p>
 
-              {/* Test credentials for demo */}
-              <div className="auth-test-credentials">
-                <p><strong>Test Account:</strong></p>
-                <p>Email: ptdat3000@gmail.com</p>
-                <p>Password: 123123123</p>
+              {/* Demo Credentials */}
+              <div className="demo-credentials">
+                <p><strong>Tài khoản thử nghiệm:</strong></p>
+                <p className="cred">Email: <code>ptdat3000@gmail.com</code></p>
+                <p className="cred">Mật khẩu: <code>123123123</code></p>
               </div>
             </form>
           </div>

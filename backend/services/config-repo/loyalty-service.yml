@@ -1,5 +1,5 @@
 server:
-  port: 8088 # Chạy loyalty-service trên cổng mới
+  port: 8088 # Cổng mới cho loyalty-service
 
 spring:
   datasource:
@@ -11,7 +11,24 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  # Cấu hình kết nối RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    non-secure-port: ${server.port}
+
+# Cấu hình tên exchange/queue cho RabbitMQ (sẽ dùng ở bước sau)
+app:
+  rabbitmq:
+    exchange: payment_events # Giả sử lắng nghe sự kiện từ payment
+    queue: loyalty_queue

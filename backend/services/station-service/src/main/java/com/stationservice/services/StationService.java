@@ -10,6 +10,7 @@ public interface StationService {
     StationResponseDto createStation(CreateStationRequestDto requestDto);
     StationResponseDto getStationById(Long stationId);
     List<StationResponseDto> getAllStations();
+    List<StationResponseDto> searchStations(String city, Double latitude, Double longitude, Double maxDistance, String chargerType, Double minPower, String status, String sortBy);
     StationResponseDto updateStation(Long stationId, UpdateStationRequestDto requestDto);
     void deleteStation(Long stationId);
 }

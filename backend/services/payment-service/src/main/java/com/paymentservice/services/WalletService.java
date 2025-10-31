@@ -6,4 +6,6 @@ import com.paymentservice.entities.Wallet; // Import Wallet entity
 
 public interface WalletService {
     Wallet createWallet(CreateWalletRequestDto requestDto);
+    Wallet getOrCreateWallet(Long userId);
+    Wallet deposit(Long userId, java.math.BigDecimal amount);
 }

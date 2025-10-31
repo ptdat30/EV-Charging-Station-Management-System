@@ -9,6 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients; // [COMMAND]: Imp
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients // [COMMAND]: Annotation này sẽ quét và kích hoạt các Feign client trong dự án.
+@org.springframework.scheduling.annotation.EnableScheduling // Enable scheduled tasks
 public class ChargingServiceApplication {
 
 	public static void main(String[] args) {

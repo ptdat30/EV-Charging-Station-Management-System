@@ -2,15 +2,19 @@
 package com.paymentservice.services;
 
 import com.paymentservice.dtos.PaymentResponseDto;
+import com.paymentservice.dtos.ProcessDepositRequestDto;
 import com.paymentservice.dtos.ProcessPaymentRequestDto;
+import com.paymentservice.dtos.ProcessRefundRequestDto;
 import com.paymentservice.entities.Payment;
 import com.paymentservice.entities.Wallet;
-import com.paymentservice.exceptions.ResourceNotFoundException; // Tạo exception này
+import com.paymentservice.exceptions.ResourceNotFoundException;
 import com.paymentservice.repositories.PaymentRepository;
 import com.paymentservice.repositories.WalletRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // Quan trọng cho xử lý giao dịch
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +23,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final WalletRepository walletRepository;
 
@@ -58,6 +63,87 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment finalPayment = paymentRepository.save(savedPayment); // Lưu lại trạng thái cuối cùng
         return convertToDto(finalPayment);
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponseDto processDeposit(ProcessDepositRequestDto requestDto) {
+        log.info("Processing deposit for reservation {} - user {} - amount {}", 
+                requestDto.getReservationId(), requestDto.getUserId(), requestDto.getAmount());
+        
+        // 1. Tìm ví của người dùng
+        Wallet wallet = walletRepository.findByUserId(requestDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user ID: " + requestDto.getUserId()));
+
+        // 2. Kiểm tra số dư
+        if (wallet.getBalance().compareTo(requestDto.getAmount()) < 0) {
+            throw new IllegalStateException("Insufficient balance for deposit. Required: " + 
+                    requestDto.getAmount() + ", Available: " + wallet.getBalance());
+        }
+
+        // 3. Tạo payment record cho deposit (sessionId = null, sẽ dùng description để lưu reservationId)
+        Payment payment = new Payment();
+        payment.setSessionId(null); // Deposit không có session
+        payment.setUserId(requestDto.getUserId());
+        payment.setAmount(requestDto.getAmount());
+        payment.setPaymentMethod(Payment.PaymentMethod.valueOf(requestDto.getPaymentMethod()));
+        payment.setPaymentStatus(Payment.PaymentStatus.pending);
+        
+        Payment savedPayment = paymentRepository.save(payment);
+
+        // 4. Trừ tiền từ ví
+        wallet.setBalance(wallet.getBalance().subtract(requestDto.getAmount()));
+        walletRepository.save(wallet);
+
+        // 5. Cập nhật trạng thái payment thành completed
+        savedPayment.setPaymentStatus(Payment.PaymentStatus.completed);
+        savedPayment.setPaymentTime(LocalDateTime.now());
+        Payment finalPayment = paymentRepository.save(savedPayment);
+        
+        log.info("Deposit processed successfully. Payment ID: {}", finalPayment.getPaymentId());
+        return convertToDto(finalPayment);
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponseDto processRefund(ProcessRefundRequestDto requestDto) {
+        log.info("Processing refund for payment {} - user {} - reason: {}", 
+                requestDto.getPaymentId(), requestDto.getUserId(), requestDto.getReason());
+        
+        // 1. Tìm payment record
+        Payment payment = paymentRepository.findById(requestDto.getPaymentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + requestDto.getPaymentId()));
+
+        // 2. Kiểm tra payment thuộc về user
+        if (!payment.getUserId().equals(requestDto.getUserId())) {
+            throw new IllegalStateException("Payment does not belong to user: " + requestDto.getUserId());
+        }
+
+        // 3. Kiểm tra payment đã được refund chưa
+        if (payment.getPaymentStatus() == Payment.PaymentStatus.refunded) {
+            throw new IllegalStateException("Payment already refunded");
+        }
+
+        // 4. Kiểm tra payment phải ở trạng thái completed
+        if (payment.getPaymentStatus() != Payment.PaymentStatus.completed) {
+            throw new IllegalStateException("Cannot refund payment with status: " + payment.getPaymentStatus());
+        }
+
+        // 5. Tìm ví và hoàn tiền
+        Wallet wallet = walletRepository.findByUserId(requestDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user ID: " + requestDto.getUserId()));
+
+        wallet.setBalance(wallet.getBalance().add(payment.getAmount()));
+        walletRepository.save(wallet);
+
+        // 6. Cập nhật trạng thái payment thành refunded
+        payment.setPaymentStatus(Payment.PaymentStatus.refunded);
+        payment.setPaymentTime(LocalDateTime.now());
+        Payment refundedPayment = paymentRepository.save(payment);
+        
+        log.info("Refund processed successfully. Payment ID: {}, Amount: {}", 
+                refundedPayment.getPaymentId(), refundedPayment.getAmount());
+        return convertToDto(refundedPayment);
     }
 
     private PaymentResponseDto convertToDto(Payment payment) {

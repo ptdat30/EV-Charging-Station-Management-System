@@ -28,4 +28,7 @@ public interface UserService {
      * @return UserDetailDto chứa thông tin cần thiết cho xác thực.
      */
     UserDetailDto getUserDetailsByEmail(String email);
+
+    // --- Verification ---
+    UserResponseDto verifyByToken(String token);
 }

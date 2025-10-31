@@ -18,8 +18,8 @@ public class Payment {
     @Column(name = "payment_id")
     private Long paymentId;
 
-    // [COMMAND]: ID của phiên sạc (từ charging-service)
-    @Column(name = "session_id", nullable = false)
+    // [COMMAND]: ID của phiên sạc (từ charging-service) - nullable cho deposit payments
+    @Column(name = "session_id")
     private Long sessionId;
 
     @Column(name = "user_id", nullable = false)

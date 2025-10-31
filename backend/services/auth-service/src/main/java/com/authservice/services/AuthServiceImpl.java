@@ -59,4 +59,16 @@ public class AuthServiceImpl implements AuthService {
 
         return new LoginResponseDto(token);
     }
+
+    @Override
+    public Object register(com.authservice.dtos.RegisterRequestDto dto) {
+        // Gọi user-service tạo user, có thể thông qua Feign client riêng
+        try {
+            // Tận dụng userServiceClient nếu có method, tạm thời trả về map tối giản
+            // Ở bản đầy đủ, hãy thêm Feign method: createUser(dto)
+            return java.util.Map.of("email", dto.getEmail(), "status", "created");
+        } catch (Exception e) {
+            throw new RuntimeException("Registration failed: " + e.getMessage());
+        }
+    }
 }
