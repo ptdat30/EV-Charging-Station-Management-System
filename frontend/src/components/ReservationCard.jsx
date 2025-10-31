@@ -1,0 +1,311 @@
+// src/components/ReservationCard.jsx
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { checkInReservation, startSessionFromReservation, cancelReservation } from '../services/stationService';
+import '../styles/ReservationCard.css';
+
+const ReservationCard = ({ reservation, onUpdate, onError }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
+  const [actionLoading, setActionLoading] = React.useState('');
+
+  const formatDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return '-';
+    try {
+      const date = new Date(dateTimeStr);
+      return date.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateTimeStr;
+    }
+  };
+
+  const formatTimeRemaining = (deadlineStr) => {
+    if (!deadlineStr) return null;
+    try {
+      const deadline = new Date(deadlineStr);
+      const now = new Date();
+      const diff = deadline - now;
+      
+      if (diff < 0) return 'Đã quá hạn';
+      const minutes = Math.floor(diff / 60000);
+      const hours = Math.floor(minutes / 60);
+      
+      if (hours > 0) return `Còn ${hours} giờ ${minutes % 60} phút`;
+      return `Còn ${minutes} phút`;
+    } catch {
+      return null;
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: 'Chờ thanh toán',
+      confirmed: 'Đã xác nhận',
+      active: 'Đang hoạt động',
+      completed: 'Hoàn thành',
+      cancelled: 'Đã hủy',
+      expired: 'Hết hạn',
+      no_show: 'Không đến'
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusClass = (status) => {
+    const classes = {
+      pending: 'status-pending',
+      confirmed: 'status-confirmed',
+      active: 'status-active',
+      completed: 'status-completed',
+      cancelled: 'status-cancelled',
+      expired: 'status-expired',
+      no_show: 'status-no-show'
+    };
+    return classes[status] || 'status-default';
+  };
+
+  const canCheckIn = () => {
+    if (!reservation.checkInDeadline) return false;
+    if (reservation.isCheckedIn) return false;
+    if (reservation.status !== 'confirmed') return false;
+    
+    const deadline = new Date(reservation.checkInDeadline);
+    const now = new Date();
+    const startTime = new Date(reservation.reservedStartTime);
+    const earliestCheckIn = new Date(startTime.getTime() - 30 * 60 * 1000); // 30 phút trước
+    
+    return now >= earliestCheckIn && now <= deadline;
+  };
+
+  const handleCheckIn = async () => {
+    if (!canCheckIn()) {
+      alert('Không thể check-in. Vui lòng kiểm tra thời gian check-in cho phép.');
+      return;
+    }
+
+    if (!confirm('Xác nhận check-in? Bạn sẽ nhận lại tiền cọc khi check-in thành công.')) {
+      return;
+    }
+
+    setActionLoading('checkin');
+    try {
+      const result = await checkInReservation(reservation.reservationId);
+      alert(`✅ Check-in thành công!\nTiền cọc đã được hoàn lại vào ví.`);
+      onUpdate && onUpdate();
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Check-in thất bại';
+      alert(`❌ ${errorMsg}`);
+      onError && onError(errorMsg);
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleStartSession = async () => {
+    if (!confirm('Bắt đầu phiên sạc ngay bây giờ?')) return;
+    
+    setActionLoading('start');
+    try {
+      const session = await startSessionFromReservation(reservation.reservationId);
+      alert('✅ Đã bắt đầu phiên sạc');
+      onUpdate && onUpdate();
+      // Navigate to charging live page
+      navigate('/sessions/live');
+    } catch (err) {
+      alert(`❌ ${err.response?.data?.message || err.message || 'Không thể bắt đầu phiên sạc'}`);
+      onError && onError(err.message);
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleCancel = async () => {
+    const reason = prompt('Lý do hủy đặt chỗ:');
+    if (!reason) return;
+
+    if (!confirm('Xác nhận hủy đặt chỗ? Tiền cọc có thể không được hoàn lại.')) return;
+
+    setActionLoading('cancel');
+    try {
+      await cancelReservation(reservation.reservationId, reason);
+      alert('✅ Đã hủy đặt chỗ');
+      onUpdate && onUpdate();
+    } catch (err) {
+      alert(`❌ ${err.response?.data?.message || err.message || 'Không thể hủy đặt chỗ'}`);
+      onError && onError(err.message);
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  return (
+    <div className={`reservation-card ${getStatusClass(reservation.status)}`}>
+      <div className="reservation-card-header">
+        <div className="reservation-code">
+          <i className="fas fa-calendar-check"></i>
+          <div>
+            <span className="code-label">Mã đặt chỗ:</span>
+            <strong>{reservation.confirmationCode || reservation.reservationId}</strong>
+          </div>
+        </div>
+        <span className={`reservation-status ${getStatusClass(reservation.status)}`}>
+          {getStatusLabel(reservation.status)}
+        </span>
+      </div>
+
+      <div className="reservation-card-body">
+        <div className="reservation-info-row">
+          <span className="info-icon">📍</span>
+          <span className="info-label">Trạm sạc:</span>
+          <span>ID {reservation.stationId}</span>
+          {reservation.chargerId && (
+            <>
+              <span className="separator">•</span>
+              <span className="info-label">Cổng:</span>
+              <span>ID {reservation.chargerId}</span>
+            </>
+          )}
+        </div>
+
+        <div className="reservation-info-row">
+          <span className="info-icon">🕐</span>
+          <span className="info-label">Thời gian:</span>
+          <span>{formatDateTime(reservation.reservedStartTime)}</span>
+          <span className="separator">→</span>
+          <span>{formatDateTime(reservation.reservedEndTime)}</span>
+        </div>
+
+        {reservation.durationMinutes && (
+          <div className="reservation-info-row">
+            <span className="info-icon">⏱️</span>
+            <span className="info-label">Thời lượng:</span>
+            <span>{reservation.durationMinutes} phút</span>
+          </div>
+        )}
+
+        {reservation.depositAmount && (
+          <div className="reservation-info-row highlight">
+            <span className="info-icon">💰</span>
+            <span className="info-label">Tiền cọc:</span>
+            <span className="deposit-amount">
+              {new Intl.NumberFormat('vi-VN').format(reservation.depositAmount)} ₫
+              {reservation.depositRefunded && (
+                <span className="deposit-refunded">✓ Đã hoàn</span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {reservation.checkInDeadline && !reservation.isCheckedIn && (
+          <div className="reservation-info-row warning">
+            <span className="info-icon">⏰</span>
+            <span className="info-label">Hạn check-in:</span>
+            <span className="checkin-deadline">
+              {formatDateTime(reservation.checkInDeadline)}
+              {canCheckIn() && (
+                <span className="checkin-remaining"> ({formatTimeRemaining(reservation.checkInDeadline)})</span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {reservation.isCheckedIn && (
+          <div className="reservation-info-row success">
+            <span className="info-icon">✓</span>
+            <span>Đã check-in lúc: {formatDateTime(reservation.checkInTime)}</span>
+          </div>
+        )}
+
+        {reservation.status === 'no_show' && reservation.noShowCount > 0 && (
+          <div className="reservation-info-row error">
+            <span className="info-icon">⚠️</span>
+            <span>Số lần không đến: {reservation.noShowCount}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="reservation-card-actions">
+        {reservation.status === 'confirmed' && canCheckIn() && (
+          <button
+            className="btn-checkin"
+            onClick={handleCheckIn}
+            disabled={loading || actionLoading === 'checkin'}
+          >
+            {actionLoading === 'checkin' ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i> Đang xử lý...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-check-circle"></i> Check-in
+              </>
+            )}
+          </button>
+        )}
+
+        {reservation.status === 'confirmed' && reservation.isCheckedIn && !reservation.sessionId && (
+          <button
+            className="btn-start"
+            onClick={handleStartSession}
+            disabled={loading || actionLoading === 'start'}
+          >
+            {actionLoading === 'start' ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i> Đang bắt đầu...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-play"></i> Bắt đầu sạc
+              </>
+            )}
+          </button>
+        )}
+
+        {reservation.status === 'active' && reservation.sessionId && (
+          <button
+            className="btn-view-live"
+            onClick={() => navigate('/sessions/live')}
+          >
+            <i className="fas fa-tv"></i> Xem quá trình sạc
+          </button>
+        )}
+
+        {reservation.status === 'confirmed' && !reservation.isCheckedIn && (
+          <button
+            className="btn-cancel"
+            onClick={handleCancel}
+            disabled={loading || actionLoading === 'cancel'}
+          >
+            {actionLoading === 'cancel' ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i> Đang hủy...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-times"></i> Hủy đặt chỗ
+              </>
+            )}
+          </button>
+        )}
+
+        {reservation.qrCode && (
+          <button
+            className="btn-qr"
+            onClick={() => alert(`QR Code: ${reservation.qrCode}`)}
+            title="Xem QR Code"
+          >
+            <i className="fas fa-qrcode"></i>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ReservationCard;
+

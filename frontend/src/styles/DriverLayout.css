@@ -1,0 +1,21 @@
+/* Driver Layout Styles */
+.driver-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.driver-main-content {
+    flex: 1;
+    padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .driver-main-content {
+        padding: 16px;
+    }
+}
+
