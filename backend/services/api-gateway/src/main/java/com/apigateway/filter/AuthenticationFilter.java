@@ -6,11 +6,11 @@ import org.slf4j.LoggerFactory; // Import LoggerFactory
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException; // Import
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -28,8 +28,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     public static final List<String> publicApiEndpoints = List.of(
             "/api/auth/login",
             "/api/users/register"
-            // Thêm các endpoint công khai khác nếu cần, ví dụ GET stations
-            // "/api/stations"
+            // GET requests đến /api/stations/** được xử lý riêng ở dưới
     );
 
     public AuthenticationFilter(WebClient.Builder webClientBuilder) {
@@ -42,13 +41,26 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
             String requestPath = request.getPath().toString();
-            log.debug("Processing request for path: {}", requestPath);
+            HttpMethod httpMethod = request.getMethod();
+            log.debug("Processing request for path: {}, method: {}", requestPath, httpMethod);
 
             // Kiểm tra endpoint công khai
             Predicate<String> isPublicApi = path -> publicApiEndpoints.stream().anyMatch(requestPath::startsWith);
             if (isPublicApi.test(requestPath)) {
                 log.debug("Public endpoint detected, skipping auth filter for: {}", requestPath);
                 return chain.filter(exchange);
+            }
+
+            // Cho phép GET requests đến /api/stations/** công khai (để xem danh sách stations và chargers)
+            // Bao gồm: /api/stations/getall, /api/stations/search, /api/stations/{id}, /api/stations/{id}/chargers
+            if (httpMethod == HttpMethod.GET && (requestPath.startsWith("/api/stations/") || requestPath.equals("/api/stations"))) {
+                log.info("✅ Public GET request to stations endpoint, skipping auth filter for: {} (method: {})", requestPath, httpMethod);
+                return chain.filter(exchange);
+            }
+            
+            // Nếu không phải GET, log để debug
+            if (requestPath.startsWith("/api/stations/") || requestPath.equals("/api/stations")) {
+                log.debug("🔒 Protected {} request to stations endpoint: {}", httpMethod, requestPath);
             }
 
             // Kiểm tra header Authorization

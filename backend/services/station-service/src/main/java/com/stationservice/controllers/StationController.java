@@ -6,6 +6,8 @@ import com.stationservice.dtos.StationResponseDto;
 import com.stationservice.dtos.UpdateStationRequestDto;
 import com.stationservice.services.StationService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StationController {
 
+    private static final Logger log = LoggerFactory.getLogger(StationController.class);
     private final StationService stationService;
 
     @PostMapping
@@ -32,7 +35,15 @@ public class StationController {
 
     @GetMapping("/getall")
     public ResponseEntity<List<StationResponseDto>> getAllStations() {
-        return ResponseEntity.ok(stationService.getAllStations());
+        try {
+            log.info("Getting all stations");
+            List<StationResponseDto> stations = stationService.getAllStations();
+            log.info("Found {} stations", stations != null ? stations.size() : 0);
+            return ResponseEntity.ok(stations);
+        } catch (Exception e) {
+            log.error("Error getting all stations", e);
+            throw e;
+        }
     }
 
     @GetMapping("/search")

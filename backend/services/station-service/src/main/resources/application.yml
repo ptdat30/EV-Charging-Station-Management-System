@@ -6,9 +6,20 @@ spring:
     config:
       import: configserver:http://localhost:8888
   application:
-    name: station-service
+    name: STATION-SERVICE  # Phải khớp với lb://STATION-SERVICE trong API Gateway
 
   datasource:
     url: jdbc:mysql://localhost:3306/station_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: huynhdat123@
+
+# Eureka client config (có thể override từ config server)
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    non-secure-port: 8081
+    instance-id: ${spring.application.name}:${server.port}

@@ -1,8 +1,11 @@
 package com.chargingservice.services;
 
+import com.chargingservice.clients.NotificationServiceClient;
 import com.chargingservice.clients.PaymentServiceClient;
 import com.chargingservice.clients.StationServiceClient;
 import com.chargingservice.dtos.CreateReservationRequestDto;
+import com.chargingservice.dtos.internal.CreateNotificationRequestDto;
+import com.chargingservice.dtos.internal.UpdateChargerStatusDto;
 import com.chargingservice.dtos.ReservationResponseDto;
 import com.chargingservice.dtos.SessionResponseDto;
 import com.chargingservice.dtos.StartSessionRequestDto;
@@ -39,6 +42,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final ChargingSessionRepository chargingSessionRepository;
     private final StationServiceClient stationServiceClient;
     private final PaymentServiceClient paymentServiceClient;
+    private final NotificationServiceClient notificationServiceClient;
 
     @Override
     @Transactional
@@ -52,10 +56,8 @@ public class ReservationServiceImpl implements ReservationService {
         // Nếu chargerId null, tự động tìm charger available tại station
         if (chargerId == null) {
             log.info("chargerId is null, finding available charger at station {}", requestDto.getStationId());
+            // findAvailableCharger sẽ throw IllegalStateException với thông báo chi tiết nếu không tìm thấy
             chargerId = findAvailableCharger(requestDto.getStationId(), requestDto.getReservedStartTime(), requestDto.getReservedEndTime());
-            if (chargerId == null) {
-                throw new IllegalStateException("No available charger found at station " + requestDto.getStationId() + " for the requested time slot");
-            }
             log.info("Found available charger: {}", chargerId);
         }
 
@@ -86,54 +88,63 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setReservedStartTime(requestDto.getReservedStartTime());
         reservation.setReservedEndTime(requestDto.getReservedEndTime());
         reservation.setDurationMinutes(requestDto.getDurationMinutes());
-        reservation.setStatus(Reservation.ReservationStatus.pending); // Start as pending until deposit is paid
+        reservation.setStatus(Reservation.ReservationStatus.confirmed); // Confirm ngay, không cần deposit
         reservation.setConfirmationCode(generateConfirmationCode());
         
         // Save first to get reservationId
         Reservation saved = reservationRepository.save(reservation);
-        log.info("Reservation created (pending deposit): {}", saved.getReservationId());
+        log.info("Reservation created: {}", saved.getReservationId());
 
         // Generate QR code after save (when reservationId is available)
         saved.setQrCode(generateQRCode(saved));
         
-        // Calculate and process deposit
-        BigDecimal depositAmount = calculateDepositAmount(saved);
-        saved.setDepositAmount(depositAmount);
-        saved.setCheckInDeadline(saved.getReservedStartTime().plusMinutes(15));
-        
+        // Update charger status to "reserved"
         try {
-            // Process deposit payment
-            ProcessDepositRequestDto depositRequest = new ProcessDepositRequestDto();
-            depositRequest.setReservationId(saved.getReservationId());
-            depositRequest.setUserId(requestDto.getUserId());
-            depositRequest.setAmount(depositAmount);
-            depositRequest.setPaymentMethod("wallet");
-            
-            PaymentResponseDto depositPayment = paymentServiceClient.processDeposit(depositRequest);
-            
-            if (depositPayment != null && depositPayment.getPaymentStatus() != null) {
-                PaymentResponseDto.PaymentStatus status = depositPayment.getPaymentStatus();
-                if (status == PaymentResponseDto.PaymentStatus.completed) {
-                    // Deposit successful - confirm reservation
-                    saved.setDepositPaymentId(depositPayment.getPaymentId());
-                    saved.setStatus(Reservation.ReservationStatus.confirmed);
-                    log.info("Deposit processed successfully. Payment ID: {}", depositPayment.getPaymentId());
-                } else {
-                    // Deposit failed - keep as pending
-                    log.warn("Deposit payment failed for reservation {}. Status: {}", saved.getReservationId(), status);
-                    throw new IllegalStateException("Deposit payment failed with status: " + status);
-                }
-            } else {
-                log.warn("Deposit payment returned null or no status for reservation {}", saved.getReservationId());
-                throw new IllegalStateException("Deposit payment failed. Please check your wallet balance.");
-            }
+            UpdateChargerStatusDto updateStatus = new UpdateChargerStatusDto();
+            updateStatus.setStatus(UpdateChargerStatusDto.ChargerStatus.reserved);
+            stationServiceClient.updateChargerStatus(chargerId, updateStatus);
+            log.info("Updated charger {} status to reserved", chargerId);
         } catch (Exception e) {
-            log.error("Error processing deposit for reservation {}: {}", saved.getReservationId(), e.getMessage(), e);
-            throw new IllegalStateException("Failed to process deposit: " + e.getMessage());
+            log.warn("Failed to update charger status to reserved: {}", e.getMessage());
+            // Continue even if charger status update fails
+        }
+        
+        // Send notification to admin about new reservation
+        try {
+            notificationServiceClient.createNotification(new CreateNotificationRequestDto(
+                    null, // null = send to all admins (notification service will handle this)
+                    CreateNotificationRequestDto.NotificationType.reservation_confirmed,
+                    "Đặt chỗ mới",
+                    String.format("Có đặt chỗ mới tại trạm %d, trụ sạc %d. Thời gian: %s đến %s",
+                            saved.getStationId(), saved.getChargerId(),
+                            saved.getReservedStartTime(), saved.getReservedEndTime()),
+                    saved.getReservationId()
+            ));
+            log.info("Notification sent to admin about new reservation {}", saved.getReservationId());
+        } catch (Exception e) {
+            log.warn("Failed to send notification to admin: {}", e.getMessage());
+            // Continue even if notification fails
+        }
+        
+        // Also send notification to user
+        try {
+            notificationServiceClient.createNotification(new CreateNotificationRequestDto(
+                    requestDto.getUserId(),
+                    CreateNotificationRequestDto.NotificationType.reservation_confirmed,
+                    "Đặt chỗ thành công",
+                    String.format("Bạn đã đặt chỗ thành công. Mã xác nhận: %s. Thời gian: %s đến %s",
+                            saved.getConfirmationCode(),
+                            saved.getReservedStartTime(), saved.getReservedEndTime()),
+                    saved.getReservationId()
+            ));
+            log.info("Notification sent to user {} about reservation {}", requestDto.getUserId(), saved.getReservationId());
+        } catch (Exception e) {
+            log.warn("Failed to send notification to user: {}", e.getMessage());
+            // Continue even if notification fails
         }
         
         saved = reservationRepository.save(saved);
-        log.info("Reservation confirmed with deposit: {}", saved.getReservationId());
+        log.info("Reservation confirmed: {}", saved.getReservationId());
 
         return convertToDto(saved);
     }
@@ -219,6 +230,7 @@ public class ReservationServiceImpl implements ReservationService {
         
         // Refund deposit if not already refunded
         if (reservation.getDepositAmount() != null && 
+            reservation.getDepositPaymentId() != null &&
             (reservation.getDepositRefunded() == null || !reservation.getDepositRefunded())) {
             
             try {
@@ -226,6 +238,7 @@ public class ReservationServiceImpl implements ReservationService {
                 com.chargingservice.dtos.internal.RefundDepositRequestDto refundRequest = 
                     new com.chargingservice.dtos.internal.RefundDepositRequestDto();
                 refundRequest.setReservationId(reservationId);
+                refundRequest.setPaymentId(reservation.getDepositPaymentId()); // Use depositPaymentId to find payment
                 refundRequest.setUserId(userId);
                 refundRequest.setAmount(reservation.getDepositAmount());
                 
@@ -279,7 +292,71 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setSessionId(session.getSessionId());
         reservation.setStatus(Reservation.ReservationStatus.active);
         reservationRepository.save(reservation);
+        
+        // Update charger status from reserved to in_use
+        try {
+            UpdateChargerStatusDto updateStatus = new UpdateChargerStatusDto();
+            updateStatus.setStatus(UpdateChargerStatusDto.ChargerStatus.in_use);
+            stationServiceClient.updateChargerStatus(reservation.getChargerId(), updateStatus);
+            log.info("Updated charger {} status from reserved to in_use", reservation.getChargerId());
+        } catch (Exception e) {
+            log.warn("Failed to update charger status to in_use: {}", e.getMessage());
+        }
 
+        return session;
+    }
+    
+    /**
+     * Start session from QR code (quét QR code tại trạm)
+     */
+    @Override
+    @Transactional
+    public SessionResponseDto startSessionFromQRCode(String qrCode, Long userId) {
+        log.info("Starting session from QR code: {} for user {}", qrCode, userId);
+        
+        // Tìm reservation bằng QR code
+        Reservation reservation = reservationRepository.findByQrCode(qrCode)
+                .orElseThrow(() -> new RuntimeException("Reservation not found for QR code: " + qrCode));
+        
+        // Validate user
+        if (!reservation.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: QR code does not belong to you");
+        }
+        
+        // Validate status
+        if (reservation.getStatus() != Reservation.ReservationStatus.confirmed) {
+            throw new IllegalStateException("Reservation is not in confirmed status. Current status: " + reservation.getStatus());
+        }
+        
+        // Check if session already started
+        if (reservation.getSessionId() != null) {
+            throw new IllegalStateException("Session already started for this reservation. Session ID: " + reservation.getSessionId());
+        }
+        
+        // Start charging session
+        StartSessionRequestDto sessionRequest = new StartSessionRequestDto();
+        sessionRequest.setUserId(userId);
+        sessionRequest.setStationId(reservation.getStationId());
+        sessionRequest.setChargerId(reservation.getChargerId());
+        
+        SessionResponseDto session = chargingService.startSession(sessionRequest);
+        
+        // Link session to reservation
+        reservation.setSessionId(session.getSessionId());
+        reservation.setStatus(Reservation.ReservationStatus.active);
+        reservationRepository.save(reservation);
+        
+        // Update charger status from reserved to in_use
+        try {
+            UpdateChargerStatusDto updateStatus = new UpdateChargerStatusDto();
+            updateStatus.setStatus(UpdateChargerStatusDto.ChargerStatus.in_use);
+            stationServiceClient.updateChargerStatus(reservation.getChargerId(), updateStatus);
+            log.info("Updated charger {} status from reserved to in_use", reservation.getChargerId());
+        } catch (Exception e) {
+            log.warn("Failed to update charger status to in_use: {}", e.getMessage());
+        }
+        
+        log.info("Session {} started from QR code {} for reservation {}", session.getSessionId(), qrCode, reservation.getReservationId());
         return session;
     }
 
@@ -335,13 +412,43 @@ public class ReservationServiceImpl implements ReservationService {
      */
     private Long findAvailableCharger(Long stationId, LocalDateTime startTime, LocalDateTime endTime) {
         try {
+            log.info("Finding available charger at station {} for time slot {} - {}", stationId, startTime, endTime);
             // Lấy danh sách chargers từ station-service
-            List<Map<String, Object>> chargers = stationServiceClient.getChargersByStationId(stationId);
+            List<Map<String, Object>> chargers;
+            try {
+                log.info("Calling station-service to get chargers for station {}", stationId);
+                chargers = stationServiceClient.getChargersByStationId(stationId);
+                log.info("Received {} chargers from station-service", chargers != null ? chargers.size() : 0);
+            } catch (org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException e) {
+                log.error("STATION-SERVICE không khả dụng (Circuit breaker). Có thể service chưa chạy hoặc chưa đăng ký với Eureka. Error: {}", e.getMessage());
+                throw new IllegalStateException("Trạm sạc service hiện không khả dụng. Vui lòng đảm bảo Station Service đang chạy và đã đăng ký với Eureka.");
+            } catch (feign.FeignException.NotFound e) {
+                log.error("Station {} không tồn tại (404): {}", stationId, e.getMessage());
+                throw new IllegalStateException("Trạm " + stationId + " không tồn tại. Vui lòng chọn trạm khác.");
+            } catch (feign.FeignException e) {
+                log.error("Feign exception when calling station-service for station {}: Status={}, Message={}", 
+                        stationId, e.status(), e.getMessage());
+                throw new IllegalStateException("Không thể kết nối đến trạm sạc service (HTTP " + e.status() + 
+                        "). Vui lòng kiểm tra Station Service đang chạy.");
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                // ResourceAccessException wraps ConnectException, SocketTimeoutException, and other connection issues
+                log.error("Resource access exception when calling station-service for station {}: {} (Cause: {})", 
+                        stationId, e.getMessage(), e.getCause() != null ? e.getCause().getClass().getSimpleName() : "unknown");
+                throw new IllegalStateException("Không thể kết nối đến trạm sạc service. Vui lòng đảm bảo Station Service đang chạy (port 9001) và đã đăng ký với Eureka.");
+            } catch (Exception e) {
+                log.error("Unexpected error when calling station-service for station {}: {} - {}", 
+                        stationId, e.getClass().getSimpleName(), e.getMessage(), e);
+                throw new IllegalStateException("Lỗi khi lấy danh sách trụ sạc từ trạm " + stationId + ": " + 
+                        (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()) + 
+                        ". Vui lòng kiểm tra Station Service đang chạy.");
+            }
             
             if (chargers == null || chargers.isEmpty()) {
-                log.warn("No chargers found at station {}", stationId);
-                return null;
+                log.warn("No chargers found at station {}. This station may not have any chargers configured.", stationId);
+                throw new IllegalStateException("Trạm " + stationId + " không có trụ sạc nào. Vui lòng chọn trạm khác.");
             }
+            
+            log.info("Found {} chargers at station {}", chargers.size(), stationId);
 
             List<Reservation.ReservationStatus> blockingStatuses = Arrays.asList(
                     Reservation.ReservationStatus.pending,
@@ -350,38 +457,115 @@ public class ReservationServiceImpl implements ReservationService {
             );
 
             // Tìm charger available (status = available hoặc reserved) và không có overlap
+            int availableCount = 0;
+            int busyCount = 0;
+            int invalidStatusCount = 0;
+            int hasActiveSessionCount = 0;
+            int hasOverlapCount = 0;
+            
             for (Map<String, Object> charger : chargers) {
+                // Try multiple possible keys for charger ID (chargerId, id, charger_id)
                 Long chargerId = getLongValue(charger, "chargerId");
-                String status = (String) charger.get("status");
+                if (chargerId == null) {
+                    chargerId = getLongValue(charger, "id");
+                }
+                if (chargerId == null) {
+                    chargerId = getLongValue(charger, "charger_id");
+                }
                 
-                // Chỉ xét chargers có status available hoặc reserved
-                if (chargerId != null && (status == null || "available".equals(status) || "reserved".equals(status))) {
-                    // Kiểm tra không có active charging session
-                    boolean hasActiveSession = chargingSessionRepository
-                            .findFirstByChargerIdAndSessionStatus(chargerId, ChargingSession.SessionStatus.charging)
-                            .isPresent();
-                    
-                    if (hasActiveSession) {
+                // Try multiple possible keys for status
+                Object statusObj = charger.get("status");
+                if (statusObj == null) {
+                    statusObj = charger.get("chargerStatus");
+                }
+                
+                // Convert status to string (handle both enum and string)
+                String status = null;
+                if (statusObj != null) {
+                    status = statusObj.toString(); // Works for both enum and string
+                }
+                
+                if (chargerId == null) {
+                    log.warn("Skipping charger with null chargerId. Available keys: {}", charger.keySet());
+                    continue;
+                }
+                
+                log.debug("Checking charger {} with status {} (type: {}, keys: {})", 
+                        chargerId, status, statusObj != null ? statusObj.getClass().getSimpleName() : "null", charger.keySet());
+                
+                // Chỉ xét chargers có status available, reserved, hoặc null (coi như available)
+                // Status có thể là: AVAILABLE, available, RESERVED, reserved (enum hoặc string)
+                if (status != null) {
+                    String statusLower = status.toLowerCase();
+                    if (!"available".equals(statusLower) && !"reserved".equals(statusLower)) {
+                        invalidStatusCount++;
+                        log.debug("Charger {} has invalid status: {} (not available or reserved)", chargerId, status);
                         continue;
                     }
-
-                    // Kiểm tra không có overlapping reservations
-                    List<Reservation> overlaps = reservationRepository.findOverlappingReservations(
-                            chargerId, startTime, endTime, blockingStatuses
-                    );
-                    
-                    if (overlaps.isEmpty()) {
-                        log.info("Found available charger {} at station {}", chargerId, stationId);
-                        return chargerId;
-                    }
                 }
+                
+                availableCount++;
+                
+                // Kiểm tra không có active charging session
+                boolean hasActiveSession = chargingSessionRepository
+                        .findFirstByChargerIdAndSessionStatus(chargerId, ChargingSession.SessionStatus.charging)
+                        .isPresent();
+                
+                if (hasActiveSession) {
+                    hasActiveSessionCount++;
+                    log.debug("Charger {} has active charging session, skipping", chargerId);
+                    continue;
+                }
+
+                // Kiểm tra không có overlapping reservations
+                List<Reservation> overlaps = reservationRepository.findOverlappingReservations(
+                        chargerId, startTime, endTime, blockingStatuses
+                );
+                
+                if (!overlaps.isEmpty()) {
+                    hasOverlapCount++;
+                    log.debug("Charger {} has {} overlapping reservations, skipping", chargerId, overlaps.size());
+                    continue;
+                }
+                
+                // Tìm thấy charger available!
+                log.info("Found available charger {} at station {}", chargerId, stationId);
+                return chargerId;
             }
             
-            log.warn("No available charger found at station {} for time slot {} - {}", stationId, startTime, endTime);
-            return null;
+            // Log chi tiết về lý do không tìm thấy charger
+            StringBuilder reasonMsg = new StringBuilder();
+            reasonMsg.append("Tổng số trụ sạc: ").append(chargers.size()).append(", ");
+            reasonMsg.append("Trạng thái hợp lệ: ").append(availableCount).append(", ");
+            
+            if (invalidStatusCount > 0) {
+                reasonMsg.append("Đang bận/offline/maintenance: ").append(invalidStatusCount).append(", ");
+            }
+            if (hasActiveSessionCount > 0) {
+                reasonMsg.append("Đang sạc: ").append(hasActiveSessionCount).append(", ");
+            }
+            if (hasOverlapCount > 0) {
+                reasonMsg.append("Đã được đặt chỗ: ").append(hasOverlapCount);
+            }
+            
+            log.warn("No available charger found at station {} for time slot {} - {}. " +
+                    "Summary: total={}, available_status={}, has_active_session={}, has_overlap={}, invalid_status={}. {}",
+                    stationId, startTime, endTime, chargers.size(), availableCount, 
+                    hasActiveSessionCount, hasOverlapCount, invalidStatusCount, reasonMsg.toString());
+            
+            // Tạo thông báo lỗi chi tiết cho user
+            String errorMessage = String.format(
+                "Tất cả các trụ sạc tại trạm %d đều không khả dụng cho khung giờ %s - %s. " +
+                "Lý do: %s. Vui lòng thử chọn khung giờ khác hoặc trạm khác.",
+                stationId, startTime, endTime, reasonMsg.toString()
+            );
+            throw new IllegalStateException(errorMessage);
+        } catch (IllegalStateException e) {
+            // Re-throw IllegalStateException (đã có thông báo lỗi chi tiết)
+            throw e;
         } catch (Exception e) {
             log.error("Error finding available charger at station {}: {}", stationId, e.getMessage(), e);
-            return null;
+            throw new IllegalStateException("Lỗi khi tìm trụ sạc tại trạm " + stationId + ": " + e.getMessage());
         }
     }
 

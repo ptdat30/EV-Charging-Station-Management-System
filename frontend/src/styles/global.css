@@ -5,6 +5,7 @@
 
 /* Import Variables */
 @import './variables.css';
+@import './Optimizations.css';
 
 /* 1. Reset Box Model + Font */
 *, *::before, *::after {

@@ -65,5 +65,17 @@ public class ReservationController {
             @PathVariable Long id) {
         return ResponseEntity.ok(reservationService.startSessionFromReservation(id, userId));
     }
+    
+    /**
+     * Start session from QR code scan
+     * POST /api/reservations/qr/start
+     */
+    @PostMapping("/qr/start")
+    public ResponseEntity<com.chargingservice.dtos.SessionResponseDto> startSessionFromQRCode(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam String qrCode) {
+        com.chargingservice.dtos.SessionResponseDto session = reservationService.startSessionFromQRCode(qrCode, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(session);
+    }
 }
 

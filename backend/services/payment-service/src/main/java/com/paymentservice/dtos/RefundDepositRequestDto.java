@@ -1,4 +1,4 @@
-package com.chargingservice.dtos.internal;
+package com.paymentservice.dtos;
 
 import lombok.Data;
 import java.math.BigDecimal;
@@ -11,4 +11,3 @@ public class RefundDepositRequestDto {
     private BigDecimal amount;
     private String reason = "Check-in successful";
 }
-

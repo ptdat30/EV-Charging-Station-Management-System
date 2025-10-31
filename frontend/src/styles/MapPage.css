@@ -5,35 +5,18 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
   
-  .map-header {
-    background: #27ae60;
-    color: white;
-    text-align: center;
-    padding: 2rem 1rem;
-  }
-  
-  .map-header h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .map-header p {
-    opacity: 0.9;
-    font-size: 0.95rem;
-  }
-  
   .search-bar {
     background: white;
-    padding: 1.5rem;
+    padding: var(--spacing-4) var(--spacing-6);
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: var(--spacing-3);
     align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin: -2rem 1rem 2rem;
+    box-shadow: var(--shadow-sm);
+    margin: var(--spacing-4) var(--spacing-4) var(--spacing-6);
     position: relative;
     z-index: 10;
-    border-radius: 12px;
+    border-radius: var(--border-radius-lg);
   }
   
   .search-input-wrapper {
@@ -125,6 +108,17 @@
     width: 120px;
     height: 120px;
     object-fit: cover;
+  }
+
+  .station-img-placeholder {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
   }
   
   .station-info {
@@ -281,9 +275,65 @@
     gap: var(--spacing-1);
     margin-top: var(--spacing-2);
   }
-  
+
   .station-info .price i {
     color: var(--color-primary);
+  }
+
+  .station-info .charger-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    margin: var(--spacing-2) 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .station-info .charger-info i {
+    color: #f39c12;
+  }
+
+  .station-info .status-badge {
+    margin-top: var(--spacing-2);
+  }
+
+  .station-info .status-badge .status {
+    display: inline-block;
+    padding: var(--spacing-1) var(--spacing-3);
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .station-info .status-badge .status.online {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .station-info .status-badge .status.offline {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .station-info .status-badge .status.maintenance {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .station-info .distance-value {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+    margin-right: var(--spacing-2);
+  }
+
+  .station-info .address {
+    color: var(--color-text-secondary);
+  }
+
+  .station-info .district {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    margin-left: var(--spacing-2);
   }
   
   .station-info .distance {
@@ -304,6 +354,35 @@
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Leaflet map styles */
+  .map-container .leaflet-container {
+    height: 100%;
+    width: 100%;
+    border-radius: 16px;
+  }
+  
+  /* Leaflet popup styles */
+  .map-container .leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    padding: 0.5rem;
+  }
+  
+  .map-container .leaflet-popup-content {
+    margin: 0.5rem;
+  }
+  
+  .map-container .leaflet-popup-content strong {
+    color: var(--color-primary);
+    font-size: var(--font-size-base);
+  }
+  
+  .map-container .leaflet-popup-content small {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
   }
   
   /* Responsive */
@@ -324,4 +403,59 @@
     .search-input-wrapper {
       min-width: auto;
     }
+  }
+
+  /* Loading, Error, Empty States */
+  .loading-container,
+  .error-container,
+  .empty-container {
+    text-align: center;
+    padding: var(--spacing-8);
+    background: var(--color-white);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    margin: var(--spacing-4) 0;
+  }
+
+  .loading-container i,
+  .error-container i,
+  .empty-container i {
+    font-size: 3rem;
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .error-container i {
+    color: var(--color-error);
+  }
+
+  .empty-container i {
+    color: var(--color-text-tertiary);
+  }
+
+  .loading-container p,
+  .error-container p,
+  .empty-container p {
+    color: var(--color-text-secondary);
+    margin: var(--spacing-2) 0;
+  }
+
+  .error-container button,
+  .empty-container button {
+    margin-top: var(--spacing-4);
+    padding: var(--spacing-3) var(--spacing-6);
+    background: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--transition-base);
+  }
+
+  .error-container button:hover,
+  .empty-container button:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }

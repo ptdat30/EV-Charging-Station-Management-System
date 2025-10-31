@@ -41,4 +41,11 @@ public interface ChargingService {
      * @return Danh sách các phiên sạc.
      */
     List<SessionResponseDto> getAllSessions();
+    
+    /**
+     * Lấy trạng thái sạc real-time (SOC %, thời gian còn lại, chi phí)
+     * @param sessionId ID của phiên sạc
+     * @return Trạng thái sạc chi tiết
+     */
+    com.chargingservice.dtos.SessionStatusDto getSessionStatus(Long sessionId);
 }

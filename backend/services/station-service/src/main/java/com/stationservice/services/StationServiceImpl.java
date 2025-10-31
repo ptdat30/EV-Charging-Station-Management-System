@@ -9,13 +9,14 @@ import com.stationservice.entities.Station;
 import com.stationservice.repositories.ChargerRepository;
 import com.stationservice.repositories.StationRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.stationservice.exceptions.ResourceNotFoundException;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StationServiceImpl implements StationService {
 
+    private static final Logger log = LoggerFactory.getLogger(StationServiceImpl.class);
     private final StationRepository stationRepository;
     private final ChargerRepository chargerRepository;
 
@@ -46,9 +48,21 @@ public class StationServiceImpl implements StationService {
 
     @Override
     public List<StationResponseDto> getAllStations() {
-        return stationRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        try {
+            log.debug("Fetching all stations from repository");
+            List<Station> stations = stationRepository.findAll();
+            log.debug("Found {} stations, converting to DTOs", stations.size());
+            
+            List<StationResponseDto> dtos = stations.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+            
+            log.debug("Successfully converted {} stations to DTOs", dtos.size());
+            return dtos;
+        } catch (Exception e) {
+            log.error("Error in getAllStations: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
@@ -137,14 +151,27 @@ public class StationServiceImpl implements StationService {
     }
 
     private StationResponseDto convertToDto(Station station) {
-        StationResponseDto dto = new StationResponseDto();
-        dto.setStationId(station.getStationId());
-        dto.setStationCode(station.getStationCode());
-        dto.setStationName(station.getStationName());
-        dto.setLocation(station.getLocation());
-        dto.setStatus(station.getStatus());
-        dto.setRating(station.getRating());
-        dto.setCreatedAt(station.getCreatedAt());
-        return dto;
+        try {
+            if (station == null) {
+                log.warn("Attempting to convert null station to DTO");
+                throw new IllegalArgumentException("Station cannot be null");
+            }
+            
+            StationResponseDto dto = new StationResponseDto();
+            dto.setStationId(station.getStationId());
+            dto.setStationCode(station.getStationCode());
+            dto.setStationName(station.getStationName());
+            dto.setLocation(station.getLocation());
+            dto.setStatus(station.getStatus());
+            dto.setRating(station.getRating());
+            dto.setCreatedAt(station.getCreatedAt());
+            
+            log.trace("Converted station {} to DTO", station.getStationId());
+            return dto;
+        } catch (Exception e) {
+            log.error("Error converting station to DTO: stationId={}, error={}", 
+                    station != null ? station.getStationId() : "null", e.getMessage(), e);
+            throw new RuntimeException("Error converting station to DTO: " + e.getMessage(), e);
+        }
     }
 }

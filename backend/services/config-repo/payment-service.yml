@@ -1,11 +1,13 @@
 server:
-  port: 8084 # Chạy payment-service trên cổng mới
+  port: 8083 # Chạy payment-service trên cổng mới
 
 spring:
+  application:
+    name: PAYMENT-SERVICE  # Phải khớp với tên trong FeignClient và API Gateway route
   datasource:
     url: jdbc:mysql://localhost:3306/payment_service_db?useSSL=false
     username: root # Thay bằng username của bạn
-    password: your_password # Thay bằng mật khẩu của bạn
+    password: huynhdat123@ # Thay bằng mật khẩu của bạn
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,3 +17,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+    non-secure-port: 8083
+    instance-id: ${spring.application.name}:${server.port}
