@@ -35,12 +35,6 @@ function AppRouter() {
             <Route path="verify" element={<VerifyAccount />} />
             <Route path="forgot-password" element={<ForgotPasswordScreen />} />
             <Route path="pricing" element={<PricingPage />} />
-            <Route path="sessions/qr" element={<ProtectedRoute roles={['DRIVER','STAFF']} />}>
-                <Route index element={<QRScanner />} />
-            </Route>
-            <Route path="sessions/live" element={<ProtectedRoute roles={['DRIVER']} />}>
-                <Route index element={<ChargingLive />} />
-            </Route>
 
             {/* --- PROTECTED ROUTES - DRIVER & STAFF --- */}
             <Route element={<ProtectedRoute roles={['DRIVER', 'STAFF']} />}>
@@ -83,6 +77,16 @@ function AppRouter() {
                 <Route path="map" element={
                     <DriverLayout>
                         <FindStationPage />
+                    </DriverLayout>
+                } />
+                <Route path="sessions/live" element={
+                    <DriverLayout>
+                        <ChargingLive />
+                    </DriverLayout>
+                } />
+                <Route path="sessions/qr" element={
+                    <DriverLayout>
+                        <QRScanner />
                     </DriverLayout>
                 } />
             </Route>

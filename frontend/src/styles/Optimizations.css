@@ -1,0 +1,75 @@
+/* Optimizations.css - Global performance and visual improvements */
+
+/* Reduced motion for better performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimize font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Optimize image loading */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optimize button interactions */
+button,
+.btn,
+input[type="button"],
+input[type="submit"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optimize form inputs */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline-offset: 2px;
+}
+
+/* Loading states */
+.loading,
+.spinner {
+  will-change: transform;
+}
+
+/* Optimize transforms */
+.transformed,
+.hover-transform {
+  will-change: transform;
+}
+
+/* Contain layout for performance */
+.station-card,
+.kpi-card,
+.chart-dual {
+  contain: layout style paint;
+}
+

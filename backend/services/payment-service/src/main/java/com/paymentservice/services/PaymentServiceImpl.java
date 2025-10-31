@@ -5,6 +5,7 @@ import com.paymentservice.dtos.PaymentResponseDto;
 import com.paymentservice.dtos.ProcessDepositRequestDto;
 import com.paymentservice.dtos.ProcessPaymentRequestDto;
 import com.paymentservice.dtos.ProcessRefundRequestDto;
+import com.paymentservice.dtos.RefundDepositRequestDto;
 import com.paymentservice.entities.Payment;
 import com.paymentservice.entities.Wallet;
 import com.paymentservice.exceptions.ResourceNotFoundException;
@@ -143,6 +144,52 @@ public class PaymentServiceImpl implements PaymentService {
         
         log.info("Refund processed successfully. Payment ID: {}, Amount: {}", 
                 refundedPayment.getPaymentId(), refundedPayment.getAmount());
+        return convertToDto(refundedPayment);
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponseDto refundDeposit(RefundDepositRequestDto requestDto) {
+        log.info("Refunding deposit for reservation {} - payment {} - user {} - amount {}", 
+                requestDto.getReservationId(), requestDto.getPaymentId(), requestDto.getUserId(), requestDto.getAmount());
+        
+        // 1. Tìm payment record bằng paymentId
+        if (requestDto.getPaymentId() == null) {
+            throw new IllegalArgumentException("Payment ID is required for deposit refund");
+        }
+        
+        Payment payment = paymentRepository.findById(requestDto.getPaymentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + requestDto.getPaymentId()));
+
+        // 2. Kiểm tra payment thuộc về user
+        if (!payment.getUserId().equals(requestDto.getUserId())) {
+            throw new IllegalStateException("Payment does not belong to user: " + requestDto.getUserId());
+        }
+
+        // 3. Kiểm tra payment đã được refund chưa
+        if (payment.getPaymentStatus() == Payment.PaymentStatus.refunded) {
+            throw new IllegalStateException("Deposit payment already refunded");
+        }
+
+        // 4. Kiểm tra payment phải ở trạng thái completed (deposit đã được thanh toán)
+        if (payment.getPaymentStatus() != Payment.PaymentStatus.completed) {
+            throw new IllegalStateException("Cannot refund deposit payment with status: " + payment.getPaymentStatus());
+        }
+
+        // 5. Tìm ví và hoàn tiền
+        Wallet wallet = walletRepository.findByUserId(requestDto.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user ID: " + requestDto.getUserId()));
+
+        wallet.setBalance(wallet.getBalance().add(payment.getAmount()));
+        walletRepository.save(wallet);
+
+        // 6. Cập nhật trạng thái payment thành refunded
+        payment.setPaymentStatus(Payment.PaymentStatus.refunded);
+        payment.setPaymentTime(LocalDateTime.now());
+        Payment refundedPayment = paymentRepository.save(payment);
+        
+        log.info("Deposit refunded successfully for reservation {}. Payment ID: {}, Amount: {}", 
+                requestDto.getReservationId(), refundedPayment.getPaymentId(), refundedPayment.getAmount());
         return convertToDto(refundedPayment);
     }
 

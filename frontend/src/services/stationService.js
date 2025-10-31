@@ -1,7 +1,26 @@
 import apiClient from '../config/api';
 
+// Get all stations
+export const getAllStations = async () => {
+    const response = await apiClient.get('/stations/getall');
+    return response.data;
+};
+
+// Search stations with filters
 export const searchStations = async (params = {}) => {
     const response = await apiClient.get('/stations/search', { params });
+    return response.data;
+};
+
+// Get station by ID
+export const getStationById = async (stationId) => {
+    const response = await apiClient.get(`/stations/${stationId}`);
+    return response.data;
+};
+
+// Get chargers by station ID
+export const getStationChargers = async (stationId) => {
+    const response = await apiClient.get(`/stations/${stationId}/chargers`);
     return response.data;
 };
 
@@ -31,6 +50,14 @@ export const startSessionFromReservation = async (reservationId) => {
 
 export const checkInReservation = async (reservationId) => {
     const response = await apiClient.post(`/reservations/${reservationId}/check-in`);
+    return response.data;
+};
+
+// Start session from QR code
+export const startSessionFromQRCode = async (qrCode) => {
+    const response = await apiClient.post(`/reservations/qr/start`, null, {
+        params: { qrCode }
+    });
     return response.data;
 };
 

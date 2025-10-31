@@ -1,0 +1,43 @@
+/* LazyComponent.css */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  min-height: 200px;
+}
+
+.loading-spinner p {
+  margin-top: var(--spacing-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+.spinner-small .spinner {
+  width: 24px;
+  height: 24px;
+}
+
+.spinner-medium .spinner {
+  width: 40px;
+  height: 40px;
+}
+
+.spinner-large .spinner {
+  width: 60px;
+  height: 60px;
+}
+
+.loading-spinner .spinner {
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

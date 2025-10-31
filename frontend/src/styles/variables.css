@@ -1,0 +1,164 @@
+/* ========================================
+   DESIGN SYSTEM - CSS VARIABLES
+   Thống nhất toàn bộ Frontend
+   ======================================== */
+
+:root {
+  /* === COLORS === */
+  /* Primary Colors */
+  --color-primary: #4CAF50;
+  --color-primary-dark: #45a049;
+  --color-primary-light: #81C784;
+  --color-primary-lighter: #C8E6C9;
+  
+  /* Secondary Colors */
+  --color-secondary: #2196F3;
+  --color-secondary-dark: #1976D2;
+  
+  /* Neutral Colors */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-gray-50: #FAFAFA;
+  --color-gray-100: #F5F5F5;
+  --color-gray-200: #EEEEEE;
+  --color-gray-300: #E0E0E0;
+  --color-gray-400: #BDBDBD;
+  --color-gray-500: #9E9E9E;
+  --color-gray-600: #757575;
+  --color-gray-700: #616161;
+  --color-gray-800: #424242;
+  --color-gray-900: #212121;
+  
+  /* Text Colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #FFFFFF;
+  
+  /* Background Colors */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8F9FA;
+  --color-bg-tertiary: #F5F5F5;
+  --color-bg-dark: #1A1A1A;
+  --color-bg-overlay: rgba(0, 0, 0, 0.4);
+  
+  /* Status Colors */
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #F44336;
+  --color-info: #2196F3;
+  
+  /* === TYPOGRAPHY === */
+  /* Font Family */
+  --font-family-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-family-heading: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 1.875rem;    /* 30px */
+  --font-size-4xl: 2.25rem;     /* 36px */
+  --font-size-5xl: 3rem;        /* 48px */
+  --font-size-6xl: 3.75rem;     /* 60px */
+  --font-size-7xl: 4.5rem;      /* 72px */
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.7;
+  
+  /* === SPACING === */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;    /* 4px */
+  --spacing-2: 0.5rem;     /* 8px */
+  --spacing-3: 0.75rem;    /* 12px */
+  --spacing-4: 1rem;       /* 16px */
+  --spacing-5: 1.25rem;    /* 20px */
+  --spacing-6: 1.5rem;     /* 24px */
+  --spacing-8: 2rem;       /* 32px */
+  --spacing-10: 2.5rem;    /* 40px */
+  --spacing-12: 3rem;      /* 48px */
+  --spacing-16: 4rem;      /* 64px */
+  --spacing-20: 5rem;      /* 80px */
+  --spacing-24: 6rem;      /* 96px */
+  
+  /* === BORDERS === */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 20px;
+  --border-radius-3xl: 24px;
+  --border-radius-full: 9999px;
+  
+  --border-width-thin: 1px;
+  --border-width-medium: 2px;
+  --border-width-thick: 3px;
+  
+  --border-color-light: var(--color-gray-200);
+  --border-color-medium: var(--color-gray-300);
+  --border-color-dark: var(--color-gray-400);
+  
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-primary: 0 4px 15px rgba(76, 175, 80, 0.3);
+  --shadow-primary-lg: 0 6px 20px rgba(76, 175, 80, 0.4);
+  
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+  
+  /* === Z-INDEX === */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  
+  /* === CONTAINER === */
+  --container-max-width: 1400px;
+  --container-padding: 2rem;
+  
+  /* === HEADER === */
+  --header-height: 80px;
+  --header-bg: var(--color-white);
+  --header-shadow: var(--shadow-md);
+  
+  /* === BUTTONS === */
+  --button-padding-sm: 0.5rem 1rem;
+  --button-padding-md: 0.75rem 2rem;
+  --button-padding-lg: 1rem 2.5rem;
+  --button-font-size: 1rem;
+  --button-font-weight: var(--font-weight-semibold);
+  --button-border-radius: var(--border-radius-md);
+  
+  /* === INPUT === */
+  --input-padding: 1rem 1.25rem;
+  --input-font-size: var(--font-size-base);
+  --input-border-radius: var(--border-radius-md);
+  --input-border-color: var(--border-color-medium);
+  --input-border-width: var(--border-width-thin);
+  --input-focus-border-color: var(--color-primary);
+  --input-focus-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
