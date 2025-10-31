@@ -8,6 +8,7 @@ import com.chargingservice.dtos.SessionResponseDto;
 import com.chargingservice.dtos.StartSessionRequestDto;
 import com.chargingservice.services.ChargingService;
 import lombok.RequiredArgsConstructor;
+import com.chargingservice.repositories.ChargingSessionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import java.util.List;
 public class ChargingController {
 
     private final ChargingService chargingService;
+    private final ChargingSessionRepository sessionRepository;
 
     // [COMMAND]: POST /api/sessions/start
     @PostMapping("/start")
@@ -52,5 +54,15 @@ public class ChargingController {
     @GetMapping
     public ResponseEntity<List<SessionResponseDto>> getAllSessions() {
         return ResponseEntity.ok(chargingService.getAllSessions());
+    }
+
+    // [COMMAND]: GET /api/sessions/active
+    @GetMapping("/active")
+    public ResponseEntity<SessionResponseDto> getActiveSession(@RequestHeader("X-User-Id") Long userId) {
+        // Tìm phiên sạc đang charging gần nhất của user
+        var opt = sessionRepository.findFirstByUserIdAndSessionStatusOrderByStartTimeDesc(
+                userId, com.chargingservice.entities.ChargingSession.SessionStatus.charging);
+        return opt.map(s -> ResponseEntity.ok(chargingService.getSessionById(s.getSessionId())))
+                .orElse(ResponseEntity.noContent().build());
     }
 }

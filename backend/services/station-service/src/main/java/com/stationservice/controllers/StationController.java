@@ -35,6 +35,20 @@ public class StationController {
         return ResponseEntity.ok(stationService.getAllStations());
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<StationResponseDto>> searchStations(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Double maxDistance,
+            @RequestParam(required = false) String chargerType,
+            @RequestParam(required = false) Double minPower,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy
+    ) {
+        return ResponseEntity.ok(stationService.searchStations(city, latitude, longitude, maxDistance, chargerType, minPower, status, sortBy));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<StationResponseDto> updateStation(@PathVariable Long id, @RequestBody UpdateStationRequestDto requestDto) {
         return ResponseEntity.ok(stationService.updateStation(id, requestDto));

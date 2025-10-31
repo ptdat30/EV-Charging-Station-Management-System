@@ -3,6 +3,7 @@ package com.authservice.controllers;
 
 import com.authservice.dtos.LoginRequestDto;
 import com.authservice.dtos.LoginResponseDto;
+import com.authservice.dtos.RegisterRequestDto;
 import com.authservice.services.AuthService;
 import com.authservice.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,18 @@ public class AuthController {
         // Service sẽ xử lý lỗi và ném exception nếu đăng nhập thất bại
         LoginResponseDto response = authService.login(loginRequestDto);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDto registerRequestDto) {
+        log.info("Received register request for email: {}", registerRequestDto.getEmail());
+        return ResponseEntity.status(201).body(authService.register(registerRequestDto));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // JWT stateless: frontend xoá token. Có thể bổ sung blacklist nếu cần.
+        return ResponseEntity.ok(Map.of("message", "Logged out"));
     }
 
     @GetMapping("/validate")

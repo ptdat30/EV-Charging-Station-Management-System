@@ -1,48 +1,112 @@
 // src/routes/AppRouter.jsx
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
-import RegisterPage from '../pages/DriverApp/Auth/RegisterPage';
-import ForgotPasswordScreen from '../pages/DriverApp/Auth/ForgotPasswordScreen';
-import UserProfileScreen from '../pages/DriverApp/Profile/UserProfileScreen';
+// Import các trang công khai
 import HomePage from '../components/HomePage';
 import Login from '../components/Login';
 import Register from '../components/Register';
-import ProtectedRoute from './ProtectedRoute';
+import VerifyAccount from '../pages/DriverApp/Auth/VerifyAccount.jsx';
+import ForgotPasswordScreen from '../pages/DriverApp/Auth/ForgotPasswordScreen';
 import FindStationPage from '../pages/FindStationPage';
-import Dashboard from '../components/Dashboard';
 import PricingPage from '../pages/PricingPage';
-import AdminPage from '../pages/AdminPage';
+
+// Import các trang cần bảo vệ
+import ProtectedRoute from './ProtectedRoute';
+import DriverLayout from '../components/DriverLayout';
+import Dashboard from '../components/Dashboard';
+import UserProfileScreen from '../pages/DriverApp/Profile/UserProfileScreen';
 import PaymentPage from '../pages/PaymentPage';
+import WalletPage from '../pages/Wallet/WalletPage.jsx';
+import BookingPage from '../pages/DriverApp/Booking/BookingPage.jsx';
+import QRScanner from '../pages/DriverApp/QR/QRScanner.jsx';
+import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
+
+// Import trang Admin
+import AdminPage from '../pages/AdminPage';
 
 function AppRouter() {
-  return (
-
+    return (
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
-          <Route path="/map" element={<FindStationPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/payment" element={<PaymentPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+            {/* --- PUBLIC ROUTES --- */}
+            <Route index element={<HomePage />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="verify" element={<VerifyAccount />} />
+            <Route path="forgot-password" element={<ForgotPasswordScreen />} />
+            <Route path="pricing" element={<PricingPage />} />
+            <Route path="sessions/qr" element={<ProtectedRoute roles={['DRIVER','STAFF']} />}>
+                <Route index element={<QRScanner />} />
+            </Route>
+            <Route path="sessions/live" element={<ProtectedRoute roles={['DRIVER']} />}>
+                <Route index element={<ChargingLive />} />
+            </Route>
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/driver/profile" element={<UserProfileScreen />} />
-            {/* Thêm các protected routes khác ở đây */}
-          </Route>
+            {/* --- PROTECTED ROUTES - DRIVER & STAFF --- */}
+            <Route element={<ProtectedRoute roles={['DRIVER', 'STAFF']} />}>
+                {/* Driver & Staff Routes with NavBar */}
+                <Route path="dashboard" element={
+                    <DriverLayout>
+                        <Dashboard />
+                    </DriverLayout>
+                } />
+                <Route path="driver/profile/info" element={
+                    <DriverLayout>
+                        <UserProfileScreen tab="info" />
+                    </DriverLayout>
+                } />
+                <Route path="driver/profile/vehicles" element={
+                    <DriverLayout>
+                        <UserProfileScreen tab="vehicles" />
+                    </DriverLayout>
+                } />
+                <Route path="driver/profile/history" element={
+                    <DriverLayout>
+                        <UserProfileScreen tab="history" />
+                    </DriverLayout>
+                } />
+                <Route path="payment" element={
+                    <DriverLayout>
+                        <PaymentPage />
+                    </DriverLayout>
+                } />
+                <Route path="wallet" element={
+                    <DriverLayout>
+                        <WalletPage />
+                    </DriverLayout>
+                } />
+                <Route path="stations/booking" element={
+                    <DriverLayout>
+                        <BookingPage />
+                    </DriverLayout>
+                } />
+                <Route path="map" element={
+                    <DriverLayout>
+                        <FindStationPage />
+                    </DriverLayout>
+                } />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route path="/admin/*" element={<AdminPage />} />
+            {/* --- STAFF ONLY ROUTES (nếu cần) --- */}
+            {/* Staff có thể dùng chung với Driver hoặc tạo routes riêng sau */}
 
-          {/* 404 Page */}
-          <Route path="*" element={<h1>404 - Trang không tồn tại</h1>} />
+            {/* --- ADMIN ROUTES --- */}
+            <Route element={<ProtectedRoute requireAdmin={true} />}>
+                <Route path="admin/*" element={<AdminPage />} />
+            </Route>
+
+            {/* --- 404 NOT FOUND --- */}
+            <Route path="*" element={
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <h2>404 - Trang không tồn tại</h2>
+                    <p>Rất tiếc, trang bạn tìm kiếm không có ở đây.</p>
+                    <a href="/" style={{ color: '#007bff', textDecoration: 'underline' }}>
+                        Quay lại trang chủ
+                    </a>
+                </div>
+            } />
         </Routes>
-
-  );
+    );
 }
 
 export default AppRouter;

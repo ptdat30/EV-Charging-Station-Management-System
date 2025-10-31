@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
         log.debug("Password encoded for user: {}", registerRequestDto.getEmail());
 
         User savedUser = userRepository.save(newUser);
-        log.info("User registered successfully with ID: {}", savedUser.getUserId());
+        log.info("User registered successfully with ID: {}", savedUser.getId());
         return savedUser; // Vẫn trả về User entity (bao gồm hash) cho register
     }
 
@@ -108,7 +108,7 @@ public class UserServiceImpl implements UserService {
 
         // Chuyển đổi sang DTO chứa cả password hash
         UserDetailDto detailDto = new UserDetailDto();
-        detailDto.setUserId(user.getUserId());
+        detailDto.setUserId(user.getId());
         detailDto.setEmail(user.getEmail());
         detailDto.setPasswordHash(user.getPasswordHash()); // Quan trọng
         detailDto.setUserType(user.getUserType());
@@ -116,6 +116,13 @@ public class UserServiceImpl implements UserService {
 
         log.debug("Found user details for email: {}", email);
         return detailDto;
+    }
+
+    // --- Verification ---
+    @Override
+    public UserResponseDto verifyByToken(String token) {
+        // Chưa hỗ trợ lưu token xác minh trong User entity. Tạm thời ném lỗi rõ ràng.
+        throw new UnsupportedOperationException("Account verification is not implemented in this build");
     }
 
 
@@ -133,7 +140,7 @@ public class UserServiceImpl implements UserService {
     // Chuyển User sang UserResponseDto (không chứa password hash)
     private UserResponseDto convertToDto(User user) {
         UserResponseDto dto = new UserResponseDto();
-        dto.setUserId(user.getUserId());
+        dto.setUserId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
         dto.setFullName(user.getFullName());

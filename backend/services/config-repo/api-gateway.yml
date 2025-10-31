@@ -54,6 +54,20 @@ spring:
             # XÓA BỎ "- StripPrefix=1"
             - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
+        - id: transactions-service-route
+          uri: lb://CHARGING-SERVICE
+          predicates:
+            - Path=/api/transactions/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
+
+        - id: reservations-service-route
+          uri: lb://CHARGING-SERVICE
+          predicates:
+            - Path=/api/reservations/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
+
         - id: payment-service-routes
           uri: lb://PAYMENT-SERVICE
           predicates:

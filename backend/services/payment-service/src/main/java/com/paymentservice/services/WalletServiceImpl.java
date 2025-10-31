@@ -27,4 +27,23 @@ public class WalletServiceImpl implements WalletService {
 
         return walletRepository.save(newWallet);
     }
+
+    @Override
+    public Wallet getOrCreateWallet(Long userId) {
+        return walletRepository.findByUserId(userId).orElseGet(() -> {
+            Wallet w = new Wallet();
+            w.setUserId(userId);
+            w.setBalance(java.math.BigDecimal.ZERO);
+            w.setStatus(Wallet.WalletStatus.active);
+            return walletRepository.save(w);
+        });
+    }
+
+    @Override
+    public Wallet deposit(Long userId, java.math.BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) throw new IllegalArgumentException("Amount must be positive");
+        Wallet wallet = getOrCreateWallet(userId);
+        wallet.setBalance(wallet.getBalance().add(amount));
+        return walletRepository.save(wallet);
+    }
 }

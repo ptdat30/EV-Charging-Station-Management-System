@@ -26,7 +26,7 @@ public class User {
     // [COMMAND]: @GeneratedValue chỉ định cách khóa chính được tạo ra. IDENTITY nghĩa là database sẽ tự động tăng giá trị.
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long userId;
+    private Long id;
 
     // [COMMAND]: @Column ánh xạ trường này tới một cột. unique=true đảm bảo không có 2 email trùng nhau. nullable=false yêu cầu cột này không được rỗng.
     @Column(unique = true, nullable = false)
@@ -48,6 +48,9 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Status status = Status.active;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
 
     // [COMMAND]: @CreationTimestamp là một annotation của Hibernate. Nó sẽ tự động gán thời gian hiện tại khi một đối tượng được tạo lần đầu.
     @CreationTimestamp

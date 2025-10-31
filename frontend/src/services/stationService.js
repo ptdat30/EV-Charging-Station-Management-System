@@ -1,3 +1,39 @@
+import apiClient from '../config/api';
+
+export const searchStations = async (params = {}) => {
+    const response = await apiClient.get('/stations/search', { params });
+    return response.data;
+};
+
+// Reservations
+export const createReservation = async (payload) => {
+    const { stationId, chargerId, reservedStartTime, reservedEndTime, durationMinutes } = payload;
+    const response = await apiClient.post('/reservations', {
+        stationId, chargerId, reservedStartTime, reservedEndTime, durationMinutes
+    });
+    return response.data;
+};
+
+export const getMyReservations = async () => {
+    const response = await apiClient.get('/reservations/me');
+    return response.data;
+};
+
+export const cancelReservation = async (reservationId, reason) => {
+    const response = await apiClient.put(`/reservations/${reservationId}/cancel`, null, { params: { reason } });
+    return response.data;
+};
+
+export const startSessionFromReservation = async (reservationId) => {
+    const response = await apiClient.post(`/reservations/${reservationId}/start`);
+    return response.data;
+};
+
+export const checkInReservation = async (reservationId) => {
+    const response = await apiClient.post(`/reservations/${reservationId}/check-in`);
+    return response.data;
+};
+
 import API_CONFIG from '../config/api';
 
 class StationService {

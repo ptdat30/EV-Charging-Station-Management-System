@@ -5,7 +5,12 @@ import com.chargingservice.entities.ChargingSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface ChargingSessionRepository extends JpaRepository<ChargingSession, Long> {
-    // Chúng ta sẽ thêm các phương thức truy vấn tùy chỉnh ở đây sau
+    java.util.List<ChargingSession> findByUserIdOrderByStartTimeDesc(Long userId);
+    java.util.Optional<ChargingSession> findFirstByUserIdAndSessionStatusOrderByStartTimeDesc(Long userId, com.chargingservice.entities.ChargingSession.SessionStatus status);
+
+    Optional<ChargingSession> findFirstByChargerIdAndSessionStatus(Long chargerId, ChargingSession.SessionStatus status);
 }
