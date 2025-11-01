@@ -92,13 +92,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Sidebar Header */}
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <div className="logo-icon">
-            <i className="fas fa-bolt"></i>
-          </div>
           {isOpen && (
             <div className="logo-text">
-              <span className="logo-title">EVCharge</span>
-              <span className="logo-subtitle">Admin Panel</span>
+              <span className="logo-title blinking">E-CHARGE STATION</span>
             </div>
           )}
         </div>

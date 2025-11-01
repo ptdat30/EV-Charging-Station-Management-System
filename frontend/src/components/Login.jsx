@@ -94,10 +94,7 @@ const Login = () => {
           <div className="login-card">
             {/* Logo & Header */}
             <div className="login-header">
-              <div className="logo-circle">
-                <span>EV</span>
-              </div>
-              <h1>EV Station</h1>
+              <h1 className="blinking">E-CHARGE STATION</h1>
               <p className="welcome-text">Chào mừng bạn trở lại!</p>
             </div>
 

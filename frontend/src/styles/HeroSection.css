@@ -75,7 +75,7 @@
 
 .highlight {
   color: var(--color-primary);
-  text-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+  text-shadow: 0 0 20px rgba(30, 41, 59, 0.5);
 }
 
 .hero-description {
@@ -122,7 +122,7 @@
 .logo-svg {
   width: 180px;
   height: 180px;
-  filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.6));
+  filter: drop-shadow(0 0 20px rgba(30, 41, 59, 0.6));
   animation: logoFloat 3s ease-in-out infinite;
   overflow: visible;
   background: transparent;
@@ -223,7 +223,7 @@
 
 .logo-text-echarge {
   font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-extrabold);
+  font-weight: 900;
   color: #ffffff;
   letter-spacing: 2px;
   text-shadow: 
@@ -234,33 +234,89 @@
   animation: textGlow 2s ease-in-out infinite;
 }
 
+.logo-text-echarge.blinking {
+  animation: textGlowAndBlink 2s ease-in-out infinite;
+}
+
 .logo-text-station {
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-extrabold);
+  font-weight: 900;
   color: #ffffff;
   letter-spacing: 1.5px;
   margin-top: -4px;
   text-shadow: 
-    0 0 15px rgba(76, 175, 80, 0.9),
-    0 0 25px rgba(76, 175, 80, 0.7),
+    0 0 15px rgba(30, 41, 59, 0.9),
+    0 0 25px rgba(30, 41, 59, 0.7),
     2px 2px 8px rgba(0, 0, 0, 0.8),
-    0 0 40px rgba(76, 175, 80, 0.5);
+    0 0 40px rgba(30, 41, 59, 0.5);
   animation: textGlow 2s ease-in-out infinite 0.5s;
+}
+
+.logo-text-station.blinking {
+  animation: textGlowAndBlink 2s ease-in-out infinite 0.5s;
+}
+
+@keyframes textGlowAndBlink {
+  0%, 100% {
+    text-shadow: 
+      0 0 15px rgba(30, 41, 59, 0.7),
+      0 0 25px rgba(30, 41, 59, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8),
+      0 0 40px rgba(30, 41, 59, 0.3);
+    opacity: 1;
+  }
+  25% {
+    text-shadow: 
+      0 0 25px rgba(30, 41, 59, 1),
+      0 0 40px rgba(30, 41, 59, 0.8),
+      0 0 60px rgba(30, 41, 59, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8);
+    opacity: 0.3;
+  }
+  50% {
+    text-shadow: 
+      0 0 25px rgba(30, 41, 59, 1),
+      0 0 40px rgba(30, 41, 59, 0.8),
+      0 0 60px rgba(30, 41, 59, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8);
+    opacity: 1;
+  }
+  75% {
+    text-shadow: 
+      0 0 15px rgba(30, 41, 59, 0.7),
+      0 0 25px rgba(30, 41, 59, 0.5),
+      2px 2px 8px rgba(0, 0, 0, 0.8),
+      0 0 40px rgba(30, 41, 59, 0.3);
+    opacity: 0.3;
+  }
+}
+
+.blinking {
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes textGlow {
   0%, 100% {
     text-shadow: 
-      0 0 15px rgba(76, 175, 80, 0.7),
-      0 0 25px rgba(76, 175, 80, 0.5),
+      0 0 15px rgba(30, 41, 59, 0.7),
+      0 0 25px rgba(30, 41, 59, 0.5),
       2px 2px 8px rgba(0, 0, 0, 0.8),
-      0 0 40px rgba(76, 175, 80, 0.3);
+      0 0 40px rgba(30, 41, 59, 0.3);
   }
   50% {
     text-shadow: 
-      0 0 25px rgba(76, 175, 80, 1),
-      0 0 40px rgba(76, 175, 80, 0.8),
-      0 0 60px rgba(76, 175, 80, 0.5),
+      0 0 25px rgba(30, 41, 59, 1),
+      0 0 40px rgba(30, 41, 59, 0.8),
+      0 0 60px rgba(30, 41, 59, 0.5),
       2px 2px 8px rgba(0, 0, 0, 0.8);
   }
 }
@@ -283,7 +339,7 @@
   margin: 0 0 var(--spacing-2);
   text-shadow: 
     2px 2px 8px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(76, 175, 80, 0.5);
+    0 0 30px rgba(30, 41, 59, 0.5);
   letter-spacing: 2px;
 }
 
@@ -352,7 +408,7 @@
 .hero-btn-register {
   background: var(--color-primary) !important;
   color: var(--color-white) !important;
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(30, 41, 59, 0.4) !important;
   border: 2px solid var(--color-primary) !important;
 }
 

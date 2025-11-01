@@ -46,8 +46,22 @@
 }
 
 .admin-logo-text {
-    font-size: 22px;
-    letter-spacing: -0.5px;
+    font-size: 24px;
+    letter-spacing: 2px;
+    font-weight: 900;
+}
+
+.blinking {
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% {
+        opacity: 1;
+    }
+    25%, 75% {
+        opacity: 0.3;
+    }
 }
 
 /* Navigation Menu */
@@ -55,9 +69,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
-    justify-content: center;
-    margin: 0 40px;
+    margin-left: 0;
 }
 
 .admin-nav-item-wrapper {
@@ -126,47 +138,33 @@
 .admin-user-info {
     display: flex;
     align-items: center;
-    gap: 10px;
     color: white;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    font-size: 14px;
     transition: all 0.2s;
 }
 
 .admin-user-info:hover {
-    background: rgba(255, 255, 255, 0.15);
+    opacity: 0.8;
 }
 
 .admin-user-avatar {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, #10b981, #059669);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 18px;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.admin-user-info .fa-chevron-down {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-}
-
-.admin-user-info .fa-chevron-down.rotate {
-    transform: rotate(180deg);
-}
-
-.admin-user-name {
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.admin-user-avatar:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
 }
 
 /* User Profile Dropdown */

@@ -129,14 +129,6 @@ const Dashboard = () => {
 
   return (
     <div className="driver-dashboard">
-      {/* Welcome Header */}
-      <div className="dashboard-welcome">
-        <div className="welcome-content">
-          <h1>Xin chào, {driverName || user?.fullName || 'Driver'}! 👋</h1>
-          <p>Chào mừng bạn đến với EVCharge Dashboard</p>
-        </div>
-      </div>
-
       {error && (
         <div className="dashboard-error">
           <i className="fas fa-exclamation-circle"></i>

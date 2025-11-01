@@ -57,7 +57,7 @@
   }
   
   .btn-search {
-    background: #27ae60;
+    background: #1e293b;
     color: white;
     border: none;
     padding: 0.8rem 1.5rem;
@@ -135,7 +135,7 @@
   .distance {
     font-size: 0.9rem;
     color: #666;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
   
   .rating {
@@ -151,8 +151,8 @@
   }
   
   .tag {
-    background: #e8f5e9;
-    color: #27ae60;
+    background: #f1f5f9;
+    color: #1e293b;
     padding: 0.2rem 0.5rem;
     border-radius: 6px;
     font-size: 0.8rem;
@@ -161,7 +161,7 @@
   
   .price {
     font-weight: 600;
-    color: #27ae60;
+    color: #1e293b;
     font-size: 1.1rem;
   }
   
@@ -175,7 +175,7 @@
 
   /* Quick Charge Button - Nút sạc ngay nổi bật */
   .btn-quick-charge {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     color: white;
     border: none;
     padding: var(--spacing-3) var(--spacing-4);
@@ -184,7 +184,7 @@
     font-weight: var(--font-weight-bold);
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 15px rgba(30, 41, 59, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -215,20 +215,20 @@
 
   .btn-quick-charge:hover:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 25px rgba(30, 41, 59, 0.6);
+    background: linear-gradient(135deg, #0f172a 0%, #0a0f1a 100%);
   }
 
   .btn-quick-charge:active:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 3px 15px rgba(16, 185, 129, 0.5);
+    box-shadow: 0 3px 15px rgba(30, 41, 59, 0.5);
   }
 
   .btn-quick-charge:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 2px 8px rgba(30, 41, 59, 0.2);
   }
 
   .btn-quick-charge i {
@@ -410,6 +410,11 @@
 
   .station-info .address {
     color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .station-info .district {

@@ -10,6 +10,26 @@
   font-family: var(--font-family-primary);
 }
 
+.logo-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--color-primary);
+}
+
+.blinking {
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.3;
+  }
+}
+
 /* ========================================
    PAGE CONTENT
    ======================================== */
@@ -19,6 +39,18 @@
   padding: 2rem;
   overflow-y: auto;
   margin-top: 70px; /* Space for navbar */
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ========================================
