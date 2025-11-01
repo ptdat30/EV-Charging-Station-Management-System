@@ -92,13 +92,10 @@ apiClient.interceptors.response.use(
 
             switch (status) {
                 case 401:
-                    console.log('🔒 Unauthorized - Clearing token and redirecting to login');
+                    console.log('🔒 Unauthorized - Clearing token');
                     localStorage.removeItem('token');
-
-                    // Chỉ redirect nếu không phải đang ở trang login
-                    if (!window.location.pathname.includes('/login')) {
-                        window.location.href = '/login';
-                    }
+                    // Không force redirect - để AuthProvider và ProtectedRoute xử lý
+                    // Tránh redirect khi đang ở homepage hoặc login page
                     break;
 
                 case 403:

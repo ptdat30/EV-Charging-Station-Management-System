@@ -199,7 +199,70 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setCancelledAt(LocalDateTime.now());
 
         Reservation saved = reservationRepository.save(reservation);
+        
+        // Update charger status to available
+        try {
+            UpdateChargerStatusDto updateStatus = new UpdateChargerStatusDto();
+            updateStatus.setStatus(UpdateChargerStatusDto.ChargerStatus.available);
+            stationServiceClient.updateChargerStatus(reservation.getChargerId(), updateStatus);
+            log.info("Updated charger {} status to available after reservation cancellation", reservation.getChargerId());
+        } catch (Exception e) {
+            log.warn("Failed to update charger status to available: {}", e.getMessage());
+        }
+        
         return convertToDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public ReservationResponseDto adminCancelReservation(Long reservationId, String reason) {
+        log.info("Admin cancelling reservation {}", reservationId);
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationId));
+
+        reservation.setStatus(Reservation.ReservationStatus.cancelled);
+        reservation.setCancellationReason(reason != null ? reason : "Cancelled by admin");
+        reservation.setCancelledAt(LocalDateTime.now());
+
+        Reservation saved = reservationRepository.save(reservation);
+        
+        // Update charger status to available
+        try {
+            UpdateChargerStatusDto updateStatus = new UpdateChargerStatusDto();
+            updateStatus.setStatus(UpdateChargerStatusDto.ChargerStatus.available);
+            stationServiceClient.updateChargerStatus(reservation.getChargerId(), updateStatus);
+            log.info("Updated charger {} status to available after admin cancellation", reservation.getChargerId());
+        } catch (Exception e) {
+            log.warn("Failed to update charger status to available: {}", e.getMessage());
+        }
+        
+        // Send notification to user
+        try {
+            CreateNotificationRequestDto notification = new CreateNotificationRequestDto();
+            notification.setUserId(reservation.getUserId());
+            notification.setNotificationType(CreateNotificationRequestDto.NotificationType.reservation_cancelled);
+            notification.setTitle("Đặt chỗ đã bị hủy bởi quản trị viên");
+            notification.setMessage(String.format(
+                    "Đặt chỗ ID %d của bạn đã bị hủy bởi quản trị viên. " +
+                    "Lý do: %s. Tiền cọc sẽ được hoàn lại.",
+                    reservation.getReservationId(),
+                    reason != null ? reason : "Không xác định"));
+            notification.setReferenceId(reservation.getReservationId());
+            
+            notificationServiceClient.createNotification(notification);
+        } catch (Exception e) {
+            log.error("Error sending cancellation notification: {}", e.getMessage());
+        }
+        
+        return convertToDto(saved);
+    }
+
+    @Override
+    public List<ReservationResponseDto> getAllReservations() {
+        log.debug("Fetching all reservations for admin");
+        return reservationRepository.findAll().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     /**

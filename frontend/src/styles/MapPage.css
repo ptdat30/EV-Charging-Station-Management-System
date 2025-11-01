@@ -172,6 +172,88 @@
     padding: var(--spacing-4) var(--spacing-2);
     min-width: 120px;
   }
+
+  /* Quick Charge Button - Nút sạc ngay nổi bật */
+  .btn-quick-charge {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: var(--spacing-3) var(--spacing-4);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-quick-charge::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-quick-charge:hover:not(:disabled)::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-quick-charge:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  }
+
+  .btn-quick-charge:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 15px rgba(16, 185, 129, 0.5);
+  }
+
+  .btn-quick-charge:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  }
+
+  .btn-quick-charge i {
+    font-size: var(--font-size-base);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .btn-quick-charge:disabled i {
+    animation: none;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  .btn-quick-charge span {
+    font-weight: var(--font-weight-bold);
+  }
   
   .btn-quick-book-card {
     background: linear-gradient(135deg, #FF6B35, #F7931E);

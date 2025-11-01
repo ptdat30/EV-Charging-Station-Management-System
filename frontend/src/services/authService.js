@@ -63,12 +63,19 @@ class AuthService {
             method: 'GET',
         });
         // result: { isValid, username, role, userId }
+        // Backend trả về role dạng lowercase (staff, driver, admin)
+        console.log('🔍 Token validation result:', result);
         if (result?.isValid) {
-            return {
+            // Backend trả về role dạng lowercase: "staff", "driver", "admin"
+            const role = result.role || result.userType || 'UNKNOWN';
+            const userData = {
                 email: result.username,
-                role: result.role,
+                role: role, // role từ backend là "staff", "driver", "admin" (lowercase)
+                userType: role, // Tương tự role
                 userId: result.userId,
             };
+            console.log('✅ Validated user data:', userData);
+            return userData;
         }
         throw new Error('Invalid token');
     }

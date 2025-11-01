@@ -21,4 +21,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByPaymentStatusInAndCreatedAtBefore(
             List<Payment.PaymentStatus> statuses, 
             java.time.LocalDateTime threshold);
+    
+    // Tìm payments theo sessionId
+    List<Payment> findBySessionIdOrderByCreatedAtDesc(Long sessionId);
+    
+    // Tìm cash payments đang pending (cho staff)
+    List<Payment> findByPaymentMethodAndPaymentStatus(
+            Payment.PaymentMethod paymentMethod,
+            Payment.PaymentStatus paymentStatus
+    );
 }

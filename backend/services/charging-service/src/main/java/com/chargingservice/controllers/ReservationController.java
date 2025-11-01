@@ -77,5 +77,18 @@ public class ReservationController {
         com.chargingservice.dtos.SessionResponseDto session = reservationService.startSessionFromQRCode(qrCode, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
     }
+
+    // Admin endpoints
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<ReservationResponseDto>> getAllReservations() {
+        return ResponseEntity.ok(reservationService.getAllReservations());
+    }
+
+    @PutMapping("/admin/{id}/cancel")
+    public ResponseEntity<ReservationResponseDto> adminCancelReservation(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        return ResponseEntity.ok(reservationService.adminCancelReservation(id, reason));
+    }
 }
 

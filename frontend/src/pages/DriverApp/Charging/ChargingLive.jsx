@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveSession, getSessionStatus, stopSession } from '../../../services/chargingService';
+import PaymentMethodModal from '../../../components/PaymentMethodModal';
 import '../../../styles/ChargingLive.css';
 
 export default function ChargingLive() {
@@ -11,6 +12,8 @@ export default function ChargingLive() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [stopping, setStopping] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [completedSession, setCompletedSession] = useState(null);
     const pollingIntervalRef = useRef(null);
 
     // Load active session
@@ -75,29 +78,55 @@ export default function ChargingLive() {
     const handleStopSession = async () => {
         if (!session?.sessionId) return;
         
-        if (!confirm('Xác nhận kết thúc phiên sạc? Hệ thống sẽ tính toán chi phí và thanh toán tự động.')) {
+        if (!confirm('Xác nhận kết thúc phiên sạc? Bạn sẽ được yêu cầu chọn phương thức thanh toán.')) {
             return;
         }
 
         setStopping(true);
         try {
             const result = await stopSession(session.sessionId);
-            alert(`✅ Đã kết thúc phiên sạc!\n\n` +
-                  `Năng lượng đã sạc: ${result.energyConsumed || '0'} kWh\n` +
-                  `Thanh toán sẽ được xử lý tự động.`);
             
             // Dừng polling
             if (pollingIntervalRef.current) {
                 clearInterval(pollingIntervalRef.current);
             }
             
-            // Navigate về booking page hoặc dashboard
-            navigate('/stations/booking');
+            // Lưu session đã hoàn thành và hiển thị payment modal
+            setCompletedSession({
+                ...result,
+                sessionId: result.sessionId || session.sessionId
+            });
+            setShowPaymentModal(true);
+            
         } catch (err) {
             alert(`❌ ${err.response?.data?.message || err.message || 'Không thể kết thúc phiên sạc'}`);
         } finally {
             setStopping(false);
         }
+    };
+
+    const handlePaymentSuccess = (paymentResult) => {
+        const methodName = paymentResult.paymentMethod === 'wallet' ? 'Ví điện tử' : 'Tiền mặt';
+        const statusMsg = paymentResult.paymentStatus === 'pending' 
+            ? '\n⚠️ Lưu ý: Thanh toán bằng tiền mặt cần nhân viên xác nhận đã thu tiền.'
+            : '';
+        
+        alert(`✅ ${paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!'}\n\n` +
+              `Phương thức: ${methodName}\n` +
+              `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`);
+        
+        // Đóng modal và navigate ngay lập tức
+        setShowPaymentModal(false);
+        setCompletedSession(null);
+        // Navigate đi ngay, không kẹt ở đây
+        navigate('/stations/booking');
+    };
+
+    const handlePaymentModalClose = () => {
+        // Đóng modal và navigate đi ngay, không kẹt ở đây
+        setShowPaymentModal(false);
+        setCompletedSession(null);
+        navigate('/stations/booking');
     };
 
     const formatCurrency = (amount) => {
@@ -346,6 +375,14 @@ export default function ChargingLive() {
                     </div>
                 )}
             </div>
+
+            {/* Payment Method Modal */}
+            <PaymentMethodModal
+                isOpen={showPaymentModal}
+                onClose={handlePaymentModalClose}
+                session={completedSession}
+                onPaymentSuccess={handlePaymentSuccess}
+            />
         </div>
     );
 }

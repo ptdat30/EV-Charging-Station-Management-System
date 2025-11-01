@@ -3,6 +3,7 @@ package com.paymentservice.services;
 
 import com.paymentservice.dtos.PaymentResponseDto;
 import com.paymentservice.dtos.ProcessDepositRequestDto;
+import com.paymentservice.dtos.ProcessOnSitePaymentRequestDto;
 import com.paymentservice.dtos.ProcessPaymentRequestDto;
 import com.paymentservice.dtos.ProcessRefundRequestDto;
 import com.paymentservice.dtos.RefundDepositRequestDto;
@@ -41,28 +42,56 @@ public class PaymentServiceImpl implements PaymentService {
         // 2. Tính toán tổng số tiền cần thanh toán
         BigDecimal amountToPay = requestDto.getEnergyConsumed().multiply(requestDto.getPricePerKwh());
 
-        // 3. Tạo bản ghi Payment với trạng thái ban đầu là pending
+        // 3. Xác định payment method
+        String paymentMethodStr = requestDto.getPaymentMethod() != null && !requestDto.getPaymentMethod().isEmpty()
+                ? requestDto.getPaymentMethod()
+                : "wallet"; // Default là wallet
+        
+        Payment.PaymentMethod paymentMethodEnum;
+        try {
+            paymentMethodEnum = Payment.PaymentMethod.valueOf(paymentMethodStr.toLowerCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid payment method: {}, defaulting to wallet", paymentMethodStr);
+            paymentMethodEnum = Payment.PaymentMethod.wallet;
+        }
+
+        // 4. Tạo bản ghi Payment với trạng thái ban đầu là pending
         Payment payment = new Payment();
         payment.setSessionId(requestDto.getSessionId());
         payment.setUserId(requestDto.getUserId());
         payment.setAmount(amountToPay);
-        payment.setPaymentMethod(Payment.PaymentMethod.wallet); // Giả sử mặc định thanh toán bằng ví
+        payment.setPaymentMethod(paymentMethodEnum);
         payment.setPaymentStatus(Payment.PaymentStatus.pending);
         Payment savedPayment = paymentRepository.save(payment);
 
-        // 4. Kiểm tra số dư và thực hiện trừ tiền
-        if (wallet.getBalance().compareTo(amountToPay) >= 0) {
-            // Đủ tiền
-            wallet.setBalance(wallet.getBalance().subtract(amountToPay));
-            walletRepository.save(wallet); // Cập nhật số dư ví
+        // 5. Xử lý thanh toán theo method
+        if (paymentMethodEnum == Payment.PaymentMethod.wallet) {
+            // Thanh toán bằng ví: Kiểm tra số dư và thực hiện trừ tiền
+            if (wallet.getBalance().compareTo(amountToPay) >= 0) {
+                // Đủ tiền
+                wallet.setBalance(wallet.getBalance().subtract(amountToPay));
+                walletRepository.save(wallet); // Cập nhật số dư ví
 
-            // Cập nhật trạng thái thanh toán thành completed
+                // Cập nhật trạng thái thanh toán thành completed
+                savedPayment.setPaymentStatus(Payment.PaymentStatus.completed);
+                savedPayment.setPaymentTime(LocalDateTime.now());
+            } else {
+                // Không đủ tiền
+                savedPayment.setPaymentStatus(Payment.PaymentStatus.failed);
+                log.warn("Insufficient wallet balance for user {}. Required: {}, Available: {}", 
+                        requestDto.getUserId(), amountToPay, wallet.getBalance());
+            }
+        } else if (paymentMethodEnum == Payment.PaymentMethod.cash) {
+            // Thanh toán bằng tiền mặt: Giữ status pending, chờ staff confirm đã thu tiền
+            savedPayment.setPaymentStatus(Payment.PaymentStatus.pending);
+            // Không set paymentTime, sẽ set khi staff confirm
+            log.info("Cash payment created with pending status for session {}. Waiting for staff confirmation.", requestDto.getSessionId());
+        } else {
+            // Các phương thức khác (QR, e_wallet, etc.)
+            // Đánh dấu completed (giả sử đã thanh toán thành công)
             savedPayment.setPaymentStatus(Payment.PaymentStatus.completed);
             savedPayment.setPaymentTime(LocalDateTime.now());
-        } else {
-            // Không đủ tiền
-            savedPayment.setPaymentStatus(Payment.PaymentStatus.failed);
-            // TO-DO: Có thể gửi thông báo yêu cầu nạp tiền
+            log.info("Payment method {} processed for session {}", paymentMethodEnum, requestDto.getSessionId());
         }
 
         Payment finalPayment = paymentRepository.save(savedPayment); // Lưu lại trạng thái cuối cùng
@@ -205,9 +234,102 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
+    public PaymentResponseDto confirmCashPayment(Long paymentId) {
+        log.info("Staff confirming cash payment: {}", paymentId);
+        
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
+        
+        // Chỉ confirm được cash payment đang pending
+        if (payment.getPaymentMethod() != Payment.PaymentMethod.cash) {
+            throw new IllegalStateException("Only cash payments can be confirmed");
+        }
+        
+        if (payment.getPaymentStatus() != Payment.PaymentStatus.pending) {
+            throw new IllegalStateException("Payment is not pending. Current status: " + payment.getPaymentStatus());
+        }
+        
+        // Cập nhật trạng thái thành completed và set paymentTime
+        payment.setPaymentStatus(Payment.PaymentStatus.completed);
+        payment.setPaymentTime(LocalDateTime.now());
+        
+        Payment confirmedPayment = paymentRepository.save(payment);
+        log.info("Cash payment {} confirmed successfully by staff", paymentId);
+        
+        return convertToDto(confirmedPayment);
+    }
+
+    @Override
+    public List<PaymentResponseDto> getPendingCashPayments() {
+        log.info("Fetching pending cash payments for staff");
+        
+        List<Payment> pendingPayments = paymentRepository.findByPaymentMethodAndPaymentStatus(
+                Payment.PaymentMethod.cash,
+                Payment.PaymentStatus.pending
+        );
+        
+        return pendingPayments.stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    @Override
     public Page<PaymentResponseDto> getMyPayments(Long userId, Pageable pageable) {
         Page<Payment> paymentsPage = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         return paymentsPage.map(this::convertToDto);
+    }
+
+    @Override
+    public Page<PaymentResponseDto> getAllPayments(Pageable pageable) {
+        Page<Payment> paymentsPage = paymentRepository.findAll(pageable);
+        return paymentsPage.map(this::convertToDto);
+    }
+
+    @Override
+    public List<PaymentResponseDto> getAllPayments() {
+        List<Payment> payments = paymentRepository.findAll();
+        return payments.stream()
+                .map(this::convertToDto)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public PaymentResponseDto processOnSitePayment(ProcessOnSitePaymentRequestDto requestDto) {
+        log.info("Processing on-site payment for session {} - user {} - amount {} - method {}", 
+                requestDto.getSessionId(), requestDto.getUserId(), requestDto.getAmount(), requestDto.getPaymentMethod());
+        
+        // Tạo payment record với trạng thái completed (vì đã thanh toán tại chỗ)
+        Payment payment = new Payment();
+        payment.setSessionId(requestDto.getSessionId());
+        payment.setUserId(requestDto.getUserId());
+        payment.setAmount(requestDto.getAmount());
+        
+        // Parse payment method
+        try {
+            payment.setPaymentMethod(Payment.PaymentMethod.valueOf(requestDto.getPaymentMethod()));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid payment method: {}, defaulting to cash", requestDto.getPaymentMethod());
+            payment.setPaymentMethod(Payment.PaymentMethod.cash);
+        }
+        
+        // On-site payments (cash/QR) are immediately completed
+        payment.setPaymentStatus(Payment.PaymentStatus.completed);
+        payment.setPaymentTime(LocalDateTime.now());
+        
+        Payment savedPayment = paymentRepository.save(payment);
+        log.info("On-site payment processed successfully. Payment ID: {}", savedPayment.getPaymentId());
+        
+        return convertToDto(savedPayment);
+    }
+
+    @Override
+    public List<PaymentResponseDto> getPaymentsBySessionId(Long sessionId) {
+        List<Payment> payments = paymentRepository.findBySessionIdOrderByCreatedAtDesc(sessionId);
+        return payments.stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
     private PaymentResponseDto convertToDto(Payment payment) {
