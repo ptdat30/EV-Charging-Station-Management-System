@@ -78,7 +78,7 @@
 }
 
 .reservation-status.status-confirmed {
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(30, 41, 59, 0.1);
   color: var(--color-success);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .reservation-info-row.highlight {
-  background: rgba(76, 175, 80, 0.05);
+  background: rgba(30, 41, 59, 0.05);
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--border-radius-md);
   margin-top: var(--spacing-2);

@@ -94,8 +94,7 @@ const MapPage = () => {
             <header className="header">
                 <div className="header-content">
                     <div className="logo">
-                        <i className="fas fa-charging-station"></i>
-                        <span>EV Finder</span>
+                        <span className="blinking">E-CHARGE STATION</span>
                     </div>
                     <div className="search-container">
                         <div className={`search-box ${searchQuery ? "has-content" : ""}`}>

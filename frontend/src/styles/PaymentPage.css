@@ -350,8 +350,8 @@
 }
 
 .payment-status.status-completed {
-    background: rgba(76, 175, 80, 0.1);
-    color: var(--color-success, #4caf50);
+    background: rgba(30, 41, 59, 0.1);
+    color: var(--color-primary, #1e293b);
 }
 
 .payment-status.status-pending,

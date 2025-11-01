@@ -75,6 +75,13 @@ const DriverNavBar = () => {
             label: 'Ví điện tử',
             description: 'Wallet',
             roles: ['DRIVER'] // Chỉ driver
+        },
+        {
+            path: '/pricing',
+            icon: 'fas fa-box',
+            label: 'Mua gói dịch vụ',
+            description: 'Packages',
+            roles: ['DRIVER'] // Chỉ driver
         }
     ];
 
@@ -90,8 +97,6 @@ const DriverNavBar = () => {
                 <div className="driver-navbar-container">
                     {/* Logo */}
                     <Link to="/dashboard" className="driver-navbar-logo">
-                        <div className="logo-icon">⚡</div>
-                        <span className="logo-text">EVCharge</span>
                     </Link>
 
                     {/* Navigation Items */}
@@ -110,23 +115,33 @@ const DriverNavBar = () => {
                     </div>
 
                     {/* User Section */}
-                    <div className="driver-navbar-user">
+                    <div className="driver-navbar-user" ref={dropdownRef}>
                         <div 
                             className="user-info" 
                             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                             style={{ cursor: 'pointer' }}
                         >
-                            <i className="fas fa-user"></i>
-                            <span className="user-name">{user?.fullName || user?.email || 'Driver'}</span>
-                            <i className={`fas fa-chevron-down ${isUserDropdownOpen ? 'rotate' : ''}`} style={{ fontSize: '12px', marginLeft: '8px' }}></i>
+                            <div className="user-avatar">
+                                {user?.email ? (
+                                    <span>{user.email.charAt(0).toUpperCase()}</span>
+                                ) : (
+                                    <i className="fas fa-user"></i>
+                                )}
+                            </div>
                         </div>
 
                         {/* Profile Dropdown */}
                         {isUserDropdownOpen && (
-                            <div className="user-profile-dropdown" ref={dropdownRef}>
+                            <div className="user-profile-dropdown">
                                 <div className="dropdown-header">
                                     <div className="dropdown-user-info">
-                                        <i className="fas fa-user-circle"></i>
+                                        <div className="dropdown-avatar">
+                                            {user?.email ? (
+                                                <span>{user.email.charAt(0).toUpperCase()}</span>
+                                            ) : (
+                                                <i className="fas fa-user-circle"></i>
+                                            )}
+                                        </div>
                                         <div>
                                             <div className="dropdown-user-name">{user?.fullName || 'Driver'}</div>
                                             <div className="dropdown-user-email">{user?.email || ''}</div>
@@ -194,7 +209,13 @@ const DriverNavBar = () => {
             <div className={`driver-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
                 <div className="mobile-menu-header">
                     <div className="mobile-user-info">
-                        <i className="fas fa-user-circle"></i>
+                        <div className="mobile-user-avatar">
+                            {user?.email ? (
+                                <span>{user.email.charAt(0).toUpperCase()}</span>
+                            ) : (
+                                <i className="fas fa-user-circle"></i>
+                            )}
+                        </div>
                         <div>
                             <div className="mobile-user-name">{user?.fullName || 'Driver'}</div>
                             <div className="mobile-user-email">{user?.email || ''}</div>
