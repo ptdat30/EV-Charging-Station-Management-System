@@ -101,34 +101,22 @@ public class ChargingServiceImpl implements ChargingService {
         // Bước 1: Gọi sang station-service để cập nhật trụ sạc thành "available"
         updateChargerStatus(savedSession.getChargerId(), UpdateChargerStatusDto.ChargerStatus.available);
 
-        // Bước 2: Gọi sang payment-service để xử lý thanh toán
-        PaymentResponseDto.PaymentStatus paymentStatusResult = PaymentResponseDto.PaymentStatus.failed; // Mặc định là failed
-        try {
-            log.info("Processing payment for session {}", savedSession.getSessionId());
-            ProcessPaymentRequestDto paymentDto = new ProcessPaymentRequestDto(
-                    savedSession.getSessionId(), savedSession.getUserId(),
-                    savedSession.getEnergyConsumed(), new BigDecimal("3000.00") // Đơn giá tạm thời
-            );
-            PaymentResponseDto paymentResult = paymentServiceClient.processPayment(paymentDto);
-            paymentStatusResult = paymentResult.getPaymentStatus(); // Lưu lại kết quả
-            log.info("Payment processed for session {}: Status - {}", savedSession.getSessionId(), paymentStatusResult);
+        // Bước 2: KHÔNG tự động thanh toán - Driver sẽ chọn payment method sau
+        // Payment sẽ được xử lý khi driver chọn payment method từ frontend
+        // Tạm thời không tạo payment record, sẽ tạo khi driver chọn method
 
-        } catch (Exception e) {
-            log.error("CRITICAL: Failed to process payment for session ID {}. Error: {}", savedSession.getSessionId(), e.getMessage(), e);
-        }
-
-        // Bước 3: Gọi sang notification-service khi kết thúc (sau khi thanh toán)
-        // Thông báo sạc hoàn tất
+        // Bước 3: Gọi sang notification-service khi kết thúc
+        // Thông báo sạc hoàn tất - yêu cầu thanh toán
         String chargingCompleteMessage;
         if (isFullyCharged) {
             chargingCompleteMessage = String.format(
-                "Pin đã sạc đầy! Phiên sạc (ID: %d) hoàn tất. Năng lượng: %.2f kWh. SOC: %.1f%%. Trạng thái thanh toán: %s",
-                savedSession.getSessionId(), savedSession.getEnergyConsumed().doubleValue(), finalSOC, paymentStatusResult
+                "Pin đã sạc đầy! Phiên sạc (ID: %d) hoàn tất. Năng lượng: %.2f kWh. SOC: %.1f%%. Vui lòng thanh toán.",
+                savedSession.getSessionId(), savedSession.getEnergyConsumed().doubleValue(), finalSOC
             );
         } else {
             chargingCompleteMessage = String.format(
-                "Phiên sạc (ID: %d) hoàn tất. Năng lượng: %.2f kWh. SOC: %.1f%%. Trạng thái thanh toán: %s",
-                savedSession.getSessionId(), savedSession.getEnergyConsumed().doubleValue(), finalSOC, paymentStatusResult
+                "Phiên sạc (ID: %d) hoàn tất. Năng lượng: %.2f kWh. SOC: %.1f%%. Vui lòng thanh toán.",
+                savedSession.getSessionId(), savedSession.getEnergyConsumed().doubleValue(), finalSOC
             );
         }
         
@@ -138,14 +126,6 @@ public class ChargingServiceImpl implements ChargingService {
                 isFullyCharged ? "Pin đã sạc đầy!" : "Sạc hoàn tất",
                 chargingCompleteMessage,
                 savedSession.getSessionId()
-        );
-        // Thông báo kết quả thanh toán
-        sendNotification(
-                savedSession.getUserId(),
-                paymentStatusResult == PaymentResponseDto.PaymentStatus.completed ? CreateNotificationRequestDto.NotificationType.payment_success : CreateNotificationRequestDto.NotificationType.payment_failed,
-                paymentStatusResult == PaymentResponseDto.PaymentStatus.completed ? "Payment Successful" : "Payment Failed",
-                "Payment for session ID " + savedSession.getSessionId() + " was " + (paymentStatusResult == PaymentResponseDto.PaymentStatus.completed ? "successful." : "failed."),
-                savedSession.getSessionId() // Hoặc có thể dùng paymentId nếu cần
         );
 
         return convertToDto(savedSession);

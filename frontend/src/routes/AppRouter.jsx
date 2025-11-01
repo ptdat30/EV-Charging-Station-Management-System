@@ -25,6 +25,9 @@ import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
 // Import trang Admin
 import AdminPage from '../pages/AdminPage';
 
+// Import trang Staff
+import StaffPage from '../pages/StaffPage';
+
 function AppRouter() {
     return (
         <Routes>
@@ -91,8 +94,10 @@ function AppRouter() {
                 } />
             </Route>
 
-            {/* --- STAFF ONLY ROUTES (nếu cần) --- */}
-            {/* Staff có thể dùng chung với Driver hoặc tạo routes riêng sau */}
+            {/* --- STAFF ONLY ROUTES --- */}
+            <Route element={<ProtectedRoute requireStaff={true} />}>
+                <Route path="staff/*" element={<StaffPage />} />
+            </Route>
 
             {/* --- ADMIN ROUTES --- */}
             <Route element={<ProtectedRoute requireAdmin={true} />}>

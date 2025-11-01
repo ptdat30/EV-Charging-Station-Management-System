@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getMyTransactionsHistory } from '../../../services/userService';
+import { getMyPayments } from '../../../services/paymentService';
 import './TransactionsHistory.css';
 
 export default function TransactionsHistory() {
@@ -13,11 +14,44 @@ export default function TransactionsHistory() {
             setLoading(true);
             setError('');
             try {
-                const result = await getMyTransactionsHistory();
-                // Handle response format: could be {data: [...]} or direct array
-                const data = result?.data || result || [];
-                setItems(Array.isArray(data) ? data : []);
-                console.log('✅ Loaded transactions:', data.length);
+                // Load both sessions and payments
+                const [sessionsResult, paymentsResult] = await Promise.all([
+                    getMyTransactionsHistory().catch(() => ({ data: [] })),
+                    getMyPayments(0, 100).catch(() => ({ content: [] }))
+                ]);
+                
+                // Combine sessions and payments into transactions list
+                const sessions = Array.isArray(sessionsResult?.data) ? sessionsResult.data : [];
+                const payments = Array.isArray(paymentsResult?.content) ? paymentsResult.content : 
+                               Array.isArray(paymentsResult?.data) ? paymentsResult.data : 
+                               Array.isArray(paymentsResult) ? paymentsResult : [];
+                
+                // Convert payments to transaction format
+                const paymentTransactions = payments.map(payment => ({
+                    sessionId: payment.sessionId,
+                    sessionCode: `PAY-${payment.paymentId}`,
+                    stationId: null, // Payment doesn't have stationId directly
+                    chargerId: null,
+                    startTime: payment.createdAt,
+                    endTime: payment.paymentTime,
+                    energyConsumed: null,
+                    sessionStatus: payment.paymentStatus === 'completed' ? 'completed' : 
+                                 payment.paymentStatus === 'pending' ? 'pending' : 'failed',
+                    paymentAmount: payment.amount,
+                    paymentMethod: payment.paymentMethod,
+                    paymentId: payment.paymentId,
+                    isPayment: true
+                }));
+                
+                // Combine and sort by time (newest first)
+                const allTransactions = [...sessions, ...paymentTransactions].sort((a, b) => {
+                    const timeA = a.startTime || a.createdAt ? new Date(a.startTime || a.createdAt).getTime() : 0;
+                    const timeB = b.startTime || b.createdAt ? new Date(b.startTime || b.createdAt).getTime() : 0;
+                    return timeB - timeA;
+                });
+                
+                setItems(allTransactions);
+                console.log('✅ Loaded transactions:', allTransactions.length, '- Sessions:', sessions.length, '- Payments:', payments.length);
             } catch (e) {
                 console.error('❌ Load transactions error:', e);
                 setError(e.response?.data?.message || e.message || 'Không thể tải lịch sử giao dịch');
@@ -31,13 +65,19 @@ export default function TransactionsHistory() {
     const filtered = useMemo(() => {
         if (!items || items.length === 0) return [];
         return items.filter(x => {
-            if (query.status !== 'all' && x.sessionStatus !== query.status) return false;
+            // Filter by status - handle both session status and payment status
+            if (query.status !== 'all') {
+                const itemStatus = x.sessionStatus?.toLowerCase() || x.paymentStatus?.toLowerCase() || '';
+                if (itemStatus !== query.status.toLowerCase()) return false;
+            }
+            // Search filter
             if (query.text) {
                 const t = query.text.toLowerCase();
                 return (
-                    String(x.sessionCode || '').toLowerCase().includes(t) ||
+                    String(x.sessionCode || x.paymentId || '').toLowerCase().includes(t) ||
                     String(x.stationId || '').includes(t) ||
-                    String(x.chargerId || '').includes(t)
+                    String(x.chargerId || '').includes(t) ||
+                    String(x.sessionId || '').includes(t)
                 );
             }
             return true;
@@ -104,6 +144,7 @@ export default function TransactionsHistory() {
                 >
                     <option value="all">Tất cả trạng thái</option>
                     <option value="completed">Hoàn thành</option>
+                    <option value="pending">Chờ xử lý</option>
                     <option value="charging">Đang sạc</option>
                     <option value="cancelled">Đã hủy</option>
                     <option value="failed">Thất bại</option>
@@ -160,6 +201,22 @@ export default function TransactionsHistory() {
                                     <div className="info-row highlight">
                                         <span className="info-label">⚡ Năng lượng:</span>
                                         <strong>{Number(s.energyConsumed).toFixed(2)} kWh</strong>
+                                    </div>
+                                )}
+                                {s.isPayment && s.paymentAmount && (
+                                    <div className="info-row highlight">
+                                        <span className="info-label">💰 Thanh toán:</span>
+                                        <strong>{new Intl.NumberFormat('vi-VN').format(s.paymentAmount)} ₫</strong>
+                                        {s.paymentMethod && (
+                                            <span className="separator">•</span>
+                                        )}
+                                        {s.paymentMethod && (
+                                            <span className="info-label">
+                                                {s.paymentMethod === 'wallet' ? 'Ví điện tử' : 
+                                                 s.paymentMethod === 'cash' ? 'Tiền mặt' : 
+                                                 s.paymentMethod}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -10,18 +10,38 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        // Tắt tính năng tự động đăng nhập
-        // Người dùng phải đăng nhập thủ công mỗi lần
-        console.log('🔄 AuthProvider mounted - Auto login disabled');
-        setLoading(false);
-        
-        // Xóa token cũ khi mount để đảm bảo không tự động đăng nhập
-        if (token) {
-            localStorage.removeItem('token');
-            setToken(null);
-            setIsAuthenticated(false);
-            setUser(null);
-        }
+        // Kiểm tra và validate token khi component mount (refresh page)
+        const initAuth = async () => {
+            const storedToken = localStorage.getItem('token');
+            
+            if (storedToken) {
+                console.log('🔄 AuthProvider mounted - Found token, validating...');
+                setToken(storedToken);
+                
+                try {
+                    // Validate token với backend
+                    const userData = await authService.validateToken(storedToken);
+                    console.log('✅ Token validation successful:', userData);
+                    setUser(userData);
+                    setIsAuthenticated(true);
+                } catch (error) {
+                    console.error('❌ Token validation failed:', error);
+                    // Token không hợp lệ hoặc hết hạn - xóa và logout
+                    localStorage.removeItem('token');
+                    setToken(null);
+                    setIsAuthenticated(false);
+                    setUser(null);
+                }
+            } else {
+                console.log('🔄 AuthProvider mounted - No token found');
+                setIsAuthenticated(false);
+                setUser(null);
+            }
+            
+            setLoading(false);
+        };
+
+        initAuth();
     }, []); // Chỉ chạy 1 lần khi mount
 
     const validateToken = async () => {

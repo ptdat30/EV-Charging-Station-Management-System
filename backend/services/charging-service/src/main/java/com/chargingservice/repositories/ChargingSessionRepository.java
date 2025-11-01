@@ -13,4 +13,7 @@ public interface ChargingSessionRepository extends JpaRepository<ChargingSession
     java.util.Optional<ChargingSession> findFirstByUserIdAndSessionStatusOrderByStartTimeDesc(Long userId, com.chargingservice.entities.ChargingSession.SessionStatus status);
 
     Optional<ChargingSession> findFirstByChargerIdAndSessionStatus(Long chargerId, ChargingSession.SessionStatus status);
+    
+    // Find sessions by status
+    java.util.List<ChargingSession> findBySessionStatus(ChargingSession.SessionStatus status);
 }

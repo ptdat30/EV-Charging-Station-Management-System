@@ -1,0 +1,24 @@
+/* Staff Layout Styles */
+.staff-layout {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-page-content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  margin-top: 70px; /* Space for fixed navbar */
+  min-height: calc(100vh - 70px);
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .staff-page-content {
+    padding: 1rem;
+  }
+}
+

@@ -27,6 +27,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         { icon: 'fas fa-sliders-h', text: 'Điều khiển từ xa', path: '/admin/stations/remote-control' },
       ]
     },
+    { 
+      icon: 'fas fa-calendar-check', 
+      text: 'Đặt chỗ', 
+      path: '/admin/reservations',
+      badge: null
+    },
     // Quản lý người dùng & gói dịch vụ
     { 
       icon: 'fas fa-users', 

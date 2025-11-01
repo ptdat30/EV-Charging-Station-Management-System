@@ -2,10 +2,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import BookingModal from './BookingModal';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import apiClient from '../config/api';
 
 const StationCard = React.memo(({ station }) => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [startingCharge, setStartingCharge] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleQuickBook = useCallback(() => {
     setIsBookingOpen(true);
@@ -18,6 +22,45 @@ const StationCard = React.memo(({ station }) => {
   const handleBookingSuccess = useCallback((reservation) => {
     console.log('Booking successful:', reservation);
   }, []);
+
+  const handleQuickCharge = useCallback(async () => {
+    if (!user) {
+      alert('Vui lòng đăng nhập để sạc');
+      navigate('/login');
+      return;
+    }
+
+    // Kiểm tra trạm có available charger không
+    const availableCharger = station.chargers?.find(c => c.status === 'available');
+    if (!availableCharger) {
+      alert('❌ Không có cổng sạc trống tại trạm này. Vui lòng đặt chỗ hoặc chọn trạm khác.');
+      return;
+    }
+
+    if (!confirm(`Xác nhận bắt đầu sạc ngay tại trạm ${station.name || station.stationName}?\nCổng sạc: ${availableCharger.chargerCode || availableCharger.chargerId}`)) {
+      return;
+    }
+
+    setStartingCharge(true);
+    try {
+      const response = await apiClient.post('/sessions/start', {
+        userId: user.userId || user.id,
+        stationId: station.id || station.stationId,
+        chargerId: availableCharger.chargerId
+      });
+
+      if (response.data) {
+        alert(`✅ Đã bắt đầu phiên sạc!\n\nMã phiên: ${response.data.sessionCode || response.data.sessionId}`);
+        // Navigate to charging live page
+        navigate('/sessions/live');
+      }
+    } catch (error) {
+      console.error('Error starting charge:', error);
+      alert(`❌ ${error.response?.data?.message || error.message || 'Không thể bắt đầu phiên sạc'}`);
+    } finally {
+      setStartingCharge(false);
+    }
+  }, [user, station, navigate]);
 
   // Memoize parsed location data
   const locationData = useMemo(() => {
@@ -95,6 +138,24 @@ const StationCard = React.memo(({ station }) => {
         <div className="station-actions">
           {station.status === 'online' ? (
             <>
+              <button 
+                className="btn-quick-charge"
+                onClick={handleQuickCharge}
+                disabled={startingCharge || !station.chargers?.some(c => c.status === 'available')}
+                title="Sạc ngay (không cần đặt chỗ)"
+              >
+                {startingCharge ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Đang khởi động...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-bolt"></i>
+                    <span>Sạc ngay</span>
+                  </>
+                )}
+              </button>
               <button 
                 className="btn-quick-book-card"
                 onClick={handleQuickBook}

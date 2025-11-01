@@ -10,8 +10,12 @@ public interface ReservationService {
     ReservationResponseDto getReservationById(Long reservationId);
     List<ReservationResponseDto> getReservationsByUserId(Long userId);
     ReservationResponseDto cancelReservation(Long reservationId, Long userId, String reason);
+    // Admin cancel reservation (no userId check)
+    ReservationResponseDto adminCancelReservation(Long reservationId, String reason);
     ReservationResponseDto checkIn(Long reservationId, Long userId);
     Object startSessionFromReservation(Long reservationId, Long userId);
     SessionResponseDto startSessionFromQRCode(String qrCode, Long userId);
+    // Get all reservations (for admin)
+    List<ReservationResponseDto> getAllReservations();
 }
 

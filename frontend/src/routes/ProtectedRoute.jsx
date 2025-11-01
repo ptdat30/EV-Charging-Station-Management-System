@@ -45,7 +45,11 @@ const ProtectedRoute = ({ requireAdmin = false, requireStaff = false, roles = nu
     }
 
     // Lấy role của user (hỗ trợ nhiều format)
-    const userRole = (user?.role || user?.roles?.[0] || '').toUpperCase();
+    // Backend trả về role dạng lowercase, cần uppercase để so sánh
+    // Có thể là user.role hoặc user.userType
+    const rawRole = user?.role || user?.userType || user?.roles?.[0] || '';
+    const userRole = String(rawRole).toUpperCase();
+    console.log('🔍 ProtectedRoute - Raw role:', rawRole, 'User role (uppercase):', userRole, 'Full user object:', user);
 
     // Kiểm tra quyền Admin (nếu route yêu cầu)
     if (requireAdmin) {
@@ -65,7 +69,9 @@ const ProtectedRoute = ({ requireAdmin = false, requireStaff = false, roles = nu
 
     // Kiểm tra quyền Staff (nếu route yêu cầu)
     if (requireStaff) {
+        console.log('🔒 Checking staff access. User role:', userRole);
         if (userRole !== 'STAFF' && userRole !== 'ADMIN') {
+            console.log('❌ Access denied. Redirecting...');
             return (
                 <Navigate
                     to="/dashboard"
@@ -77,6 +83,7 @@ const ProtectedRoute = ({ requireAdmin = false, requireStaff = false, roles = nu
                 />
             );
         }
+        console.log('✅ Staff access granted');
     }
 
     // Kiểm tra roles cụ thể

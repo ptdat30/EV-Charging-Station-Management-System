@@ -26,3 +26,17 @@ export const getPaymentById = async (paymentId) => {
     return response.data;
 };
 
+/**
+ * Xử lý thanh toán cho phiên sạc (sau khi sạc xong)
+ */
+export const processPaymentForSession = async (sessionId, userId, energyConsumed, pricePerKwh, paymentMethod) => {
+    const response = await apiClient.post('/payments/process', {
+        sessionId,
+        userId,
+        energyConsumed,
+        pricePerKwh,
+        paymentMethod // 'wallet' hoặc 'cash'
+    });
+    return response.data;
+};
+

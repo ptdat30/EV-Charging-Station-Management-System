@@ -44,7 +44,14 @@ const PackagesManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      // For now, use mock data until backend is ready
+      
+      // ⚠️ NOTE: Package service không có trong backend hiện tại
+      // Đang sử dụng mock data cho mục đích demo/development
+      // TODO: Khi backend package service được implement, thay thế bằng:
+      // const response = await getAllPackages();
+      // const data = response.data || response || [];
+      // setPackages(Array.isArray(data) ? data : []);
+      
       const mockPackages = [
         {
           id: 1,

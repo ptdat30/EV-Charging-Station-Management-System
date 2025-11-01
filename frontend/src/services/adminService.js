@@ -211,3 +211,22 @@ function getTimeAgo(date) {
   return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
 }
 
+/**
+ * Lấy danh sách tất cả giao dịch (Admin only)
+ * @param {object} filters - Filters for transactions
+ * @returns {Promise}
+ */
+export const getAllTransactions = async (filters = {}) => {
+  try {
+    console.log('💰 Fetching all transactions...');
+    const response = await apiClient.get('/payments/admin/all', {
+      params: filters
+    });
+    console.log('✅ All transactions fetched:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Failed to fetch transactions:', error);
+    throw error;
+  }
+};
+

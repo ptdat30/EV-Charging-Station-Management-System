@@ -37,27 +37,46 @@ const Login = () => {
 
       if (result.success) {
         // Redirect theo role của user
-        const userRole = (result.user?.role || result.user?.roles?.[0] || '').toUpperCase();
+        // Backend trả về role dạng lowercase (staff, driver, admin)
+        // Có thể là result.user.role hoặc result.user.userType
+        const rawRole = result.user?.role || result.user?.userType || result.user?.roles?.[0] || '';
+        const userRole = String(rawRole).toUpperCase();
+        console.log('🔐 Login successful. Raw role:', rawRole, 'User role (uppercase):', userRole, 'Full user object:', result.user);
         let redirectPath = from;
 
-        // Nếu đang ở homepage hoặc login page, redirect theo role
-        if (from === '/' || from === '/login') {
-          switch (userRole) {
-            case 'DRIVER':
+        // Luôn redirect theo role sau khi đăng nhập thành công
+        // (trừ khi đã có từ path hợp lệ cho role đó)
+        switch (userRole) {
+          case 'DRIVER':
+            if (from === '/' || from === '/login' || !from.startsWith('/driver') && !from.startsWith('/dashboard')) {
               redirectPath = '/dashboard';
-              break;
-            case 'ADMIN':
+            }
+            console.log('🚗 Redirecting DRIVER to:', redirectPath);
+            break;
+          case 'ADMIN':
+            if (from === '/' || from === '/login' || !from.startsWith('/admin')) {
               redirectPath = '/admin';
-              break;
-            case 'STAFF':
-              redirectPath = '/dashboard'; // Staff có thể dùng dashboard chung hoặc tạo riêng sau
-              break;
-            default:
-              redirectPath = '/dashboard';
-          }
+            }
+            console.log('👑 Redirecting ADMIN to:', redirectPath);
+            break;
+          case 'STAFF':
+            if (from === '/' || from === '/login' || !from.startsWith('/staff')) {
+              redirectPath = '/staff'; // Staff dashboard
+            }
+            console.log('👤 Redirecting STAFF to:', redirectPath);
+            break;
+          default:
+            redirectPath = '/dashboard';
+            console.log('⚠️ Unknown role, redirecting to default:', redirectPath);
         }
 
-        navigate(redirectPath, { replace: true });
+        console.log('📍 Navigating to:', redirectPath);
+        
+        // Đảm bảo user state đã được set trước khi navigate
+        // setTimeout nhỏ để đảm bảo state update được apply
+        setTimeout(() => {
+          navigate(redirectPath, { replace: true });
+        }, 100);
       } else {
         setError(result.message || 'Email hoặc mật khẩu không đúng');
       }

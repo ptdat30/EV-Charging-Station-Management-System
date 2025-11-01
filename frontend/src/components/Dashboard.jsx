@@ -1,6 +1,6 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LazyEnergyChart } from './LazyChart';
 import { getDashboardStats, getRecentSessions, getEnergyUsageChart } from '../services/dashboardService';
@@ -10,6 +10,7 @@ import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -17,6 +18,21 @@ const Dashboard = () => {
   const [energyData, setEnergyData] = useState([]);
   const [driverName, setDriverName] = useState('');
   const [error, setError] = useState('');
+
+  // Redirect staff to staff dashboard
+  useEffect(() => {
+    const userRole = (user?.role || user?.userType || '').toUpperCase();
+    if (userRole === 'STAFF') {
+      console.log('🔄 Staff detected in Dashboard, redirecting to /staff');
+      navigate('/staff', { replace: true });
+      return;
+    }
+    if (userRole === 'ADMIN') {
+      console.log('🔄 Admin detected in Dashboard, redirecting to /admin');
+      navigate('/admin', { replace: true });
+      return;
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const loadData = async () => {
