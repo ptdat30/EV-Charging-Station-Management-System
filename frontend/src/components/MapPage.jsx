@@ -156,6 +156,7 @@ const MapPage = () => {
     }
 
     // Availability filter
+    // Note: Chỉ trạm online mới có thể đặt chỗ và sạc
     if (availabilityValue === 'available') {
       filtered = filtered.filter(station => 
         station.status === 'online' &&
@@ -163,6 +164,7 @@ const MapPage = () => {
       );
     } else if (availabilityValue === 'in_use') {
       filtered = filtered.filter(station => 
+        station.status === 'online' &&
         station.chargers?.some(c => c.status === 'in_use')
       );
     }

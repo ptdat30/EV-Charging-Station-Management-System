@@ -284,6 +284,23 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                 </>
               )}
             </button>
+            {/* Login Link */}
+            <div className="register-login-link">
+              <span>Bạn đã có tài khoản?</span>
+              {onSwitchToLogin ? (
+                <button
+                  type="button"
+                  onClick={handleSwitchToLogin}
+                  className="login-link-text"
+                >
+                  Đăng nhập ngay
+                </button>
+              ) : (
+                <Link to="/login" onClick={onClose} className="login-link-text">
+                  Đăng nhập ngay
+                </Link>
+              )}
+            </div>
           </form>
         </div>
       </div>

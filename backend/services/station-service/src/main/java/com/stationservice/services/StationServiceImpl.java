@@ -134,9 +134,16 @@ public class StationServiceImpl implements StationService {
         Station station = stationRepository.findById(stationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Station not found with id: " + stationId));
 
-        station.setStationName(requestDto.getStationName());
-        station.setLocation(requestDto.getLocation());
-        station.setStatus(requestDto.getStatus());
+        // Chỉ cập nhật các field có giá trị (partial update)
+        if (requestDto.getStationName() != null) {
+            station.setStationName(requestDto.getStationName());
+        }
+        if (requestDto.getLocation() != null) {
+            station.setLocation(requestDto.getLocation());
+        }
+        if (requestDto.getStatus() != null) {
+            station.setStatus(requestDto.getStatus());
+        }
 
         Station updatedStation = stationRepository.save(station);
         return convertToDto(updatedStation);

@@ -146,3 +146,19 @@ export const deleteVehicle = async (vehicleId) => {
         throw error;
     }
 };
+
+/**
+ * Lấy danh sách tất cả người dùng (Admin only)
+ * @returns {Promise}
+ */
+export const getAllUsers = async () => {
+    try {
+        console.log('📋 Fetching all users...');
+        const response = await apiClient.get('/users/getall');
+        console.log('✅ All users fetched:', response.data);
+        return response;
+    } catch (error) {
+        console.error('❌ Failed to fetch all users:', error);
+        throw error;
+    }
+};

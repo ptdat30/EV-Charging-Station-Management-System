@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getMyProfile, updateMyProfile } from '../../../services/userService';
+import { NavLink, useLocation } from 'react-router-dom';
 import './UserProfile.css';
 import VehiclesManager from './VehiclesManager';
 import TransactionsHistory from './TransactionsHistory';
-import { useLocation } from 'react-router-dom';
 
 function UserProfileScreen({ tab }) {
     const { user, token, isAuthenticated } = useAuth();
@@ -17,14 +17,16 @@ function UserProfileScreen({ tab }) {
         phone: '',
         address: '',
         emergencyContact: '',
+        avatarUrl: '',
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
-            // Kiểm tra authentication
             if (!isAuthenticated || !token) {
                 console.log('❌ Not authenticated, skipping profile fetch');
                 setLoading(false);
@@ -40,28 +42,29 @@ function UserProfileScreen({ tab }) {
                 const response = await getMyProfile();
                 console.log('✅ Profile fetched successfully:', response.data);
 
-                // Ưu tiên dữ liệu từ API, fallback về user context
                 setProfileData({
                     fullName: response.data?.fullName || user?.fullName || '',
                     email: response.data?.email || user?.email || '',
                     phone: response.data?.phone || user?.phone || '',
                     address: response.data?.address || '',
                     emergencyContact: response.data?.emergencyContact || '',
+                    avatarUrl: response.data?.avatarUrl || user?.avatarUrl || '',
                 });
+                setAvatarPreview(response.data?.avatarUrl || user?.avatarUrl || null);
             } catch (err) {
                 console.error('❌ Failed to fetch profile:', err);
 
-                // Xử lý các loại lỗi khác nhau
                 if (err.response?.status === 404) {
                     setError('Không tìm thấy thông tin hồ sơ. Vui lòng tạo hồ sơ mới.');
-                    // Fallback: Hiển thị thông tin từ user context
                     setProfileData({
                         fullName: user?.fullName || '',
                         email: user?.email || '',
                         phone: user?.phone || '',
                         address: '',
                         emergencyContact: '',
+                        avatarUrl: user?.avatarUrl || '',
                     });
+                    setAvatarPreview(user?.avatarUrl || null);
                 } else if (err.response?.status === 401) {
                     setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                 } else if (err.response?.status === 403) {
@@ -114,10 +117,67 @@ function UserProfileScreen({ tab }) {
         }
     };
 
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            setError('Vui lòng chọn file ảnh');
+            return;
+        }
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Kích thước ảnh không được vượt quá 5MB');
+            return;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setAvatarPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload avatar
+        setUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const { uploadAvatar } = await import('../../../services/userService');
+            const response = await uploadAvatar(formData);
+            
+            if (response.data?.url) {
+                setProfileData({ ...profileData, avatarUrl: response.data.url });
+                setError('');
+                alert('Cập nhật avatar thành công!');
+            }
+        } catch (err) {
+            console.error('❌ Failed to upload avatar:', err);
+            setError(err.response?.data?.message || 'Không thể tải lên avatar. Vui lòng thử lại.');
+            setAvatarPreview(null);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    // Get initials for avatar
+    const getInitials = () => {
+        const name = profileData.fullName || user?.fullName || user?.email || 'U';
+        return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    };
+
     // Loading state
     if (loading && !profileData.email) {
         return (
-            <div className="profile-screen">
+            <div className="github-profile-container">
                 <div className="loading-container">
                     <div className="spinner"></div>
                     <p>Đang tải thông tin hồ sơ...</p>
@@ -129,7 +189,7 @@ function UserProfileScreen({ tab }) {
     // Not authenticated
     if (!isAuthenticated) {
         return (
-            <div className="profile-screen">
+            <div className="github-profile-container">
                 <div className="error-container">
                     <h2>⚠️ Bạn chưa đăng nhập</h2>
                     <p>Vui lòng <a href="/login">đăng nhập</a> để xem thông tin hồ sơ.</p>
@@ -138,161 +198,241 @@ function UserProfileScreen({ tab }) {
         );
     }
 
-    // Render
+    const activeTab = /\/info\b/.test(pathname) ? 'info' :
+                     /\/vehicles\b/.test(pathname) ? 'vehicles' :
+                     /\/history\b/.test(pathname) ? 'history' : 'info';
+
     return (
-        <div className="profile-screen">
-            <main className="profile-container">
-                <h2>
-                  {/\/info\b/.test(pathname) ? 'Thông tin cá nhân' :
-                   /\/vehicles\b/.test(pathname) ? 'Quản lý xe'
-                   : 'Lịch sử giao dịch'}
-                </h2>
-                {error && (
-                    <div className="error-message">
-                        <i className="fas fa-exclamation-triangle"></i>
-                        {error}
-                    </div>
-                )}
-                {/\/info\b/.test(pathname) && (
-                <form onSubmit={handleSubmit} className="profile-form">
-                    {/* Email (Read-only) */}
-                    <div className="form-group">
-                        <label htmlFor="email">
-                            <i className="fas fa-envelope"></i>
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={profileData.email}
-                            disabled
-                            className="form-input-disabled"
-                        />
-                    </div>
-
-                    {/* Full Name */}
-                    <div className="form-group">
-                        <label htmlFor="fullName">
-                            <i className="fas fa-user"></i>
-                            Họ và Tên
-                        </label>
-                        <input
-                            type="text"
-                            id="fullName"
-                            name="fullName"
-                            value={profileData.fullName}
-                            onChange={handleChange}
-                            disabled={!isEditing || loading}
-                            required
-                            className={!isEditing ? "form-input-disabled" : ""}
-                        />
-                    </div>
-
-                    {/* Phone */}
-                    <div className="form-group">
-                        <label htmlFor="phone">
-                            <i className="fas fa-phone"></i>
-                            Số điện thoại
-                        </label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            value={profileData.phone || ''}
-                            onChange={handleChange}
-                            disabled={!isEditing || loading}
-                            placeholder="0912345678"
-                            className={!isEditing ? "form-input-disabled" : ""}
-                        />
-                    </div>
-
-                    {/* Address */}
-                    <div className="form-group">
-                        <label htmlFor="address">
-                            <i className="fas fa-map-marker-alt"></i>
-                            Địa chỉ
-                        </label>
-                        <textarea
-                            id="address"
-                            name="address"
-                            value={profileData.address || ''}
-                            onChange={handleChange}
-                            disabled={!isEditing || loading}
-                            rows={3}
-                            placeholder="Nhập địa chỉ của bạn"
-                            className={!isEditing ? "form-input-disabled" : ""}
-                        />
-                    </div>
-
-                    {/* Emergency Contact */}
-                    <div className="form-group">
-                        <label htmlFor="emergencyContact">
-                            <i className="fas fa-ambulance"></i>
-                            Liên hệ khẩn cấp
-                        </label>
-                        <input
-                            type="tel"
-                            id="emergencyContact"
-                            name="emergencyContact"
-                            value={profileData.emergencyContact || ''}
-                            onChange={handleChange}
-                            disabled={!isEditing || loading}
-                            placeholder="0987654321"
-                            className={!isEditing ? "form-input-disabled" : ""}
-                        />
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="profile-actions">
-                        {isEditing ? (
-                            <>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <span className="spinner-small"></span>
-                                            Đang lưu...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-save"></i>
-                                            Lưu thay đổi
-                                        </>
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={handleEditToggle}
-                                    disabled={loading}
-                                >
-                                    <i className="fas fa-times"></i>
-                                    Hủy
-                                </button>
-                            </>
-                        ) : (
-                            <button
-                                type="button"
-                                className="btn btn-primary"
-                                onClick={handleEditToggle}
+        <div className="github-profile-container">
+            {/* Profile Header */}
+            <div className="profile-header">
+                <div className="profile-header-content">
+                    <div className="profile-avatar-wrapper">
+                        <div className="profile-avatar-container">
+                            {(avatarPreview || profileData.avatarUrl) ? (
+                                <img 
+                                    src={avatarPreview || profileData.avatarUrl} 
+                                    alt="Avatar" 
+                                    className="profile-avatar-img"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextElementSibling.style.display = 'flex';
+                                    }}
+                                />
+                            ) : null}
+                            <div 
+                                className="profile-avatar"
+                                style={{ display: (avatarPreview || profileData.avatarUrl) ? 'none' : 'flex' }}
                             >
-                                <i className="fas fa-edit"></i>
-                                Chỉnh sửa hồ sơ
-                            </button>
-                        )}
+                                {getInitials()}
+                            </div>
+                            <label className="avatar-upload-btn" htmlFor="avatar-upload" title="Đổi avatar">
+                                {uploadingAvatar ? (
+                                    <span className="spinner-small"></span>
+                                ) : (
+                                    <i className="fas fa-camera"></i>
+                                )}
+                            </label>
+                            <input
+                                id="avatar-upload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleAvatarChange}
+                                style={{ display: 'none' }}
+                                disabled={uploadingAvatar}
+                            />
+                        </div>
                     </div>
-                </form>
+                    <div className="profile-info">
+                        <h1 className="profile-name">{profileData.fullName || user?.fullName || 'Người dùng'}</h1>
+                        <div className="profile-username">{profileData.email || user?.email || ''}</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="profile-nav-container">
+                <nav className="profile-nav">
+                    <NavLink 
+                        to="/driver/profile/info" 
+                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
+                    >
+                        <span className="nav-item-text">Thông tin</span>
+                    </NavLink>
+                    <NavLink 
+                        to="/driver/profile/vehicles" 
+                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
+                    >
+                        <span className="nav-item-text">Quản lý xe</span>
+                    </NavLink>
+                    <NavLink 
+                        to="/driver/profile/history" 
+                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
+                    >
+                        <span className="nav-item-text">Lịch sử giao dịch</span>
+                    </NavLink>
+                </nav>
+            </div>
+
+            {/* Content Area */}
+            <div className="profile-content">
+                {error && (
+                    <div className="profile-error-banner">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        <span>{error}</span>
+                    </div>
                 )}
-                {/\/vehicles\b/.test(pathname) && (
-                    <VehiclesManager />
+
+                {/* Info Tab */}
+                {activeTab === 'info' && (
+                    <div className="profile-section">
+                        <div className="section-header">
+                            <h2>Thông tin cá nhân</h2>
+                            {!isEditing && (
+                                <button 
+                                    className="btn btn-primary btn-sm"
+                                    onClick={handleEditToggle}
+                                >
+                                    <i className="fas fa-pencil-alt"></i>
+                                    Chỉnh sửa
+                                </button>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="profile-form-github">
+                            <div className="form-field">
+                                <label htmlFor="email">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    value={profileData.email}
+                                    disabled
+                                    className="form-control form-control-disabled"
+                                />
+                                <p className="form-caption">Email không thể thay đổi</p>
+                            </div>
+
+                            <div className="form-field">
+                                <label htmlFor="fullName">
+                                    Họ và tên
+                                </label>
+                                <input
+                                    type="text"
+                                    id="fullName"
+                                    name="fullName"
+                                    value={profileData.fullName}
+                                    onChange={handleChange}
+                                    disabled={!isEditing || loading}
+                                    required
+                                    className="form-control"
+                                    placeholder="Nhập họ và tên"
+                                />
+                            </div>
+
+                            <div className="form-field">
+                                <label htmlFor="phone">
+                                    Số điện thoại
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value={profileData.phone || ''}
+                                    onChange={handleChange}
+                                    disabled={!isEditing || loading}
+                                    className="form-control"
+                                    placeholder="0912345678"
+                                />
+                            </div>
+
+                            <div className="form-field">
+                                <label htmlFor="address">
+                                    Địa chỉ
+                                </label>
+                                <textarea
+                                    id="address"
+                                    name="address"
+                                    value={profileData.address || ''}
+                                    onChange={handleChange}
+                                    disabled={!isEditing || loading}
+                                    rows={3}
+                                    className="form-control"
+                                    placeholder="Nhập địa chỉ của bạn"
+                                />
+                            </div>
+
+                            <div className="form-field">
+                                <label htmlFor="emergencyContact">
+                                    Liên hệ khẩn cấp
+                                </label>
+                                    <input
+                                        type="tel"
+                                        id="emergencyContact"
+                                        name="emergencyContact"
+                                        value={profileData.emergencyContact || ''}
+                                        onChange={handleChange}
+                                        disabled={!isEditing || loading}
+                                        className="form-control"
+                                        placeholder="0987654321"
+                                    />
+                            </div>
+
+                            {isEditing && (
+                                <div className="form-actions">
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <span className="spinner-small"></span>
+                                                Đang lưu...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <i className="fas fa-check"></i>
+                                                Lưu thay đổi
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={handleEditToggle}
+                                        disabled={loading}
+                                    >
+                                        Hủy
+                                    </button>
+                                </div>
+                            )}
+                        </form>
+                    </div>
                 )}
-                {/\/history\b/.test(pathname) && (
-                    <TransactionsHistory />
+
+                {/* Vehicles Tab */}
+                {activeTab === 'vehicles' && (
+                    <div className="profile-section">
+                        <div className="section-header">
+                            <h2>Quản lý xe</h2>
+                        </div>
+                        <VehiclesManager />
+                    </div>
                 )}
+
+                {/* History Tab */}
+                {activeTab === 'history' && (
+                    <div className="profile-section">
+                        <div className="section-header">
+                            <h2>Lịch sử giao dịch</h2>
+                        </div>
+                        <TransactionsHistory />
+                    </div>
+                )}
+
                 {/* Debug Info (Dev Only) */}
                 {import.meta.env.DEV && (
                     <div className="debug-info">
@@ -302,12 +442,13 @@ function UserProfileScreen({ tab }) {
                                 isAuthenticated,
                                 hasToken: !!token,
                                 hasUser: !!user,
-                                profileData
+                                profileData,
+                                activeTab
                             }, null, 2)}</pre>
                         </details>
                     </div>
                 )}
-            </main>
+            </div>
         </div>
     );
 }

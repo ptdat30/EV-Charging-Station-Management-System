@@ -14,12 +14,21 @@ eureka:
     register-with-eureka: true
 
 spring:
+  # Codec configuration for large file uploads (Gateway uses reactive, not servlet)
+  codec:
+    max-in-memory-size: 10MB
+  
   cloud:
     gateway:
       # [COMMAND]: TẮT discovery locator
       discovery:
         locator:
           enabled: false
+      
+      # HTTP client configuration for large file uploads
+      httpclient:
+        connect-timeout: 45000
+        response-timeout: 60s
 
       # [COMMAND]: Các route tường minh
       routes:

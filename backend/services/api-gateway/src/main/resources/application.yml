@@ -7,6 +7,10 @@
 # Chỉ giữ những config CẦN override local
 # Phần lớn config sẽ lấy từ Config Server
 
+spring:
+  codec:
+    max-in-memory-size: 10MB
+
 logging:
   level:
     root: INFO

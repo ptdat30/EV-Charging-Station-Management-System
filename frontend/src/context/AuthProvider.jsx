@@ -10,12 +10,17 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        console.log('🔄 AuthProvider mounted, token:', token ? 'exists' : 'none');
-
+        // Tắt tính năng tự động đăng nhập
+        // Người dùng phải đăng nhập thủ công mỗi lần
+        console.log('🔄 AuthProvider mounted - Auto login disabled');
+        setLoading(false);
+        
+        // Xóa token cũ khi mount để đảm bảo không tự động đăng nhập
         if (token) {
-            validateToken();
-        } else {
-            setLoading(false);
+            localStorage.removeItem('token');
+            setToken(null);
+            setIsAuthenticated(false);
+            setUser(null);
         }
     }, []); // Chỉ chạy 1 lần khi mount
 
