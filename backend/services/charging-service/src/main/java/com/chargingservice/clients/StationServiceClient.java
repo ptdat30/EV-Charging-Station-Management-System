@@ -27,4 +27,8 @@ public interface StationServiceClient {
     // GET /api/stations/{stationId}/chargers - Lấy danh sách chargers của một station
     @GetMapping("/api/stations/{stationId}/chargers")
     List<Map<String, Object>> getChargersByStationId(@PathVariable("stationId") Long stationId);
+
+    // GET /api/stations/{stationId} - Lấy thông tin chi tiết của một station
+    @GetMapping("/api/stations/{stationId}")
+    Map<String, Object> getStationById(@PathVariable("stationId") Long stationId);
 }

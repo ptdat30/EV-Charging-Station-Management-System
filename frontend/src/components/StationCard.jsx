@@ -93,21 +93,43 @@ const StationCard = React.memo(({ station }) => {
           )}
         </div>
         <div className="station-actions">
-          <button 
-            className="btn-quick-book-card"
-            onClick={handleQuickBook}
-            title="Đặt chỗ nhanh"
-          >
-            <i className="fas fa-bolt"></i>
-            Đặt nhanh
-          </button>
-          <button 
-            className="btn-book"
-            onClick={handleBookClick}
-          >
-            <i className="fas fa-calendar-check"></i>
-            Đặt chỗ
-          </button>
+          {station.status === 'online' ? (
+            <>
+              <button 
+                className="btn-quick-book-card"
+                onClick={handleQuickBook}
+                title="Đặt chỗ nhanh"
+              >
+                <i className="fas fa-bolt"></i>
+                Đặt nhanh
+              </button>
+              <button 
+                className="btn-book"
+                onClick={handleBookClick}
+              >
+                <i className="fas fa-calendar-check"></i>
+                Đặt chỗ
+              </button>
+            </>
+          ) : (
+            <div className="booking-notice" style={{ 
+              gridColumn: '1 / -1',
+              padding: '0.75rem',
+              background: '#fee2e2',
+              borderRadius: '8px',
+              textAlign: 'center',
+              fontSize: '0.875rem',
+              color: '#991b1b'
+            }}>
+              <i className="fas fa-exclamation-triangle"></i>
+              <span>
+                {station.status === 'maintenance' ? 'Trạm đang bảo trì - Không thể đặt chỗ hoặc sạc' :
+                 station.status === 'offline' ? 'Trạm tạm ngưng - Không thể đặt chỗ hoặc sạc' :
+                 station.status === 'closed' ? 'Trạm đã đóng cửa - Không thể đặt chỗ hoặc sạc' :
+                 'Trạm không khả dụng - Không thể đặt chỗ hoặc sạc'}
+              </span>
+            </div>
+          )}
           <button 
             className="btn-detail"
             onClick={() => navigate(`/stations/${station.id}`)}

@@ -6,6 +6,11 @@ import '../styles/HeroSection.css';
 const HeroSection = ({ onLoginClick, onRegisterClick }) => {
   const { isAuthenticated } = useAuth();
 
+  // Debug: log authentication state
+  console.log('HeroSection - isAuthenticated:', isAuthenticated);
+  console.log('HeroSection - onLoginClick:', onLoginClick);
+  console.log('HeroSection - onRegisterClick:', onRegisterClick);
+
   return (
     <section className="hero">
       {/* Video Background */}
@@ -26,10 +31,8 @@ const HeroSection = ({ onLoginClick, onRegisterClick }) => {
       <div className="hero-overlay"></div>
 
       <div className="hero-content">
-        {!isAuthenticated && (
-          <>
-            <div className="hero-brand">
-              <div className="hero-brand-logo">
+        <div className="hero-brand">
+          <div className="hero-brand-logo">
                 <svg 
                   viewBox="0 0 200 200" 
                   className="logo-svg"
@@ -82,21 +85,24 @@ const HeroSection = ({ onLoginClick, onRegisterClick }) => {
                   <div className="logo-text-station">STATION</div>
                 </div>
               </div>
-              <p className="hero-brand-tagline">Hệ Thống Sạc Xe Điện Của Sinh Viên UTH</p>
-            </div>
-            <div className="hero-auth-buttons">
-              <button className="hero-btn-login" onClick={onLoginClick}>
-                <i className="fas fa-sign-in-alt"></i>
-                Đăng Nhập
-              </button>
-              <button className="hero-btn-register" onClick={onRegisterClick}>
-                <i className="fas fa-user-plus"></i>
-                Đăng Ký
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+          <p className="hero-brand-tagline">Hệ Thống Sạc Xe Điện Của Sinh Viên UTH</p>
+        </div>
+        {/* Debug: Hiển thị nút luôn để test */}
+        <div className="hero-auth-buttons">
+          {onLoginClick && (
+            <button className="hero-btn-login" onClick={onLoginClick}>
+              <i className="fas fa-sign-in-alt"></i>
+              Đăng Nhập
+            </button>
+          )}
+          {onRegisterClick && (
+            <button className="hero-btn-register" onClick={onRegisterClick}>
+              <i className="fas fa-user-plus"></i>
+              Đăng Ký
+            </button>
+          )}
+         </div>
+       </div>
     </section>
   );
 };

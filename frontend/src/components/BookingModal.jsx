@@ -79,6 +79,15 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
       return;
     }
 
+    // Chỉ cho phép đặt chỗ khi trạm đang online (hoạt động)
+    if (station.status !== 'online') {
+      const statusMsg = station.status === 'maintenance' ? 'đang bảo trì' :
+                       station.status === 'offline' ? 'tạm ngưng' :
+                       station.status === 'closed' ? 'đã đóng cửa' : 'không khả dụng';
+      setError(`Trạm ${statusMsg}. Không thể đặt chỗ hoặc sạc tại thời điểm này.`);
+      return;
+    }
+
     setLoading(true);
     setError('');
     
@@ -131,6 +140,15 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
     
     if (!station || !station.id) {
       setError('Thông tin trạm không hợp lệ');
+      return;
+    }
+
+    // Chỉ cho phép đặt chỗ khi trạm đang online (hoạt động)
+    if (station.status !== 'online') {
+      const statusMsg = station.status === 'maintenance' ? 'đang bảo trì' :
+                       station.status === 'offline' ? 'tạm ngưng' :
+                       station.status === 'closed' ? 'đã đóng cửa' : 'không khả dụng';
+      setError(`Trạm ${statusMsg}. Không thể đặt chỗ hoặc sạc tại thời điểm này.`);
       return;
     }
 

@@ -51,6 +51,26 @@ public class ReservationServiceImpl implements ReservationService {
 
         validateRequestTimes(requestDto.getReservedStartTime(), requestDto.getReservedEndTime(), requestDto.getDurationMinutes());
         
+        // Kiểm tra trạng thái trạm: chỉ cho phép đặt chỗ khi trạm đang online
+        try {
+            Map<String, Object> station = stationServiceClient.getStationById(requestDto.getStationId());
+            if (station != null) {
+                String stationStatus = (String) station.get("status");
+                if (stationStatus == null || !"online".equalsIgnoreCase(stationStatus)) {
+                    String statusMsg = stationStatus == null ? "không xác định" :
+                                       "maintenance".equalsIgnoreCase(stationStatus) ? "đang bảo trì" :
+                                       "offline".equalsIgnoreCase(stationStatus) ? "tạm ngưng" :
+                                       "closed".equalsIgnoreCase(stationStatus) ? "đã đóng cửa" : stationStatus;
+                    throw new IllegalStateException("Trạm " + statusMsg + ". Không thể đặt chỗ hoặc sạc tại thời điểm này.");
+                }
+            }
+        } catch (IllegalStateException e) {
+            throw e; // Re-throw validation errors
+        } catch (Exception e) {
+            log.warn("Could not verify station status, proceeding anyway: {}", e.getMessage());
+            // Continue if station service is unavailable (fail gracefully)
+        }
+        
         Long chargerId = requestDto.getChargerId();
         
         // Nếu chargerId null, tự động tìm charger available tại station

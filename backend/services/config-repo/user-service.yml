@@ -12,6 +12,14 @@ spring:
       ddl-auto: update # Tự động cập nhật schema, hữu ích khi phát triển
     show-sql: true # Hiển thị câu lệnh SQL trong console
 
+  # Multipart upload configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2KB
+
 # Cấu hình để user-service đăng ký với eureka
 eureka:
   client:
