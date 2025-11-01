@@ -1,10 +1,10 @@
-// src/components/DriverNavBar.jsx
+// src/components/staff/StaffNavBar.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import './DriverNavBar.css';
+import { useAuth } from '../../context/AuthContext';
+import './StaffNavBar.css';
 
-const DriverNavBar = () => {
+const StaffNavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
@@ -12,10 +12,14 @@ const DriverNavBar = () => {
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
+    // Debug: Log user info
+    useEffect(() => {
+        console.log('👤 StaffNavBar - User:', user);
+        console.log('👤 StaffNavBar - Location:', location.pathname);
+    }, [user, location]);
+
     const handleLogout = () => {
-        // Navigate trước để tránh ProtectedRoute redirect về login
         navigate('/', { replace: true });
-        // Sau đó mới logout để clear state
         setTimeout(() => {
             logout();
         }, 0);
@@ -42,86 +46,72 @@ const DriverNavBar = () => {
         };
     }, [isUserDropdownOpen]);
 
-    // Lấy role của user
-    const userRole = (user?.role || user?.roles?.[0] || '').toUpperCase();
-    const isStaff = userRole === 'STAFF';
-
-    // Menu items - ẩn một số items cho STAFF
-    const allNavItems = [
+    // Menu items cho Staff
+    const navItems = [
         {
-            path: '/dashboard',
+            path: '/staff',
             icon: 'fas fa-home',
-            label: 'Trang chủ',
-            description: 'Dashboard',
-            roles: ['DRIVER', 'STAFF'] // Cả 2 đều có
+            label: 'Tổng quan',
+            description: 'Dashboard'
         },
         {
-            path: '/map',
-            icon: 'fas fa-map-marker-alt',
-            label: 'Tìm trạm sạc',
-            description: 'Tìm trạm',
-            roles: ['DRIVER', 'STAFF']
+            path: '/staff/sessions',
+            icon: 'fas fa-bolt',
+            label: 'Quản lý phiên sạc',
+            description: 'Sessions'
         },
         {
-            path: '/stations/booking',
-            icon: 'fas fa-calendar-check',
-            label: 'Quản lý sạc',
-            description: 'Reservations',
-            roles: ['DRIVER'] // Chỉ driver
+            path: '/staff/payment',
+            icon: 'fas fa-cash-register',
+            label: 'Thanh toán tại chỗ',
+            description: 'Payment'
         },
         {
-            path: '/payment',
-            icon: 'fas fa-wallet',
-            label: 'Ví điện tử',
-            description: 'Wallet',
-            roles: ['DRIVER'] // Chỉ driver
+            path: '/staff/monitoring',
+            icon: 'fas fa-monitor-heart-rate',
+            label: 'Theo dõi điểm sạc',
+            description: 'Monitoring'
         },
         {
-            path: '/pricing',
-            icon: 'fas fa-box',
-            label: 'Mua gói dịch vụ',
-            description: 'Packages',
-            roles: ['DRIVER'] // Chỉ driver
+            path: '/staff/incidents',
+            icon: 'fas fa-exclamation-triangle',
+            label: 'Báo cáo sự cố',
+            description: 'Incidents'
         }
     ];
-
-    // Filter menu items dựa trên role của user
-    const navItems = allNavItems.filter(item => 
-        item.roles.includes(userRole)
-    );
 
     return (
         <>
             {/* Desktop Navbar */}
-            <nav className="driver-navbar">
-                <div className="driver-navbar-container">
+            <nav className="staff-navbar">
+                <div className="staff-navbar-container">
                     {/* Logo */}
-                    <Link to="/dashboard" className="driver-navbar-logo">
+                    <Link to="/staff" className="staff-navbar-logo">
                     </Link>
 
                     {/* Navigation Items */}
-                    <div className="driver-navbar-menu">
+                    <div className="staff-navbar-menu">
                         {navItems.map((item) => (
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`driver-nav-item ${isActive(item.path) ? 'active' : ''}`}
+                                className={`staff-nav-item ${isActive(item.path) ? 'active' : ''}`}
                                 title={item.description}
                             >
                                 <i className={item.icon}></i>
-                                <span className="nav-label">{item.label}</span>
+                                <span className="staff-nav-label">{item.label}</span>
                             </Link>
                         ))}
                     </div>
 
                     {/* User Section */}
-                    <div className="driver-navbar-user" ref={dropdownRef}>
-                        <div 
-                            className="user-info" 
+                    <div className="staff-navbar-user" ref={dropdownRef}>
+                        <div
+                            className="staff-user-info"
                             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                             style={{ cursor: 'pointer' }}
                         >
-                            <div className="user-avatar">
+                            <div className="staff-user-avatar">
                                 {user?.email ? (
                                     <span>{user.email.charAt(0).toUpperCase()}</span>
                                 ) : (
@@ -132,10 +122,10 @@ const DriverNavBar = () => {
 
                         {/* Profile Dropdown */}
                         {isUserDropdownOpen && (
-                            <div className="user-profile-dropdown">
-                                <div className="dropdown-header">
-                                    <div className="dropdown-user-info">
-                                        <div className="dropdown-avatar">
+                            <div className="staff-user-dropdown">
+                                <div className="staff-dropdown-header">
+                                    <div className="staff-dropdown-user-info">
+                                        <div className="staff-dropdown-avatar">
                                             {user?.email ? (
                                                 <span>{user.email.charAt(0).toUpperCase()}</span>
                                             ) : (
@@ -143,42 +133,26 @@ const DriverNavBar = () => {
                                             )}
                                         </div>
                                         <div>
-                                            <div className="dropdown-user-name">{user?.fullName || 'Driver'}</div>
-                                            <div className="dropdown-user-email">{user?.email || ''}</div>
+                                            <div className="staff-dropdown-user-name">{user?.fullName || 'Staff'}</div>
+                                            <div className="staff-dropdown-user-email">{user?.email || 'staff@evcharge.vn'}</div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <nav className="dropdown-nav">
-                                    <Link 
-                                        to="/driver/profile/info" 
-                                        className={`dropdown-nav-item ${/\/info\b/.test(location.pathname) ? 'active' : ''}`}
+                                <div className="staff-dropdown-nav">
+                                    <Link
+                                        to="/driver/profile/info"
+                                        className="staff-dropdown-nav-item"
                                         onClick={() => setIsUserDropdownOpen(false)}
                                     >
                                         <i className="fas fa-user"></i>
-                                        <span>Thông tin cá nhân</span>
+                                        <span>Hồ sơ</span>
                                     </Link>
-                                    <Link 
-                                        to="/driver/profile/vehicles" 
-                                        className={`dropdown-nav-item ${/\/vehicles\b/.test(location.pathname) ? 'active' : ''}`}
-                                        onClick={() => setIsUserDropdownOpen(false)}
-                                    >
-                                        <i className="fas fa-car"></i>
-                                        <span>Quản lý xe</span>
-                                    </Link>
-                                    <Link 
-                                        to="/driver/profile/history" 
-                                        className={`dropdown-nav-item ${/\/history\b/.test(location.pathname) ? 'active' : ''}`}
-                                        onClick={() => setIsUserDropdownOpen(false)}
-                                    >
-                                        <i className="fas fa-history"></i>
-                                        <span>Lịch sử giao dịch</span>
-                                    </Link>
-                                </nav>
+                                </div>
 
-                                <div className="dropdown-footer">
-                                    <button 
-                                        className="dropdown-logout-btn"
+                                <div className="staff-dropdown-footer">
+                                    <button
+                                        className="staff-dropdown-logout-btn"
                                         onClick={() => {
                                             setIsUserDropdownOpen(false);
                                             handleLogout();
@@ -194,7 +168,7 @@ const DriverNavBar = () => {
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className={`driver-mobile-toggle ${isMobileMenuOpen ? 'open' : ''}`}
+                        className={`staff-mobile-toggle ${isMobileMenuOpen ? 'open' : ''}`}
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         aria-label="Toggle menu"
                     >
@@ -206,10 +180,10 @@ const DriverNavBar = () => {
             </nav>
 
             {/* Mobile Menu */}
-            <div className={`driver-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-                <div className="mobile-menu-header">
-                    <div className="mobile-user-info">
-                        <div className="mobile-user-avatar">
+            <div className={`staff-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+                <div className="staff-mobile-menu-header">
+                    <div className="staff-mobile-user-info">
+                        <div className="staff-mobile-avatar">
                             {user?.email ? (
                                 <span>{user.email.charAt(0).toUpperCase()}</span>
                             ) : (
@@ -217,18 +191,18 @@ const DriverNavBar = () => {
                             )}
                         </div>
                         <div>
-                            <div className="mobile-user-name">{user?.fullName || 'Driver'}</div>
-                            <div className="mobile-user-email">{user?.email || ''}</div>
+                            <div className="staff-mobile-user-name">{user?.fullName || 'Staff'}</div>
+                            <div className="staff-mobile-user-email">{user?.email || 'staff@evcharge.vn'}</div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mobile-menu-items">
+                <div className="staff-mobile-menu-items">
                     {navItems.map((item) => (
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`mobile-nav-item ${isActive(item.path) ? 'active' : ''}`}
+                            className={`staff-mobile-nav-item ${isActive(item.path) ? 'active' : ''}`}
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
                             <i className={item.icon}></i>
@@ -238,9 +212,9 @@ const DriverNavBar = () => {
                     ))}
                 </div>
 
-                <div className="mobile-menu-footer">
-                    <button 
-                        className="mobile-logout-btn"
+                <div className="staff-mobile-menu-footer">
+                    <button
+                        className="staff-mobile-logout-btn"
                         onClick={() => {
                             setIsMobileMenuOpen(false);
                             handleLogout();
@@ -254,8 +228,8 @@ const DriverNavBar = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div 
-                    className="mobile-menu-overlay"
+                <div
+                    className="staff-mobile-menu-overlay"
                     onClick={() => setIsMobileMenuOpen(false)}
                 ></div>
             )}
@@ -263,5 +237,5 @@ const DriverNavBar = () => {
     );
 };
 
-export default DriverNavBar;
+export default StaffNavBar;
 

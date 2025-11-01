@@ -90,7 +90,7 @@
 }
 
 .stat-item.confirmed {
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(30, 41, 59, 0.1);
   border: 2px solid var(--color-success);
 }
 

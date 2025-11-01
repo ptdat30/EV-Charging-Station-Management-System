@@ -73,9 +73,23 @@
 
 .auth-header h1 {
   font-size: var(--font-size-4xl);
-  font-weight: var(--font-weight-extrabold);
+  font-weight: 900;
   margin-bottom: var(--spacing-2);
   color: var(--color-white);
+  letter-spacing: 2px;
+}
+
+.blinking {
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.3;
+  }
 }
 
 .auth-header p {

@@ -70,8 +70,7 @@ const Footer = () => {
         {/* Cột 1: Logo & Mô tả */}
         <div className="footer-col">
           <div className="footer-logo">
-            <span className="logo-icon">EV</span>
-            <span className="logo-text">EVCharge</span>
+            <span className="logo-text blinking">E-CHARGE STATION</span>
           </div>
           <p className="footer-desc">
             Vận hành bởi EVCharge Việt Nam cung cấp dịch vụ tìm kiếm và đặt trạm sạc điện, giúp việc di chuyển trở nên dễ dàng và tiện lợi hơn bao giờ hết.

@@ -236,7 +236,7 @@
 
 .station-info-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   color: #475569;
   font-size: 0.9375rem;
@@ -244,33 +244,49 @@
   padding: 0.75rem;
   background: #f8fafc;
   border-radius: 8px;
+  line-height: 1.5;
 }
 
 .station-info-item i {
   width: 20px;
   color: #3b82f6;
   font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.station-info-item span {
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .station-stats {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
 }
 
 .station-stat-item {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
-  font-size: 0.9375rem;
+  gap: 0.5rem;
+  font-size: 0.9rem;
   color: #475569;
   font-weight: 500;
 }
 
 .station-stat-item i {
   color: #3b82f6;
-  font-size: 1.125rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.station-stat-item strong {
+  font-weight: 700;
+  color: inherit;
 }
 
 .station-card-footer {

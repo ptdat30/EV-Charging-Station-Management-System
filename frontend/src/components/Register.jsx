@@ -87,8 +87,7 @@ const Register = () => {
         <div className="auth-container">
           <div className="auth-card">
             <div className="auth-header">
-              <div className="auth-logo-icon">EV</div>
-              <h1>EV Station</h1>
+              <h1 className="blinking">E-CHARGE STATION</h1>
               <p>Hệ thống quản lý trạm sạc xe điện thông minh</p>
             </div>
 

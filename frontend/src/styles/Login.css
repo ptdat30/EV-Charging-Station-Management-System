@@ -59,7 +59,7 @@
 .logo-circle {
   width: 70px;
   height: 70px;
-  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  background: linear-gradient(135deg, #1e293b, #334155);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -68,15 +68,29 @@
   font-weight: 800;
   font-size: 1.4rem;
   margin: 0 auto 1rem;
-  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 8px 20px rgba(30, 41, 59, 0.3);
   letter-spacing: 1px;
 }
 
 .login-header h1 {
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: #1a1a1a;
   margin: 0 0 0.4rem;
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.blinking {
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.3;
+  }
 }
 
 .welcome-text {
@@ -165,14 +179,14 @@
 
 .input-wrapper input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #1e293b;
   background: white;
-  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.15);
+  box-shadow: 0 0 0 4px rgba(30, 41, 59, 0.15);
 }
 
 .input-wrapper input:focus + .icon,
 .input-wrapper input:not(:placeholder-shown) + .icon {
-  color: #4CAF50;
+  color: #1e293b;
 }
 
 /* Toggle Password */
@@ -190,13 +204,13 @@
 }
 
 .toggle-password:hover {
-  color: #4CAF50;
+  color: #1e293b;
 }
 
 /* Login Button */
 .login-btn {
   width: 100%;
-  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  background: linear-gradient(135deg, #1e293b, #334155);
   color: white;
   border: none;
   padding: 1.1rem;
@@ -210,13 +224,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 6px 16px rgba(30, 41, 59, 0.3);
 }
 
 .login-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #43a047, #5cb860);
+  background: linear-gradient(135deg, #0f172a, #475569);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(76, 175, 80, 0.35);
+  box-shadow: 0 10px 20px rgba(30, 41, 59, 0.35);
 }
 
 .login-btn:disabled {
@@ -247,7 +261,7 @@
 }
 
 .register-link .link {
-  color: #4CAF50;
+  color: #1e293b;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s ease;

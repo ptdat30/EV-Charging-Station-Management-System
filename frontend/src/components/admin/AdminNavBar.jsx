@@ -115,8 +115,6 @@ const AdminNavBar = () => {
                 <div className="admin-navbar-container">
                     {/* Logo */}
                     <Link to="/admin" className="admin-navbar-logo">
-                        <div className="admin-logo-icon">⚡</div>
-                        <span className="admin-logo-text">EVCharge Admin</span>
                     </Link>
 
                     {/* Navigation Items */}
@@ -153,8 +151,6 @@ const AdminNavBar = () => {
                                     <i className="fas fa-user"></i>
                                 )}
                             </div>
-                            <span className="admin-user-name">{user?.fullName || user?.email || 'Admin'}</span>
-                            <i className={`fas fa-chevron-down ${isUserDropdownOpen ? 'rotate' : ''}`}></i>
                         </div>
 
                         {/* Profile Dropdown */}

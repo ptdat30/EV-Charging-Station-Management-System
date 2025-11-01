@@ -6,10 +6,10 @@
 :root {
   /* === COLORS === */
   /* Primary Colors */
-  --color-primary: #4CAF50;
-  --color-primary-dark: #45a049;
-  --color-primary-light: #81C784;
-  --color-primary-lighter: #C8E6C9;
+  --color-primary: #1e293b;
+  --color-primary-dark: #0f172a;
+  --color-primary-light: #334155;
+  --color-primary-lighter: #475569;
   
   /* Secondary Colors */
   --color-secondary: #2196F3;
@@ -118,8 +118,8 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-primary: 0 4px 15px rgba(76, 175, 80, 0.3);
-  --shadow-primary-lg: 0 6px 20px rgba(76, 175, 80, 0.4);
+  --shadow-primary: 0 4px 15px rgba(30, 41, 59, 0.3);
+  --shadow-primary-lg: 0 6px 20px rgba(30, 41, 59, 0.4);
   
   /* === TRANSITIONS === */
   --transition-fast: 150ms ease;
@@ -159,6 +159,6 @@
   --input-border-color: var(--border-color-medium);
   --input-border-width: var(--border-width-thin);
   --input-focus-border-color: var(--color-primary);
-  --input-focus-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  --input-focus-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
 }
 

@@ -37,8 +37,6 @@ const Header = ({ onLoginClick, onRegisterClick }) => {
       <div className="header-container">
         {/* Logo */}
         <Link to="/" className="logo">
-          <div className="logo-icon">EV</div>
-          <span className="logo-text">EVCharge</span>
         </Link>
 
         {/* Desktop Menu */}

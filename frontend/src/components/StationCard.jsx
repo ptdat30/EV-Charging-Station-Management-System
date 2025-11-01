@@ -71,7 +71,21 @@ const StationCard = React.memo(({ station }) => {
   
   // Memoize station info
   const stationInfo = useMemo(() => {
-    const address = station.address || locationData.address || 'Địa chỉ không xác định';
+    // Get address from station or locationData
+    const rawAddress = station.address || locationData.address || 'Địa chỉ không xác định';
+    const district = station.district || locationData.district || '';
+    const city = station.city || locationData.city || '';
+    
+    // Format address to avoid duplication
+    let address = rawAddress;
+    // If address already contains district or city, don't add them again
+    if (district && !rawAddress.toLowerCase().includes(district.toLowerCase())) {
+      address = `${rawAddress}, ${district}`;
+    }
+    if (city && !address.toLowerCase().includes(city.toLowerCase())) {
+      address = `${address}, ${city}`;
+    }
+    
     const distance = station.distance || 'Khoảng cách không xác định';
     const rating = station.rating || 0;
     const reviews = station.reviews || 0;
@@ -94,9 +108,9 @@ const StationCard = React.memo(({ station }) => {
           <p className="distance">
             <i className="fas fa-map-marker-alt"></i>
             {stationInfo.distance && <span className="distance-value">{stationInfo.distance}</span>}
-            <br />
-            <span className="address">{stationInfo.address}</span>
-            {station.district && <span className="district">{station.district}</span>}
+          </p>
+          <p className="address">
+            {stationInfo.address}
           </p>
           <div className="rating">
             <i className="fas fa-star"></i>
@@ -115,7 +129,7 @@ const StationCard = React.memo(({ station }) => {
             <i className="fas fa-bolt"></i>
             <span>
               {stationInfo.availableChargers > 0 ? (
-                <strong style={{ color: 'green' }}>{stationInfo.availableChargers}/{stationInfo.chargerCount} trống</strong>
+                <strong style={{ color: '#10b981' }}>{stationInfo.availableChargers}/{stationInfo.chargerCount} trống</strong>
               ) : (
                 <span>{stationInfo.chargerCount} cổng sạc</span>
               )}

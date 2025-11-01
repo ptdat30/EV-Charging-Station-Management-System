@@ -159,7 +159,7 @@
 
 .btn-quick-book:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
+  box-shadow: 0 8px 25px rgba(30, 41, 59, 0.5);
 }
 
 .btn-quick-book:disabled {
