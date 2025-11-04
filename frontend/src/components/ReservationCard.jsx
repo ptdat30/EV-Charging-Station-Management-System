@@ -1,5 +1,5 @@
 // src/components/ReservationCard.jsx
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkInReservation, startSessionFromReservation, cancelReservation } from '../services/stationService';
 import '../styles/ReservationCard.css';
@@ -8,6 +8,9 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
   const [actionLoading, setActionLoading] = React.useState('');
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
+  const [cancelReason, setCancelReason] = React.useState('');
+  const updatePendingRef = React.useRef(false);
 
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return '-';
@@ -69,7 +72,8 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     return classes[status] || 'status-default';
   };
 
-  const canCheckIn = () => {
+  // Memoize canCheckIn to prevent unnecessary recalculations
+  const canCheckIn = useMemo(() => {
     if (!reservation.checkInDeadline) return false;
     if (reservation.isCheckedIn) return false;
     if (reservation.status !== 'confirmed') return false;
@@ -80,10 +84,10 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     const earliestCheckIn = new Date(startTime.getTime() - 30 * 60 * 1000); // 30 phút trước
     
     return now >= earliestCheckIn && now <= deadline;
-  };
+  }, [reservation.checkInDeadline, reservation.isCheckedIn, reservation.status, reservation.reservedStartTime]);
 
-  const handleCheckIn = async () => {
-    if (!canCheckIn()) {
+  const handleCheckIn = useCallback(async () => {
+    if (!canCheckIn) {
       alert('Không thể check-in. Vui lòng kiểm tra thời gian check-in cho phép.');
       return;
     }
@@ -104,9 +108,9 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     } finally {
       setActionLoading('');
     }
-  };
+  }, [canCheckIn, reservation.reservationId, onUpdate, onError]);
 
-  const handleStartSession = async () => {
+  const handleStartSession = useCallback(async () => {
     if (!confirm('Bắt đầu phiên sạc ngay bây giờ?')) return;
     
     setActionLoading('start');
@@ -122,39 +126,64 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     } finally {
       setActionLoading('');
     }
-  };
+  }, [reservation.reservationId, onUpdate, onError, navigate]);
 
-  const [showCancelModal, setShowCancelModal] = React.useState(false);
-  const [cancelReason, setCancelReason] = React.useState('');
-
-  const handleCancelClick = () => {
+  const handleCancelClick = useCallback(() => {
     setCancelReason('');
     setShowCancelModal(true);
-  };
+  }, []);
 
-  const handleCancelConfirm = async () => {
+  const actionLoadingRef = React.useRef('');
+  
+  const handleCancelConfirm = useCallback(async (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
     if (!cancelReason.trim()) {
       alert('Vui lòng nhập lý do hủy đặt chỗ.');
       return;
     }
 
-    setShowCancelModal(false);
+    if (actionLoadingRef.current === 'cancel') {
+      return; // Prevent double submission
+    }
+
+    actionLoadingRef.current = 'cancel';
     setActionLoading('cancel');
     
     try {
+      console.log('Cancelling reservation:', reservation.reservationId, 'Reason:', cancelReason.trim());
       await cancelReservation(reservation.reservationId, cancelReason.trim());
       alert('✅ Đã hủy đặt chỗ thành công!');
-      onUpdate && onUpdate();
-    } catch (err) {
-      alert(`❌ ${err.response?.data?.message || err.message || 'Không thể hủy đặt chỗ'}`);
-      onError && onError(err.message);
-    } finally {
+      setShowCancelModal(false);
+      setCancelReason('');
+      actionLoadingRef.current = '';
       setActionLoading('');
+      // Prevent multiple onUpdate calls
+      if (!updatePendingRef.current && onUpdate) {
+        updatePendingRef.current = true;
+        // Delay onUpdate to prevent immediate re-render during hover
+        setTimeout(() => {
+          onUpdate();
+          updatePendingRef.current = false;
+        }, 200);
+      }
+    } catch (err) {
+      console.error('Cancel reservation error:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Không thể hủy đặt chỗ';
+      alert(`❌ ${errorMsg}`);
+      onError && onError(errorMsg);
+      actionLoadingRef.current = '';
+      setActionLoading('');
+    }
+  }, [cancelReason, reservation.reservationId, onUpdate, onError]);
+
+  const handleCloseModal = useCallback(() => {
+    setShowCancelModal(false);
+    if (!actionLoading) {
       setCancelReason('');
     }
-  };
-
-  const handleCancel = handleCancelClick;
+  }, [actionLoading]);
 
   return (
     <div className={`reservation-card ${getStatusClass(reservation.status)}`}>
@@ -220,7 +249,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
             <span className="info-label">Hạn check-in:</span>
             <span className="checkin-deadline">
               {formatDateTime(reservation.checkInDeadline)}
-              {canCheckIn() && (
+              {canCheckIn && (
                 <span className="checkin-remaining"> ({formatTimeRemaining(reservation.checkInDeadline)})</span>
               )}
             </span>
@@ -243,7 +272,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
       </div>
 
       <div className="reservation-card-actions">
-        {reservation.status === 'confirmed' && canCheckIn() && (
+        {reservation.status === 'confirmed' && canCheckIn && (
           <button
             className="btn-checkin"
             onClick={handleCheckIn}
@@ -293,7 +322,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
           (reservation.status === 'confirmed' && !reservation.isCheckedIn)) && (
           <button
             className="btn-cancel"
-            onClick={handleCancel}
+            onClick={handleCancelClick}
             disabled={loading || actionLoading === 'cancel'}
             title="Hủy đặt chỗ này"
           >
@@ -322,7 +351,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
-        <div className="cancel-modal-overlay" onClick={() => setShowCancelModal(false)}>
+        <div className="cancel-modal-overlay" onClick={handleCloseModal}>
           <div className="cancel-modal" onClick={(e) => e.stopPropagation()}>
             <div className="cancel-modal-header">
               <h3>
@@ -331,7 +360,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
               </h3>
               <button 
                 className="cancel-modal-close"
-                onClick={() => setShowCancelModal(false)}
+                onClick={handleCloseModal}
               >
                 <i className="fas fa-times"></i>
               </button>
@@ -370,10 +399,19 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
                 <textarea
                   id="cancel-reason"
                   value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
+                  onChange={(e) => {
+                    setCancelReason(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey && cancelReason.trim()) {
+                      handleCancelConfirm(e);
+                    }
+                  }}
                   placeholder="Nhập lý do hủy đặt chỗ (ví dụ: Thay đổi kế hoạch, Không còn cần sạc...)"
                   rows="3"
                   className="cancel-reason-textarea"
+                  disabled={actionLoading === 'cancel'}
+                  autoFocus
                 />
               </div>
               <div className="cancel-notice">
@@ -383,14 +421,16 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
             </div>
             <div className="cancel-modal-footer">
               <button
+                type="button"
                 className="btn-cancel-secondary"
-                onClick={() => setShowCancelModal(false)}
+                onClick={handleCloseModal}
                 disabled={actionLoading === 'cancel'}
               >
                 <i className="fas fa-arrow-left"></i>
                 Quay lại
               </button>
               <button
+                type="button"
                 className="btn-cancel-primary"
                 onClick={handleCancelConfirm}
                 disabled={!cancelReason.trim() || actionLoading === 'cancel'}
@@ -415,5 +455,31 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
   );
 };
 
-export default ReservationCard;
+// Custom comparison function to prevent unnecessary re-renders
+const areEqual = (prevProps, nextProps) => {
+  // Compare reservation by ID and status (most critical fields)
+  if (prevProps.reservation.reservationId !== nextProps.reservation.reservationId) {
+    return false;
+  }
+  if (prevProps.reservation.status !== nextProps.reservation.status) {
+    return false;
+  }
+  if (prevProps.reservation.isCheckedIn !== nextProps.reservation.isCheckedIn) {
+    return false;
+  }
+  if (prevProps.reservation.sessionId !== nextProps.reservation.sessionId) {
+    return false;
+  }
+  // Compare function references (they should be stable due to useCallback)
+  if (prevProps.onUpdate !== nextProps.onUpdate) {
+    return false;
+  }
+  if (prevProps.onError !== nextProps.onError) {
+    return false;
+  }
+  // If all critical fields are the same, prevent re-render
+  return true;
+};
+
+export default React.memo(ReservationCard, areEqual);
 
