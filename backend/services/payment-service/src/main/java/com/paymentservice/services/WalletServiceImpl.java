@@ -46,4 +46,15 @@ public class WalletServiceImpl implements WalletService {
         wallet.setBalance(wallet.getBalance().add(amount));
         return walletRepository.save(wallet);
     }
+
+    @Override
+    public Wallet deduct(Long userId, java.math.BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) throw new IllegalArgumentException("Amount must be positive");
+        Wallet wallet = getOrCreateWallet(userId);
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient balance. Required: " + amount + ", Available: " + wallet.getBalance());
+        }
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        return walletRepository.save(wallet);
+    }
 }

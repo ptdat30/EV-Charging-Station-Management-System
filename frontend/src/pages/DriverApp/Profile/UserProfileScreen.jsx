@@ -213,7 +213,11 @@ function UserProfileScreen({ tab }) {
                                 <img 
                                     src={avatarPreview || profileData.avatarUrl} 
                                     alt="Avatar" 
-                                    className="profile-avatar-img"
+                                    className={`profile-avatar-img ${
+                                        user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
+                                        user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
+                                        user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
+                                    }`}
                                     onError={(e) => {
                                         e.target.style.display = 'none';
                                         e.target.nextElementSibling.style.display = 'flex';
@@ -221,7 +225,11 @@ function UserProfileScreen({ tab }) {
                                 />
                             ) : null}
                             <div 
-                                className="profile-avatar"
+                                className={`profile-avatar ${
+                                    user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
+                                    user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
+                                    user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
+                                }`}
                                 style={{ display: (avatarPreview || profileData.avatarUrl) ? 'none' : 'flex' }}
                             >
                                 {getInitials()}

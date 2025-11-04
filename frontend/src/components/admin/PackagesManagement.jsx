@@ -11,8 +11,6 @@ const PackagesManagement = () => {
   const [error, setError] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,17 +18,6 @@ const PackagesManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
 
-  // Edit form
-  const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
-    type: 'prepaid',
-    price: '',
-    durationDays: '',
-    features: '',
-    maxChargers: '',
-    isActive: true,
-  });
 
   useEffect(() => {
     fetchPackages();
@@ -52,40 +39,38 @@ const PackagesManagement = () => {
       // const data = response.data || response || [];
       // setPackages(Array.isArray(data) ? data : []);
       
+      // Cố định 3 gói dịch vụ: Bạc, Vàng, Bạch Kim
       const mockPackages = [
         {
           id: 1,
-          name: 'Gói Cơ bản',
-          description: 'Phù hợp cho trạm nhỏ, mới bắt đầu',
-          type: 'prepaid',
+          name: 'Gói Bạc',
+          description: 'Gói dịch vụ cơ bản cho driver',
+          type: 'SILVER',
           price: 299000,
           durationDays: 30,
-          features: ['Tối đa 5 cổng sạc', 'Báo cáo cơ bản', 'Hỗ trợ email 48h'],
-          maxChargers: 5,
+          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 25%', 'Ưu tiên booking', 'Hỗ trợ email 48h'],
           isActive: true,
           createdAt: new Date().toISOString(),
         },
         {
           id: 2,
-          name: 'Gói Chuyên nghiệp',
-          description: 'Dành cho hệ thống trung bình, nhiều trạm',
-          type: 'postpaid',
-          price: 799000,
+          name: 'Gói Vàng',
+          description: 'Gói dịch vụ nâng cao cho driver',
+          type: 'GOLD',
+          price: 599000,
           durationDays: 30,
-          features: ['Tối đa 20 cổng sạc', 'Báo cáo nâng cao', 'Hỗ trợ 24/7'],
-          maxChargers: 20,
+          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 40%', 'Ưu tiên cao', 'Hỗ trợ chat 24/7', 'Báo cáo chi tiết'],
           isActive: true,
           createdAt: new Date().toISOString(),
         },
         {
           id: 3,
-          name: 'Gói VIP',
-          description: 'Giải pháp toàn diện cho chuỗi trạm lớn',
-          type: 'vip',
-          price: 0,
-          durationDays: 365,
-          features: ['Không giới hạn cổng sạc', 'Dashboard quản trị', 'Hỗ trợ VIP 24/7'],
-          maxChargers: -1, // -1 means unlimited
+          name: 'Gói Bạch Kim',
+          description: 'Gói dịch vụ cao cấp cho driver',
+          type: 'PLATINUM',
+          price: 999000,
+          durationDays: 30,
+          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 50%', 'Ưu tiên cao nhất', 'Hỗ trợ VIP 24/7', 'Báo cáo nâng cao'],
           isActive: true,
           createdAt: new Date().toISOString(),
         },
@@ -153,71 +138,6 @@ const PackagesManagement = () => {
     setShowModal(true);
   };
 
-  const handleEditPackage = (pkg) => {
-    setSelectedPackage(pkg);
-    setEditForm({
-      name: pkg.name || '',
-      description: pkg.description || '',
-      type: pkg.type || 'prepaid',
-      price: pkg.price || '',
-      durationDays: pkg.durationDays || '',
-      features: Array.isArray(pkg.features) ? pkg.features.join('\n') : (pkg.features || ''),
-      maxChargers: pkg.maxChargers === -1 ? '' : (pkg.maxChargers || ''),
-      isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-    });
-    setShowEditModal(true);
-  };
-
-  const handleUpdatePackage = async (e) => {
-    e.preventDefault();
-    if (!selectedPackage) return;
-
-    try {
-      setLoading(true);
-      const featuresArray = editForm.features.split('\n').filter(f => f.trim());
-      await apiClient.put(`/packages/${selectedPackage.id}`, {
-        name: editForm.name,
-        description: editForm.description,
-        type: editForm.type,
-        price: parseFloat(editForm.price) || 0,
-        durationDays: parseInt(editForm.durationDays) || 30,
-        features: featuresArray,
-        maxChargers: editForm.maxChargers === '' ? -1 : parseInt(editForm.maxChargers) || -1,
-        isActive: editForm.isActive,
-      });
-      await fetchPackages();
-      setShowEditModal(false);
-      setSelectedPackage(null);
-      alert('Cập nhật gói dịch vụ thành công!');
-    } catch (err) {
-      console.error('Error updating package:', err);
-      alert(err.response?.data?.message || 'Không thể cập nhật gói dịch vụ');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeletePackage = async (packageId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này?')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await deletePackage(packageId);
-      await fetchPackages();
-      if (selectedPackage?.id === packageId) {
-        setShowModal(false);
-        setSelectedPackage(null);
-      }
-      alert('Xóa gói dịch vụ thành công!');
-    } catch (err) {
-      console.error('Error deleting package:', err);
-      alert(err.response?.data?.message || 'Không thể xóa gói dịch vụ');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleToggleStatus = async (packageId, currentStatus) => {
     try {
@@ -234,11 +154,11 @@ const PackagesManagement = () => {
 
   const getTypeBadge = (type) => {
     const typeConfig = {
-      prepaid: { label: 'Trả trước', color: '#3b82f6', bg: '#dbeafe' },
-      postpaid: { label: 'Trả sau', color: '#8b5cf6', bg: '#ede9fe' },
-      vip: { label: 'VIP', color: '#f59e0b', bg: '#fef3c7' },
+      SILVER: { label: 'Gói Bạc', color: '#64748b', bg: '#f1f5f9' },
+      GOLD: { label: 'Gói Vàng', color: '#f59e0b', bg: '#fef3c7' },
+      PLATINUM: { label: 'Gói Bạch Kim', color: '#e5e4e2', bg: '#f8fafc' },
     };
-    const config = typeConfig[type] || typeConfig.prepaid;
+    const config = typeConfig[type] || { label: type, color: '#64748b', bg: '#f1f5f9' };
     return (
       <span className="type-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}
@@ -288,11 +208,23 @@ const PackagesManagement = () => {
             <i className="fas fa-refresh"></i>
             Làm mới
           </button>
-          <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
-            <i className="fas fa-plus"></i>
-            Thêm gói mới
-          </button>
         </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="info-banner" style={{ 
+        background: '#e0f2fe', 
+        border: '1px solid #0ea5e9', 
+        borderRadius: '0.5rem', 
+        padding: '1rem', 
+        marginBottom: '1.5rem',
+        color: '#0c4a6e'
+      }}>
+        <i className="fas fa-info-circle"></i>
+        <span style={{ marginLeft: '0.5rem' }}>
+          Các gói dịch vụ đã được cố định: Bạc, Vàng, Bạch Kim. Admin không thể chỉnh sửa hoặc xóa các gói này.
+          Vui lòng sử dụng chức năng quản lý user để kiểm soát user nào sử dụng gói dịch vụ nào.
+        </span>
       </div>
 
       {/* Stats Summary */}
@@ -302,22 +234,22 @@ const PackagesManagement = () => {
           <div className="stat-label">Tổng số gói</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#3b82f6' }}>
-            {packages.filter(p => p.type === 'prepaid').length}
+          <div className="stat-value" style={{ color: '#c0c0c0' }}>
+            {packages.filter(p => p.type === 'SILVER').length}
           </div>
-          <div className="stat-label">Trả trước</div>
+          <div className="stat-label">Gói Bạc</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#8b5cf6' }}>
-            {packages.filter(p => p.type === 'postpaid').length}
+          <div className="stat-value" style={{ color: '#ffd700' }}>
+            {packages.filter(p => p.type === 'GOLD').length}
           </div>
-          <div className="stat-label">Trả sau</div>
+          <div className="stat-label">Gói Vàng</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#10b981' }}>
-            {packages.filter(p => p.isActive).length}
+          <div className="stat-value" style={{ color: '#e5e4e2' }}>
+            {packages.filter(p => p.type === 'PLATINUM').length}
           </div>
-          <div className="stat-label">Đang kích hoạt</div>
+          <div className="stat-label">Gói Bạch Kim</div>
         </div>
       </div>
 
@@ -338,9 +270,9 @@ const PackagesManagement = () => {
           onChange={(e) => setTypeFilter(e.target.value)}
         >
           <option value="all">Tất cả loại</option>
-          <option value="prepaid">Trả trước</option>
-          <option value="postpaid">Trả sau</option>
-          <option value="vip">VIP</option>
+          <option value="SILVER">Gói Bạc</option>
+          <option value="GOLD">Gói Vàng</option>
+          <option value="PLATINUM">Gói Bạch Kim</option>
         </select>
         <select
           className="filter-select"
@@ -439,14 +371,12 @@ const PackagesManagement = () => {
 
                   <div className="package-info">
                     <div className="info-item">
-                      <i className="fas fa-plug"></i>
-                      <span>
-                        {pkg.maxChargers === -1 ? 'Không giới hạn' : `Tối đa ${pkg.maxChargers} cổng`}
-                      </span>
-                    </div>
-                    <div className="info-item">
                       <i className="fas fa-calendar"></i>
                       <span>{pkg.durationDays} ngày</span>
+                    </div>
+                    <div className="info-item">
+                      <i className="fas fa-tag"></i>
+                      <span>Loại: {pkg.type}</span>
                     </div>
                   </div>
                 </div>
@@ -459,21 +389,6 @@ const PackagesManagement = () => {
                   >
                     <i className="fas fa-eye"></i>
                     Chi tiết
-                  </button>
-                  <button
-                    className="btn-action btn-edit"
-                    onClick={() => handleEditPackage(pkg)}
-                    title="Chỉnh sửa"
-                  >
-                    <i className="fas fa-edit"></i>
-                    Sửa
-                  </button>
-                  <button
-                    className="btn-action btn-delete"
-                    onClick={() => handleDeletePackage(pkg.id)}
-                    title="Xóa"
-                  >
-                    <i className="fas fa-trash"></i>
                   </button>
                 </div>
               </div>
@@ -493,42 +408,6 @@ const PackagesManagement = () => {
         />
       )}
 
-      {/* Edit Package Modal */}
-      {showEditModal && selectedPackage && (
-        <EditPackageModal
-          package={selectedPackage}
-          formData={editForm}
-          setFormData={setEditForm}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedPackage(null);
-            setEditForm({
-              name: '',
-              description: '',
-              type: 'prepaid',
-              price: '',
-              durationDays: '',
-              features: '',
-              maxChargers: '',
-              isActive: true,
-            });
-          }}
-          onSubmit={handleUpdatePackage}
-          loading={loading}
-        />
-      )}
-
-      {/* Create Package Modal */}
-      {showCreateModal && (
-        <CreatePackageModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={async () => {
-            setShowCreateModal(false);
-            await fetchPackages();
-          }}
-          loading={loading}
-        />
-      )}
     </div>
   );
 };
@@ -537,11 +416,11 @@ const PackagesManagement = () => {
 const PackageDetailModal = ({ package: pkg, onClose }) => {
   const getTypeBadge = (type) => {
     const typeConfig = {
-      prepaid: { label: 'Trả trước', color: '#3b82f6', bg: '#dbeafe' },
-      postpaid: { label: 'Trả sau', color: '#8b5cf6', bg: '#ede9fe' },
-      vip: { label: 'VIP', color: '#f59e0b', bg: '#fef3c7' },
+      SILVER: { label: 'Gói Bạc', color: '#64748b', bg: '#f1f5f9' },
+      GOLD: { label: 'Gói Vàng', color: '#f59e0b', bg: '#fef3c7' },
+      PLATINUM: { label: 'Gói Bạch Kim', color: '#e5e4e2', bg: '#f8fafc' },
     };
-    const config = typeConfig[type] || typeConfig.prepaid;
+    const config = typeConfig[type] || { label: type, color: '#64748b', bg: '#f1f5f9' };
     return (
       <span className="type-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}
@@ -586,10 +465,8 @@ const PackageDetailModal = ({ package: pkg, onClose }) => {
               <span className="info-value">{pkg.durationDays} ngày</span>
             </div>
             <div className="info-row">
-              <span className="info-label">Số cổng tối đa:</span>
-              <span className="info-value">
-                {pkg.maxChargers === -1 ? 'Không giới hạn' : `${pkg.maxChargers} cổng`}
-              </span>
+              <span className="info-label">Loại gói:</span>
+              <span className="info-value">{pkg.type}</span>
             </div>
             <div className="info-row">
               <span className="info-label">Trạng thái:</span>
@@ -626,427 +503,5 @@ const PackageDetailModal = ({ package: pkg, onClose }) => {
   );
 };
 
-// Edit Package Modal Component
-const EditPackageModal = ({ package: pkg, formData, setFormData, onClose, onSubmit, loading }) => {
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleCheckboxChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.checked });
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Chỉnh sửa gói dịch vụ</h3>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-        <form onSubmit={onSubmit} className="edit-package-form">
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="edit-name">
-                Tên gói <span className="required">*</span>
-              </label>
-              <input
-                id="edit-name"
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="form-control"
-                disabled={loading}
-                placeholder="Ví dụ: Gói Cơ bản"
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="edit-type">
-                Loại <span className="required">*</span>
-              </label>
-              <select
-                id="edit-type"
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="form-control"
-                disabled={loading}
-                required
-              >
-                <option value="prepaid">Trả trước</option>
-                <option value="postpaid">Trả sau</option>
-                <option value="vip">VIP</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="edit-description">Mô tả</label>
-            <textarea
-              id="edit-description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="form-control"
-              disabled={loading}
-              rows={3}
-              placeholder="Mô tả về gói dịch vụ"
-            />
-          </div>
-
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="edit-price">Giá (₫)</label>
-              <input
-                id="edit-price"
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="form-control"
-                disabled={loading}
-                min="0"
-                placeholder="299000"
-              />
-              <p className="form-caption">Để 0 hoặc trống cho gói VIP (liên hệ)</p>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="edit-durationDays">
-                Thời hạn (ngày) <span className="required">*</span>
-              </label>
-              <input
-                id="edit-durationDays"
-                type="number"
-                name="durationDays"
-                value={formData.durationDays}
-                onChange={handleChange}
-                required
-                className="form-control"
-                disabled={loading}
-                min="1"
-                placeholder="30"
-              />
-            </div>
-          </div>
-
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="edit-maxChargers">Số cổng tối đa</label>
-              <input
-                id="edit-maxChargers"
-                type="number"
-                name="maxChargers"
-                value={formData.maxChargers}
-                onChange={handleChange}
-                className="form-control"
-                disabled={loading}
-                min="-1"
-                placeholder="5"
-              />
-              <p className="form-caption">Để trống hoặc -1 cho không giới hạn</p>
-            </div>
-
-            <div className="form-field">
-              <label>
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleCheckboxChange}
-                  disabled={loading}
-                />
-                <span style={{ marginLeft: '8px' }}>Đang kích hoạt</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="edit-features">Tính năng (mỗi dòng một tính năng)</label>
-            <textarea
-              id="edit-features"
-              name="features"
-              value={formData.features}
-              onChange={handleChange}
-              className="form-control"
-              disabled={loading}
-              rows={5}
-              placeholder="Tối đa 5 cổng sạc&#10;Báo cáo cơ bản&#10;Hỗ trợ email 48h"
-            />
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-small"></span>
-                  Đang lưu...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-check"></i>
-                  Lưu thay đổi
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Create Package Modal Component (similar structure, will implement)
-const CreatePackageModal = ({ onClose, onSuccess, loading: parentLoading }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    type: 'prepaid',
-    price: '',
-    durationDays: '30',
-    features: '',
-    maxChargers: '',
-    isActive: true,
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-  };
-
-  const handleCheckboxChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.checked });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    try {
-      setLoading(true);
-      const featuresArray = formData.features.split('\n').filter(f => f.trim());
-      await apiClient.post('/packages', {
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        type: formData.type,
-        price: parseFloat(formData.price) || 0,
-        durationDays: parseInt(formData.durationDays) || 30,
-        features: featuresArray,
-        maxChargers: formData.maxChargers === '' ? -1 : parseInt(formData.maxChargers) || -1,
-        isActive: formData.isActive,
-      });
-
-      alert('Tạo gói dịch vụ thành công!');
-      onSuccess();
-    } catch (err) {
-      console.error('Error creating package:', err);
-      setError(err.response?.data?.message || 'Không thể tạo gói dịch vụ. Vui lòng thử lại.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isLoading = loading || parentLoading;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Thêm gói dịch vụ mới</h3>
-          <button className="modal-close" onClick={onClose} disabled={isLoading}>
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="edit-package-form">
-          {error && (
-            <div className="form-error-banner">
-              <i className="fas fa-exclamation-triangle"></i>
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="create-name">
-                Tên gói <span className="required">*</span>
-              </label>
-              <input
-                id="create-name"
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="form-control"
-                disabled={isLoading}
-                placeholder="Ví dụ: Gói Cơ bản"
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="create-type">
-                Loại <span className="required">*</span>
-              </label>
-              <select
-                id="create-type"
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="form-control"
-                disabled={isLoading}
-                required
-              >
-                <option value="prepaid">Trả trước</option>
-                <option value="postpaid">Trả sau</option>
-                <option value="vip">VIP</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="create-description">Mô tả</label>
-            <textarea
-              id="create-description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="form-control"
-              disabled={isLoading}
-              rows={3}
-              placeholder="Mô tả về gói dịch vụ"
-            />
-          </div>
-
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="create-price">Giá (₫)</label>
-              <input
-                id="create-price"
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="form-control"
-                disabled={isLoading}
-                min="0"
-                placeholder="299000"
-              />
-              <p className="form-caption">Để 0 hoặc trống cho gói VIP (liên hệ)</p>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="create-durationDays">
-                Thời hạn (ngày) <span className="required">*</span>
-              </label>
-              <input
-                id="create-durationDays"
-                type="number"
-                name="durationDays"
-                value={formData.durationDays}
-                onChange={handleChange}
-                required
-                className="form-control"
-                disabled={isLoading}
-                min="1"
-                placeholder="30"
-              />
-            </div>
-          </div>
-
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="create-maxChargers">Số cổng tối đa</label>
-              <input
-                id="create-maxChargers"
-                type="number"
-                name="maxChargers"
-                value={formData.maxChargers}
-                onChange={handleChange}
-                className="form-control"
-                disabled={isLoading}
-                min="-1"
-                placeholder="5"
-              />
-              <p className="form-caption">Để trống hoặc -1 cho không giới hạn</p>
-            </div>
-
-            <div className="form-field">
-              <label>
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleCheckboxChange}
-                  disabled={isLoading}
-                />
-                <span style={{ marginLeft: '8px' }}>Kích hoạt ngay</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="create-features">Tính năng (mỗi dòng một tính năng)</label>
-            <textarea
-              id="create-features"
-              name="features"
-              value={formData.features}
-              onChange={handleChange}
-              className="form-control"
-              disabled={isLoading}
-              rows={5}
-              placeholder="Tối đa 5 cổng sạc&#10;Báo cáo cơ bản&#10;Hỗ trợ email 48h"
-            />
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spinner-small"></span>
-                  Đang tạo...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-check"></i>
-                  Tạo gói dịch vụ
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 export default PackagesManagement;

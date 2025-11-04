@@ -113,6 +113,8 @@ public class UserServiceImpl implements UserService {
         detailDto.setPasswordHash(user.getPasswordHash()); // Quan trọng
         detailDto.setUserType(user.getUserType());
         detailDto.setStatus(user.getStatus());
+        detailDto.setSubscriptionPackage(user.getSubscriptionPackage());
+        detailDto.setSubscriptionExpiresAt(user.getSubscriptionExpiresAt());
 
         log.debug("Found user details for email: {}", email);
         return detailDto;
@@ -146,6 +148,8 @@ public class UserServiceImpl implements UserService {
         dto.setFullName(user.getFullName());
         dto.setUserType(user.getUserType());
         dto.setStatus(user.getStatus());
+        dto.setSubscriptionPackage(user.getSubscriptionPackage());
+        dto.setSubscriptionExpiresAt(user.getSubscriptionExpiresAt());
         dto.setCreatedAt(user.getCreatedAt());
         return dto;
     }

@@ -192,6 +192,22 @@ export const AuthProvider = ({ children }) => {
         authService.logout();
     };
 
+    const refreshUser = async () => {
+        if (!token) {
+            console.warn('⚠️ No token available to refresh user');
+            return;
+        }
+        await validateToken(token);
+    };
+
+    const updateUser = (userData) => {
+        console.log('🔄 Updating user context:', userData);
+        setUser(prevUser => ({
+            ...prevUser,
+            ...userData
+        }));
+    };
+
     const value = {
         user,
         token,
@@ -199,7 +215,9 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         loading,
-        isAuthenticated
+        isAuthenticated,
+        refreshUser,
+        updateUser
     };
 
     return (

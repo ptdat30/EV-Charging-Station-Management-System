@@ -52,6 +52,14 @@ public class User {
     @Column(name = "verification_token")
     private String verificationToken;
 
+    // Subscription package: SILVER, GOLD, PLATINUM, or null
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subscription_package")
+    private SubscriptionPackage subscriptionPackage;
+
+    @Column(name = "subscription_expires_at")
+    private LocalDateTime subscriptionExpiresAt;
+
     // [COMMAND]: @CreationTimestamp là một annotation của Hibernate. Nó sẽ tự động gán thời gian hiện tại khi một đối tượng được tạo lần đầu.
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -70,6 +78,11 @@ public class User {
     // [COMMAND]: Định nghĩa một enum cho các trạng thái, khớp với database.
     public enum Status {
         active, inactive, suspended, deleted
+    }
+
+    // Subscription package enum
+    public enum SubscriptionPackage {
+        SILVER, GOLD, PLATINUM
     }
 
     public interface UserService {

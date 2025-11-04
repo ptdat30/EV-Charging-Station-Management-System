@@ -13,6 +13,7 @@ const UsersManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,6 +149,32 @@ const UsersManagement = () => {
     } catch (err) {
       console.error('Error deleting user:', err);
       alert(err.response?.data?.message || 'Không thể xóa người dùng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManageSubscription = (user) => {
+    setSelectedUser(user);
+    setShowSubscriptionModal(true);
+  };
+
+  const handleUpdateSubscription = async (packageType, expiresAt) => {
+    if (!selectedUser) return;
+
+    try {
+      setLoading(true);
+      await apiClient.put(`/packages/subscription/${selectedUser.userId || selectedUser.id}`, {
+        packageType: packageType || null,
+        expiresAt: expiresAt || null
+      });
+      await fetchUsers();
+      setShowSubscriptionModal(false);
+      setSelectedUser(null);
+      alert('Cập nhật gói dịch vụ thành công!');
+    } catch (err) {
+      console.error('Error updating subscription:', err);
+      alert(err.response?.data?.message || 'Không thể cập nhật gói dịch vụ');
     } finally {
       setLoading(false);
     }
@@ -321,6 +348,7 @@ const UsersManagement = () => {
                 <th>Số điện thoại</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
+                <th>Gói dịch vụ</th>
                 <th>Ngày tạo</th>
                 <th>Thao tác</th>
               </tr>
@@ -328,7 +356,7 @@ const UsersManagement = () => {
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="no-data-cell">
+                  <td colSpan="9" className="no-data-cell">
                     <i className="fas fa-inbox"></i>
                     <p>Không tìm thấy người dùng nào</p>
                   </td>
@@ -353,6 +381,17 @@ const UsersManagement = () => {
                     <td>{getTypeBadge(user.userType)}</td>
                     <td>{getStatusBadge(user.status)}</td>
                     <td>
+                      {user.subscriptionPackage ? (
+                        <span className={`package-badge ${user.subscriptionPackage.toLowerCase()}`}>
+                          {user.subscriptionPackage === 'SILVER' ? 'Bạc' : 
+                           user.subscriptionPackage === 'GOLD' ? 'Vàng' : 
+                           user.subscriptionPackage === 'PLATINUM' ? 'Bạch Kim' : user.subscriptionPackage}
+                        </span>
+                      ) : (
+                        <span className="no-package">Chưa có</span>
+                      )}
+                    </td>
+                    <td>
                       <span className="date-text">{formatDate(user.createdAt)}</span>
                     </td>
                     <td>
@@ -370,6 +409,14 @@ const UsersManagement = () => {
                           title="Chỉnh sửa"
                         >
                           <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          className="btn-action btn-package"
+                          onClick={() => handleManageSubscription(user)}
+                          title="Quản lý gói dịch vụ"
+                          style={{ background: '#8b5cf6', color: 'white' }}
+                        >
+                          <i className="fas fa-box"></i>
                         </button>
                         <button
                           className="btn-action btn-delete"
@@ -427,6 +474,130 @@ const UsersManagement = () => {
           loading={loading}
         />
       )}
+
+      {/* Subscription Management Modal */}
+      {showSubscriptionModal && selectedUser && (
+        <SubscriptionManagementModal
+          user={selectedUser}
+          onClose={() => {
+            setShowSubscriptionModal(false);
+            setSelectedUser(null);
+          }}
+          onUpdate={handleUpdateSubscription}
+          loading={loading}
+        />
+      )}
+    </div>
+  );
+};
+
+// Subscription Management Modal Component
+const SubscriptionManagementModal = ({ user, onClose, onUpdate, loading }) => {
+  const [packageType, setPackageType] = useState(user.subscriptionPackage || '');
+  const [expiresAt, setExpiresAt] = useState(
+    user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).toISOString().split('T')[0] : ''
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const expiresAtDate = expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null;
+    onUpdate(packageType || null, expiresAtDate);
+  };
+
+  const handleRemove = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ của người dùng này?')) {
+      onUpdate(null, null);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Quản lý Gói Dịch vụ</h3>
+          <button className="modal-close" onClick={onClose} disabled={loading}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="subscription-form">
+          <div className="form-field">
+            <label>Người dùng:</label>
+            <div className="user-info-display">
+              <strong>{user.fullName || user.email}</strong>
+              <span className="email-text">{user.email}</span>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="package-type">Gói dịch vụ:</label>
+            <select
+              id="package-type"
+              value={packageType}
+              onChange={(e) => setPackageType(e.target.value)}
+              className="form-control"
+              disabled={loading}
+            >
+              <option value="">Không có gói</option>
+              <option value="SILVER">Gói Bạc</option>
+              <option value="GOLD">Gói Vàng</option>
+              <option value="PLATINUM">Gói Bạch Kim</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="expires-at">Ngày hết hạn:</label>
+            <input
+              id="expires-at"
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              className="form-control"
+              disabled={loading}
+              min={new Date().toISOString().split('T')[0]}
+            />
+            <p className="form-caption">Để trống sẽ tự động set 30 ngày từ hiện tại</p>
+          </div>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleRemove}
+              disabled={loading || !user.subscriptionPackage}
+            >
+              <i className="fas fa-trash"></i>
+              Xóa gói
+            </button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-check"></i>
+                    Lưu thay đổi
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

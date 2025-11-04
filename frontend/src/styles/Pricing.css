@@ -57,6 +57,221 @@
   border: 2px solid #1e293b;
 }
 
+/* Package Type Styling */
+.pricing-card.silver {
+  border: 3px solid #c0c0c0;
+  box-shadow: 
+    0 0 15px rgba(192, 192, 192, 0.5),
+    0 0 30px rgba(192, 192, 192, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 0 15px rgba(192, 192, 192, 0.2);
+  position: relative;
+}
+
+.pricing-card.silver:hover {
+  box-shadow: 
+    0 0 20px rgba(192, 192, 192, 0.7),
+    0 0 35px rgba(192, 192, 192, 0.5),
+    0 8px 20px rgba(192, 192, 192, 0.4),
+    inset 0 0 20px rgba(192, 192, 192, 0.3);
+  transform: translateY(-4px);
+}
+
+.pricing-card.gold {
+  border: 3px solid #ffd700;
+  box-shadow: 
+    0 0 18px rgba(255, 215, 0, 0.6),
+    0 0 35px rgba(255, 215, 0, 0.4),
+    0 0 50px rgba(255, 215, 0, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 0 18px rgba(255, 215, 0, 0.25);
+  position: relative;
+  animation: goldGlow 2.5s ease-in-out infinite;
+}
+
+.pricing-card.gold:hover {
+  box-shadow: 
+    0 0 25px rgba(255, 215, 0, 0.8),
+    0 0 45px rgba(255, 215, 0, 0.6),
+    0 0 65px rgba(255, 215, 0, 0.4),
+    0 8px 20px rgba(255, 215, 0, 0.5),
+    inset 0 0 25px rgba(255, 215, 0, 0.35);
+  transform: translateY(-4px);
+}
+
+@keyframes goldGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 18px rgba(255, 215, 0, 0.6),
+      0 0 35px rgba(255, 215, 0, 0.4),
+      0 0 50px rgba(255, 215, 0, 0.25),
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 0 18px rgba(255, 215, 0, 0.25);
+  }
+  50% {
+    box-shadow: 
+      0 0 22px rgba(255, 215, 0, 0.7),
+      0 0 40px rgba(255, 215, 0, 0.5),
+      0 0 55px rgba(255, 215, 0, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 0 22px rgba(255, 215, 0, 0.3);
+  }
+}
+
+.pricing-card.platinum {
+  border: 3px solid white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+  box-shadow: 
+    0 0 15px rgba(229, 228, 226, 0.6),
+    0 0 30px rgba(255, 255, 255, 0.5),
+    0 0 45px rgba(255, 0, 110, 0.4),
+    0 0 60px rgba(131, 56, 236, 0.3),
+    0 0 75px rgba(58, 134, 255, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  animation: platinumCardGlow 3s ease-in-out infinite;
+}
+
+.pricing-card.platinum::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(229, 228, 226, 0.7) 20%,
+    rgba(255, 0, 110, 0.5) 40%,
+    rgba(131, 56, 236, 0.4) 50%,
+    rgba(58, 134, 255, 0.4) 60%,
+    rgba(6, 255, 165, 0.5) 70%,
+    rgba(255, 190, 11, 0.5) 80%,
+    rgba(251, 86, 7, 0.4) 90%,
+    transparent 100%
+  );
+  opacity: 0.2;
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(6px);
+}
+
+.pricing-card.platinum > * {
+  position: relative;
+  z-index: 1;
+}
+
+.pricing-card.platinum:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 0 20px rgba(229, 228, 226, 0.7),
+    0 0 35px rgba(255, 255, 255, 0.6),
+    0 0 50px rgba(255, 0, 110, 0.5),
+    0 0 65px rgba(131, 56, 236, 0.4),
+    0 0 80px rgba(58, 134, 255, 0.35),
+    0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+@keyframes platinumCardGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 15px rgba(229, 228, 226, 0.6),
+      0 0 30px rgba(255, 255, 255, 0.5),
+      0 0 45px rgba(255, 0, 110, 0.4),
+      0 0 60px rgba(131, 56, 236, 0.3),
+      0 0 75px rgba(58, 134, 255, 0.25),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  25% {
+    box-shadow: 
+      0 0 18px rgba(255, 255, 255, 0.7),
+      0 0 33px rgba(229, 228, 226, 0.6),
+      0 0 48px rgba(131, 56, 236, 0.5),
+      0 0 63px rgba(58, 134, 255, 0.4),
+      0 0 78px rgba(6, 255, 165, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(229, 228, 226, 0.7),
+      0 0 35px rgba(255, 255, 255, 0.6),
+      0 0 50px rgba(58, 134, 255, 0.55),
+      0 0 65px rgba(6, 255, 165, 0.5),
+      0 0 80px rgba(255, 190, 11, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  75% {
+    box-shadow: 
+      0 0 18px rgba(255, 255, 255, 0.7),
+      0 0 33px rgba(229, 228, 226, 0.6),
+      0 0 48px rgba(6, 255, 165, 0.5),
+      0 0 63px rgba(255, 190, 11, 0.4),
+      0 0 78px rgba(251, 86, 7, 0.35),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+
+/* Current Package Badge - Hidden */
+.current-package-badge {
+  display: none;
+}
+
+/* Dim other packages when one is active */
+.pricing-card:not(.active-package) {
+  opacity: 0.6;
+  filter: grayscale(0.4);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.pricing-card.active-package {
+  opacity: 1;
+  filter: grayscale(0);
+}
+
+/* Message Banner */
+.message-banner {
+  padding: 1rem 1.5rem;
+  margin: 1rem auto;
+  max-width: 1400px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+.message-banner.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.message-banner.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #ef4444;
+}
+
+.message-banner i {
+  font-size: 1.2rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .popular-badge {
   position: absolute;
   top: -12px;
@@ -124,6 +339,7 @@
 
 .cta-btn {
   width: 100%;
+  min-height: 48px;
   padding: 1rem;
   border-radius: 0.75rem;
   font-weight: 600;
@@ -131,6 +347,10 @@
   cursor: pointer;
   transition: 0.3s;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .cta-btn.primary {
@@ -152,6 +372,12 @@
 .cta-btn.secondary:hover {
   background: #e2e8f0;
   border-color: #cbd5e1;
+}
+
+.cta-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 /* Table */

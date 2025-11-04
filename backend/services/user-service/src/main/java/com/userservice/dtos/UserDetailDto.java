@@ -13,4 +13,6 @@ public class UserDetailDto {
     private String passwordHash; // Bao gồm password hash
     private User.UserType userType;
     private User.Status status;
+    private User.SubscriptionPackage subscriptionPackage;
+    private java.time.LocalDateTime subscriptionExpiresAt;
 }
