@@ -21,6 +21,7 @@ import WalletPage from '../pages/Wallet/WalletPage.jsx';
 import BookingPage from '../pages/DriverApp/Booking/BookingPage.jsx';
 import QRScanner from '../pages/DriverApp/QR/QRScanner.jsx';
 import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
+import NotificationsPage from '../pages/DriverApp/Notifications/NotificationsPage.jsx';
 
 // Import trang Admin
 import AdminPage from '../pages/AdminPage';
@@ -94,6 +95,11 @@ function AppRouter() {
                 <Route path="pricing" element={
                     <DriverLayout>
                         <PricingPage />
+                    </DriverLayout>
+                } />
+                <Route path="notifications" element={
+                    <DriverLayout>
+                        <NotificationsPage />
                     </DriverLayout>
                 } />
             </Route>
