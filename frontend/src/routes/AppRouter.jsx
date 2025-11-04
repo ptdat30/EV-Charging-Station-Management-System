@@ -22,6 +22,7 @@ import BookingPage from '../pages/DriverApp/Booking/BookingPage.jsx';
 import QRScanner from '../pages/DriverApp/QR/QRScanner.jsx';
 import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
 import NotificationsPage from '../pages/DriverApp/Notifications/NotificationsPage.jsx';
+import RoutePlanningPage from '../pages/DriverApp/RoutePlanning/RoutePlanningPage.jsx';
 
 // Import trang Admin
 import AdminPage from '../pages/AdminPage';
@@ -75,6 +76,11 @@ function AppRouter() {
                 <Route path="stations/booking" element={
                     <DriverLayout>
                         <BookingPage />
+                    </DriverLayout>
+                } />
+                <Route path="route-planning" element={
+                    <DriverLayout>
+                        <RoutePlanningPage />
                     </DriverLayout>
                 } />
                 <Route path="map" element={

@@ -243,13 +243,24 @@
 }
 
 .btn-cancel {
-  background: var(--color-gray-300);
+  background: var(--color-gray-200);
   color: var(--color-text-primary);
+  border: 1px solid var(--color-gray-400);
+  opacity: 1;
+  visibility: visible;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: var(--color-gray-400);
+  background: var(--color-gray-300);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
   transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-qr {
@@ -313,6 +324,9 @@
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.3s ease-out;
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
 }
 
 @keyframes slideUp {
@@ -471,6 +485,8 @@
   padding: var(--spacing-5) var(--spacing-6);
   border-top: var(--border-width-thin) solid var(--border-color-light);
   justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-cancel-secondary,
@@ -499,6 +515,8 @@
 .btn-cancel-primary {
   background: var(--color-danger);
   color: white;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-cancel-primary:hover:not(:disabled) {
@@ -507,10 +525,16 @@
   box-shadow: var(--shadow-md);
 }
 
+.btn-cancel-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
 .btn-cancel-secondary:disabled,
 .btn-cancel-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Responsive */

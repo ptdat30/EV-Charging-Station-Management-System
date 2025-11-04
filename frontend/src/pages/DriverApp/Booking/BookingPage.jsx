@@ -1,5 +1,5 @@
 // src/pages/DriverApp/Booking/BookingPage.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { getMyReservations } from '../../../services/stationService';
 import ReservationCard from '../../../components/ReservationCard';
 import QRCodeInputModal from '../../../components/QRCodeInputModal';
@@ -11,8 +11,11 @@ export default function BookingPage() {
     const [error, setError] = useState('');
     const [filter, setFilter] = useState('all'); // all, confirmed, active, completed, cancelled, no_show
     const [qrModalOpen, setQrModalOpen] = useState(false);
+    const loadingRef = useRef(false);
 
-    const load = async () => {
+    const load = useCallback(async () => {
+        if (loadingRef.current) return; // Prevent multiple simultaneous loads
+        loadingRef.current = true;
         setLoading(true);
         setError('');
         try {
@@ -24,20 +27,26 @@ export default function BookingPage() {
             setError(e.response?.data?.message || e.message || 'Không thể tải danh sách đặt chỗ');
         } finally {
             setLoading(false);
+            loadingRef.current = false;
         }
-    };
+    }, []);
 
     useEffect(() => {
         load();
-    }, []);
+    }, [load]);
 
-    const handleUpdate = () => {
-        load(); // Reload after action
-    };
+    const handleUpdate = useCallback(() => {
+        // Debounce to prevent rapid successive calls
+        if (loadingRef.current) return;
+        // Use setTimeout to delay the load, allowing any ongoing renders to complete
+        setTimeout(() => {
+            load(); // Reload after action
+        }, 50);
+    }, [load]);
 
-    const handleError = (errorMsg) => {
+    const handleError = useCallback((errorMsg) => {
         setError(errorMsg);
-    };
+    }, []);
 
     const filteredReservations = useMemo(() => {
         if (filter === 'all') return reservations;

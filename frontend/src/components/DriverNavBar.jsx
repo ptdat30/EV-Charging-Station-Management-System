@@ -66,6 +66,13 @@ const DriverNavBar = () => {
             roles: ['DRIVER', 'STAFF']
         },
         {
+            path: '/route-planning',
+            icon: 'fas fa-route',
+            label: 'Lập lộ trình',
+            description: 'Route Planning',
+            roles: ['DRIVER'] // Chỉ driver
+        },
+        {
             path: '/stations/booking',
             icon: 'fas fa-calendar-check',
             label: 'Quản lý sạc',

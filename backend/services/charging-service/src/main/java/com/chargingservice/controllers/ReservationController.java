@@ -2,6 +2,7 @@ package com.chargingservice.controllers;
 
 import com.chargingservice.dtos.CreateReservationRequestDto;
 import com.chargingservice.dtos.ReservationResponseDto;
+import com.chargingservice.dtos.RouteBookingRequestDto;
 import com.chargingservice.services.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,36 @@ public class ReservationController {
         requestDto.setUserId(userId);
         ReservationResponseDto reservation = reservationService.createReservation(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(reservation);
+    }
+
+    /**
+     * Create multiple reservations for a route (chain booking)
+     * POST /api/reservations/route
+     */
+    @PostMapping("/route")
+    public ResponseEntity<List<ReservationResponseDto>> createRouteReservations(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody RouteBookingRequestDto requestDto) {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ReservationController.class);
+        log.info("Received route booking request - userId: {}, bookings count: {}", userId, requestDto.getBookings().size());
+        
+        List<ReservationResponseDto> reservations = reservationService.createRouteReservations(userId, requestDto.getBookings());
+        return ResponseEntity.status(HttpStatus.CREATED).body(reservations);
+    }
+
+    /**
+     * Cancel a route reservation and auto-cancel subsequent ones
+     * PUT /api/reservations/{id}/cancel-route
+     */
+    @PutMapping("/{id}/cancel-route")
+    public ResponseEntity<?> cancelRouteReservation(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long id) {
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ReservationController.class);
+        log.info("Received route cancellation request - userId: {}, reservationId: {}", userId, id);
+        
+        reservationService.cancelRouteReservation(id, userId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
