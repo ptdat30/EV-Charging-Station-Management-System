@@ -1,35 +1,54 @@
 // src/components/staff/ChargingPointMonitoring.jsx
-import React, { useState, useEffect } from 'react';
-import { getAllStations } from '../../services/stationService';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getAllStations, getStationChargers, updateChargerStatus } from '../../services/stationService';
+import { getSessionById, getSessionStatus } from '../../services/chargingService';
 import apiClient from '../../config/api';
 import '../../styles/StaffMonitoring.css';
 
 const ChargingPointMonitoring = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [stations, setStations] = useState([]);
   const [selectedStation, setSelectedStation] = useState(null);
+  const [chargers, setChargers] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [updatingChargerId, setUpdatingChargerId] = useState(null);
 
+  // Handle URL params change - select station from URL
   useEffect(() => {
-    fetchData();
-    // Auto refresh every 10 seconds
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedStation) {
-      fetchSessionsForStation(selectedStation.stationId || selectedStation.id);
+    const stationIdParam = searchParams.get('station');
+    if (stationIdParam && stations.length > 0) {
+      const station = stations.find(s => 
+        (s.stationId || s.id)?.toString() === stationIdParam.toString()
+      );
+      if (station && (!selectedStation || (selectedStation.stationId || selectedStation.id) !== (station.stationId || station.id))) {
+        setSelectedStation(station);
+      }
     }
-  }, [selectedStation]);
+  }, [searchParams, stations]); // Only depend on searchParams and stations
 
-  const fetchData = async () => {
+  // Fetch all data - use refs to avoid dependency issues
+  const selectedStationRef = React.useRef(selectedStation);
+  const searchParamsRef = React.useRef(searchParams);
+  
+  useEffect(() => {
+    selectedStationRef.current = selectedStation;
+  }, [selectedStation]);
+  
+  useEffect(() => {
+    searchParamsRef.current = searchParams;
+  }, [searchParams]);
+
+  const fetchData = useCallback(async (preserveSelection = true) => {
     try {
       setLoading(true);
-      const stationsData = await getAllStations().catch(() => []);
       
-      // getAllStations() returns data directly, not { data: ... }
+      // Fetch stations
+      const stationsData = await getAllStations().catch(() => []);
       let stationsList = [];
       if (Array.isArray(stationsData)) {
         stationsList = stationsData;
@@ -37,37 +56,92 @@ const ChargingPointMonitoring = () => {
         stationsList = stationsData.data;
       }
 
-      setStations(stationsList);
-      if (selectedStation) {
-        // Refresh selected station
-        const updated = stationsList.find(s => 
-          (s.stationId || s.id) === (selectedStation.stationId || selectedStation.id)
+      // If station ID in URL, select it (only on initial load)
+      const stationIdParam = searchParamsRef.current.get('station');
+      const currentSelectedStation = selectedStationRef.current;
+      
+      if (stationIdParam && stationsList.length > 0 && !preserveSelection) {
+        const station = stationsList.find(s => 
+          (s.stationId || s.id)?.toString() === stationIdParam.toString()
         );
-        if (updated) setSelectedStation(updated);
+        if (station) {
+          setSelectedStation(station);
+        }
+      } else if (preserveSelection && currentSelectedStation) {
+        // Refresh selected station data
+        const updated = stationsList.find(s => 
+          (s.stationId || s.id) === (currentSelectedStation.stationId || currentSelectedStation.id)
+        );
+        if (updated) {
+          setSelectedStation(updated);
+        }
+      }
+
+      setStations(stationsList);
+
+      // Fetch sessions
+      try {
+        const response = await apiClient.get('/sessions').catch(() => ({ data: [] }));
+        const sessionsList = Array.isArray(response.data) ? response.data : [];
+        setSessions(sessionsList);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        setSessions([]);
       }
     } catch (error) {
-      console.error('Error fetching stations:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // No dependencies - stable function
 
-  const fetchSessionsForStation = async (stationId) => {
+
+
+  // Fetch chargers for selected station
+  const fetchChargers = useCallback(async (stationId) => {
     try {
-      const response = await apiClient.get('/sessions').catch(() => ({ data: [] }));
-      const sessionsList = Array.isArray(response.data) ? response.data : [];
-      const stationSessions = sessionsList.filter(s => 
-        s.stationId === stationId || s.stationId === stationId
-      );
-      setSessions(stationSessions);
+      const chargersData = await getStationChargers(stationId);
+      setChargers(Array.isArray(chargersData) ? chargersData : []);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
-      setSessions([]);
+      console.error('Error fetching chargers:', error);
+      setChargers([]);
     }
-  };
+  }, []);
+
+  // Initial load - only run once on mount
+  useEffect(() => {
+    // Initial load - don't preserve selection on first load
+    fetchData(false);
+  }, []); // Empty dependency array - only run on mount
+
+  // Setup auto refresh interval - separate effect
+  useEffect(() => {
+    // Only setup interval if fetchData is stable
+    if (!fetchData) return;
+    
+    const interval = setInterval(() => {
+      // Preserve selection when auto-refreshing
+      fetchData(true);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  // Load chargers when station is selected
+  useEffect(() => {
+    if (selectedStation) {
+      const stationId = selectedStation.stationId || selectedStation.id;
+      if (stationId) {
+        fetchChargers(stationId);
+        // Sessions are already fetched in fetchData
+      }
+    }
+  }, [selectedStation, fetchChargers]);
 
   const handleStationSelect = (station) => {
     setSelectedStation(station);
+    // Update URL without navigation
+    navigate(`/staff/monitoring?station=${station.stationId || station.id}`, { replace: true });
   };
 
   const handleUpdateStatus = async (chargerId, newStatus) => {
@@ -84,18 +158,27 @@ const ChargingPointMonitoring = () => {
       return;
     }
 
+    setUpdatingChargerId(chargerId);
     try {
-      // Update charger status - backend expects enum value (lowercase as per Charger.ChargerStatus enum)
-      await apiClient.put(`/chargers/${chargerId}`, {
-        status: newStatus, // Backend enum is lowercase: available, in_use, offline, maintenance, reserved
-      });
+      await updateChargerStatus(chargerId, newStatus);
+      
+      // Update local state
+      setChargers(prev => prev.map(c => 
+        (c.chargerId || c.id) === chargerId 
+          ? { ...c, status: newStatus }
+          : c
+      ));
 
+      // Refresh stations to update stats (preserve selection)
+      fetchData(true);
+      
       alert('✅ Đã cập nhật trạng thái thành công!');
-      fetchData();
     } catch (error) {
       console.error('Error updating charger status:', error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Không thể cập nhật trạng thái';
       alert(`❌ ${errorMsg}`);
+    } finally {
+      setUpdatingChargerId(null);
     }
   };
 
@@ -128,17 +211,45 @@ const ChargingPointMonitoring = () => {
   };
 
   const getChargerSession = (chargerId) => {
-    return sessions.find(s => 
-      s.chargerId === chargerId && 
-      (s.sessionStatus === 'CHARGING' || s.sessionStatus === 'charging' || s.sessionStatus === 'ACTIVE')
-    );
+    return sessions.find(s => {
+      const sessionChargerId = s.chargerId;
+      const sessionStatus = s.sessionStatus?.toLowerCase();
+      return sessionChargerId === chargerId && 
+             (sessionStatus === 'charging' || sessionStatus === 'active' || sessionStatus === 'starting');
+    });
   };
 
-  const filteredChargers = selectedStation ? (selectedStation.chargers || []).filter(charger => {
-    if (filterStatus === 'all') return true;
-    const status = charger.status?.toLowerCase() || '';
-    return status === filterStatus.toLowerCase();
-  }) : [];
+  // Filter chargers
+  const filteredChargers = chargers.filter(charger => {
+    // Status filter
+    if (filterStatus !== 'all') {
+      const status = charger.status?.toLowerCase() || '';
+      if (status !== filterStatus.toLowerCase()) return false;
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const chargerCode = (charger.chargerCode || '').toLowerCase();
+      const chargerType = (charger.chargerType || '').toLowerCase();
+      if (!chargerCode.includes(query) && !chargerType.includes(query)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Calculate stats
+  const stationStats = selectedStation ? {
+    total: chargers.length,
+    available: chargers.filter(c => (c.status?.toLowerCase() || '') === 'available').length,
+    inUse: chargers.filter(c => (c.status?.toLowerCase() || '') === 'in_use').length,
+    offline: chargers.filter(c => (c.status?.toLowerCase() || '') === 'offline').length,
+    maintenance: chargers.filter(c => (c.status?.toLowerCase() || '') === 'maintenance').length,
+    reserved: chargers.filter(c => (c.status?.toLowerCase() || '') === 'reserved').length,
+    activeSessions: chargers.filter(c => getChargerSession(c.chargerId || c.id)).length,
+  } : null;
 
   if (loading && stations.length === 0) {
     return (
@@ -159,8 +270,8 @@ const ChargingPointMonitoring = () => {
           <h2>Theo dõi Điểm sạc</h2>
           <p>Giám sát và quản lý trạng thái các điểm sạc theo thời gian thực</p>
         </div>
-        <button className="btn-secondary" onClick={fetchData}>
-          <i className="fas fa-refresh"></i>
+        <button className="btn-secondary" onClick={fetchData} disabled={loading}>
+          <i className={`fas fa-refresh ${loading ? 'fa-spin' : ''}`}></i>
           Làm mới
         </button>
       </div>
@@ -172,33 +283,47 @@ const ChargingPointMonitoring = () => {
           Chọn trạm sạc
         </label>
         <div className="station-grid">
-          {stations.map(station => (
-            <div
-              key={station.stationId || station.id}
-              className={`station-card-selector ${selectedStation && (selectedStation.stationId || selectedStation.id) === (station.stationId || station.id) ? 'active' : ''}`}
-              onClick={() => handleStationSelect(station)}
-            >
-              <div className="station-card-header">
-                <div>
-                  <h4>{station.stationName || station.stationCode}</h4>
-                  <p className="station-code">{station.stationCode}</p>
+          {stations.map(station => {
+            const stationChargers = station.chargers || [];
+            const availableCount = stationChargers.filter(c => 
+              (c.status?.toLowerCase() || '') === 'available'
+            ).length;
+            const inUseCount = stationChargers.filter(c => 
+              (c.status?.toLowerCase() || '') === 'in_use'
+            ).length;
+
+            return (
+              <div
+                key={station.stationId || station.id}
+                className={`station-card-selector ${
+                  selectedStation && (selectedStation.stationId || selectedStation.id) === (station.stationId || station.id) 
+                    ? 'active' 
+                    : ''
+                }`}
+                onClick={() => handleStationSelect(station)}
+              >
+                <div className="station-card-header">
+                  <div>
+                    <h4>{station.stationName || station.stationCode}</h4>
+                    <p className="station-code">{station.stationCode}</p>
+                  </div>
+                  <span className="charger-count">
+                    {stationChargers.length} điểm sạc
+                  </span>
                 </div>
-                <span className="charger-count">
-                  {station.chargers?.length || 0} điểm sạc
-                </span>
+                <div className="station-stats">
+                  <span>
+                    <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                    {availableCount} sẵn sàng
+                  </span>
+                  <span>
+                    <i className="fas fa-bolt" style={{ color: '#3b82f6' }}></i>
+                    {inUseCount} đang dùng
+                  </span>
+                </div>
               </div>
-              <div className="station-stats">
-                <span>
-                  <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
-                  {station.chargers?.filter(c => c.status === 'available' || c.status === 'AVAILABLE').length || 0} sẵn sàng
-                </span>
-                <span>
-                  <i className="fas fa-bolt" style={{ color: '#3b82f6' }}></i>
-                  {station.chargers?.filter(c => c.status === 'in_use' || c.status === 'IN_USE').length || 0} đang dùng
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -211,9 +336,25 @@ const ChargingPointMonitoring = () => {
                 <i className="fas fa-plug"></i>
                 Điểm sạc tại {selectedStation.stationName || selectedStation.stationCode}
               </h3>
-              <p>Tổng số: {selectedStation.chargers?.length || 0} điểm sạc</p>
+              {stationStats && (
+                <div className="station-stats-bar">
+                  <span>Tổng: <strong>{stationStats.total}</strong></span>
+                  <span className="stat-available">Sẵn sàng: <strong>{stationStats.available}</strong></span>
+                  <span className="stat-in-use">Đang sạc: <strong>{stationStats.inUse}</strong></span>
+                  <span className="stat-offline">Offline: <strong>{stationStats.offline}</strong></span>
+                  <span className="stat-maintenance">Bảo trì: <strong>{stationStats.maintenance}</strong></span>
+                  <span className="stat-sessions">Phiên đang chạy: <strong>{stationStats.activeSessions}</strong></span>
+                </div>
+              )}
             </div>
             <div className="filter-controls">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Tìm kiếm điểm sạc..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
               <select
                 className="filter-select"
                 value={filterStatus}
@@ -232,12 +373,26 @@ const ChargingPointMonitoring = () => {
           {filteredChargers.length === 0 ? (
             <div className="no-chargers">
               <i className="fas fa-plug"></i>
-              <p>Không có điểm sạc nào</p>
+              <p>Không có điểm sạc nào phù hợp</p>
+              {(filterStatus !== 'all' || searchQuery) && (
+                <button 
+                  className="btn-secondary" 
+                  onClick={() => {
+                    setFilterStatus('all');
+                    setSearchQuery('');
+                  }}
+                  style={{ marginTop: '1rem' }}
+                >
+                  Xóa bộ lọc
+                </button>
+              )}
             </div>
           ) : (
             <div className="chargers-grid">
               {filteredChargers.map((charger) => {
                 const activeSession = getChargerSession(charger.chargerId || charger.id);
+                const isUpdating = updatingChargerId === (charger.chargerId || charger.id);
+                
                 return (
                   <div key={charger.chargerId || charger.id} className="charger-card">
                     <div className="charger-card-header">
@@ -259,13 +414,24 @@ const ChargingPointMonitoring = () => {
                           <div className="session-header">
                             <i className="fas fa-charging-station"></i>
                             <strong>Đang sạc</strong>
+                            <button
+                              className="btn-view-session"
+                              onClick={() => navigate(`/staff/sessions?session=${activeSession.sessionId}`)}
+                            >
+                              <i className="fas fa-eye"></i> Chi tiết
+                            </button>
                           </div>
                           <div className="session-details">
                             <span>Phiên: {activeSession.sessionCode || `#${activeSession.sessionId}`}</span>
-                            <span>User: {activeSession.userId}</span>
+                            <span>User ID: {activeSession.userId}</span>
                             {activeSession.energyConsumed && (
                               <span>
                                 Năng lượng: {parseFloat(activeSession.energyConsumed).toFixed(2)} kWh
+                              </span>
+                            )}
+                            {activeSession.startTime && (
+                              <span>
+                                Bắt đầu: {new Date(activeSession.startTime).toLocaleTimeString('vi-VN')}
                               </span>
                             )}
                           </div>
@@ -277,6 +443,7 @@ const ChargingPointMonitoring = () => {
                           className="status-select"
                           value={charger.status || 'available'}
                           onChange={(e) => handleUpdateStatus(charger.chargerId || charger.id, e.target.value)}
+                          disabled={isUpdating}
                         >
                           <option value="available">Sẵn sàng</option>
                           <option value="in_use">Đang sạc</option>
@@ -284,6 +451,9 @@ const ChargingPointMonitoring = () => {
                           <option value="maintenance">Bảo trì</option>
                           <option value="reserved">Đã đặt</option>
                         </select>
+                        {isUpdating && (
+                          <i className="fas fa-spinner fa-spin" style={{ marginLeft: '8px', color: '#3b82f6' }}></i>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import com.chargingservice.clients.NotificationServiceClient;
 import com.chargingservice.clients.PaymentServiceClient;
 import com.chargingservice.clients.StationServiceClient;
 import com.chargingservice.dtos.CreateReservationRequestDto;
+import com.chargingservice.dtos.RouteBookingRequestDto;
 import com.chargingservice.dtos.internal.CreateNotificationRequestDto;
 import com.chargingservice.dtos.internal.UpdateChargerStatusDto;
 import com.chargingservice.dtos.ReservationResponseDto;
@@ -676,6 +677,159 @@ public class ReservationServiceImpl implements ReservationService {
         // Hiện tại dùng giá trị cố định, có thể mở rộng sau
         // Có thể tính: deposit = durationMinutes * pricePerMinute * depositRate
         return DEFAULT_DEPOSIT_AMOUNT;
+    }
+
+    @Override
+    @Transactional
+    public List<ReservationResponseDto> createRouteReservations(Long userId, List<RouteBookingRequestDto.RouteBookingItemDto> bookings) {
+        log.info("Creating route reservations for user {} with {} bookings", userId, bookings.size());
+        
+        if (bookings == null || bookings.isEmpty()) {
+            throw new IllegalArgumentException("Bookings list cannot be empty");
+        }
+        
+        // Sort bookings by order
+        bookings.sort((a, b) -> Integer.compare(a.getOrder() != null ? a.getOrder() : 0, b.getOrder() != null ? b.getOrder() : 0));
+        
+        List<ReservationResponseDto> createdReservations = new java.util.ArrayList<>();
+        // Create a shorter route group ID to fit within confirmation_code limit (20 chars)
+        // Format: R-timestamp-userId (e.g., "R-345678-16" = 9 chars, leaving 11 for originalCode)
+        // Use last 6 digits of timestamp (seconds) to keep it short
+        long timestampSeconds = System.currentTimeMillis() / 1000;
+        String timestampStr = String.valueOf(timestampSeconds);
+        String shortTimestamp = timestampStr.length() > 6 ? timestampStr.substring(timestampStr.length() - 6) : timestampStr;
+        String routeGroupId = "R-" + shortTimestamp + "-" + userId;
+        
+        for (RouteBookingRequestDto.RouteBookingItemDto booking : bookings) {
+            try {
+                // Create CreateReservationRequestDto from RouteBookingItemDto
+                CreateReservationRequestDto requestDto = new CreateReservationRequestDto();
+                requestDto.setUserId(userId);
+                requestDto.setStationId(booking.getStationId());
+                requestDto.setChargerId(booking.getChargerId());
+                requestDto.setReservedStartTime(booking.getReservedStartTime());
+                requestDto.setReservedEndTime(booking.getReservedEndTime());
+                requestDto.setDurationMinutes(booking.getDurationMinutes());
+                
+                // Create reservation using existing method
+                ReservationResponseDto reservation = createReservation(requestDto);
+                
+                // Mark as part of route by updating confirmation code to include route group ID
+                // Keep it short to fit within 20 char limit: R-timestamp-userId-XXXX
+                Reservation savedReservation = reservationRepository.findById(reservation.getReservationId())
+                    .orElseThrow(() -> new RuntimeException("Reservation not found after creation"));
+                String originalCode = savedReservation.getConfirmationCode();
+                // Truncate originalCode if needed to ensure total length <= 20
+                String newCode = routeGroupId + "-" + originalCode;
+                if (newCode.length() > 20) {
+                    // If too long, use only last 4 chars of originalCode
+                    int maxOriginalLength = 20 - routeGroupId.length() - 1; // -1 for the dash
+                    if (maxOriginalLength > 0) {
+                        String truncatedOriginal = originalCode.length() > maxOriginalLength 
+                            ? originalCode.substring(originalCode.length() - maxOriginalLength)
+                            : originalCode;
+                        newCode = routeGroupId + "-" + truncatedOriginal;
+                    } else {
+                        // If routeGroupId itself is too long, use just the first 19 chars
+                        newCode = routeGroupId.substring(0, Math.min(19, routeGroupId.length()));
+                    }
+                }
+                savedReservation.setConfirmationCode(newCode);
+                reservationRepository.save(savedReservation);
+                reservation.setConfirmationCode(savedReservation.getConfirmationCode());
+                
+                createdReservations.add(reservation);
+                log.info("Created reservation {} for route {} at station {}", 
+                    reservation.getReservationId(), routeGroupId, booking.getStationId());
+                    
+            } catch (Exception e) {
+                log.error("Failed to create reservation for route booking at station {}: {}", 
+                    booking.getStationId(), e.getMessage(), e);
+                
+                // If any reservation fails, cancel all previously created ones
+                for (ReservationResponseDto created : createdReservations) {
+                    try {
+                        Reservation toCancel = reservationRepository.findById(created.getReservationId())
+                            .orElse(null);
+                        if (toCancel != null && toCancel.getStatus() != Reservation.ReservationStatus.cancelled) {
+                            toCancel.setStatus(Reservation.ReservationStatus.cancelled);
+                            toCancel.setCancellationReason("Route booking failed: " + e.getMessage());
+                            toCancel.setCancelledAt(LocalDateTime.now());
+                            reservationRepository.save(toCancel);
+                        }
+                    } catch (Exception cancelError) {
+                        log.error("Failed to cancel reservation {} during rollback: {}", 
+                            created.getReservationId(), cancelError.getMessage());
+                    }
+                }
+                
+                throw new RuntimeException("Failed to create route reservations: " + e.getMessage(), e);
+            }
+        }
+        
+        log.info("Successfully created {} reservations for route {}", createdReservations.size(), routeGroupId);
+        return createdReservations;
+    }
+
+    @Override
+    @Transactional
+    public void cancelRouteReservation(Long reservationId, Long userId) {
+        log.info("Cancelling route reservation {} for user {}", reservationId, userId);
+        
+        Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationId));
+        
+        if (!reservation.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Reservation belongs to different user");
+        }
+        
+        // Cancel this reservation
+        reservation.setStatus(Reservation.ReservationStatus.cancelled);
+        reservation.setCancellationReason("Route cancelled by user");
+        reservation.setCancelledAt(LocalDateTime.now());
+        reservationRepository.save(reservation);
+        
+        // Find and cancel all subsequent reservations for the same user
+        // (reservations with start time >= this reservation's start time, ordered by start time)
+        List<Reservation> allUserReservations = reservationRepository.findByUserIdOrderByReservedStartTimeDesc(userId);
+        
+        // Filter: same route group (check confirmation code prefix) and start time >= cancelled reservation's start time
+        String routeGroupId = null;
+        if (reservation.getConfirmationCode() != null && reservation.getConfirmationCode().startsWith("R-")) {
+            // Extract route group ID: R-timestamp-userId (first 3 parts separated by "-")
+            String[] parts = reservation.getConfirmationCode().split("-");
+            if (parts.length >= 3) {
+                routeGroupId = parts[0] + "-" + parts[1] + "-" + parts[2];
+            }
+        }
+        
+        LocalDateTime cancelledStartTime = reservation.getReservedStartTime();
+        int cancelledCount = 0;
+        
+        for (Reservation r : allUserReservations) {
+            // Check if it's part of the same route
+            boolean isSameRoute = false;
+            if (routeGroupId != null && r.getConfirmationCode() != null) {
+                isSameRoute = r.getConfirmationCode().startsWith(routeGroupId);
+            }
+            
+            // Cancel if: same route, start time >= cancelled reservation start time, and not already cancelled
+            if (isSameRoute && 
+                r.getReservedStartTime().isAfter(cancelledStartTime.minusSeconds(1)) && 
+                r.getStatus() != Reservation.ReservationStatus.cancelled &&
+                !r.getReservationId().equals(reservationId)) {
+                
+                r.setStatus(Reservation.ReservationStatus.cancelled);
+                r.setCancellationReason("Auto-cancelled: previous reservation in route was cancelled");
+                r.setCancelledAt(LocalDateTime.now());
+                reservationRepository.save(r);
+                cancelledCount++;
+                log.info("Auto-cancelled subsequent reservation {} (station {}, start {})", 
+                    r.getReservationId(), r.getStationId(), r.getReservedStartTime());
+            }
+        }
+        
+        log.info("Cancelled route reservation {} and {} subsequent reservations", reservationId, cancelledCount);
     }
 
     private ReservationResponseDto convertToDto(Reservation r) {

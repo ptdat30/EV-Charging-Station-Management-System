@@ -24,6 +24,12 @@ export const getStationChargers = async (stationId) => {
     return response.data;
 };
 
+// Get charger by ID
+export const getChargerById = async (chargerId) => {
+    const response = await apiClient.get(`/chargers/${chargerId}`);
+    return response.data;
+};
+
 // Update station
 export const updateStation = async (stationId, updateData) => {
     const response = await apiClient.put(`/stations/${stationId}`, updateData);
@@ -37,7 +43,9 @@ export const updateStationStatus = async (stationId, status) => {
 
 // Update charger status
 export const updateChargerStatus = async (chargerId, status) => {
-    const response = await apiClient.put(`/stations/chargers/${chargerId}`, { status });
+    const response = await apiClient.put(`/chargers/${chargerId}`, {
+        status: status
+    });
     return response.data;
 };
 
@@ -56,7 +64,9 @@ export const getMyReservations = async () => {
 };
 
 export const cancelReservation = async (reservationId, reason) => {
-    const response = await apiClient.put(`/reservations/${reservationId}/cancel`, null, { params: { reason } });
+    const response = await apiClient.put(`/reservations/${reservationId}/cancel`, null, { 
+        params: { reason: reason || '' }
+    });
     return response.data;
 };
 
