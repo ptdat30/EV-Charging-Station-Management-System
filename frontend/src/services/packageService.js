@@ -103,3 +103,20 @@ export const togglePackageStatus = async (packageId, isActive) => {
         throw error;
     }
 };
+
+/**
+ * Mua gói dịch vụ cho driver
+ * @param {string} packageType - Loại gói (SILVER, GOLD, PLATINUM)
+ * @returns {Promise}
+ */
+export const purchasePackage = async (packageType) => {
+    try {
+        console.log('💰 Purchasing package...', packageType);
+        const response = await apiClient.post('/packages/purchase', { packageType });
+        console.log('✅ Package purchased:', response.data);
+        return response;
+    } catch (error) {
+        console.error('❌ Failed to purchase package:', error);
+        throw error;
+    }
+};

@@ -44,6 +44,7 @@
     color: white;
     border: 4px solid #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .profile-avatar-img {
@@ -53,7 +54,70 @@
     object-fit: cover;
     border: 4px solid #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
+
+/* Subscription Package Borders - Profile Page */
+.profile-avatar.package-silver,
+.profile-avatar-img.package-silver {
+    border: 6px solid #c0c0c0;
+    box-shadow: 
+        0 0 20px rgba(192, 192, 192, 0.6),
+        0 0 35px rgba(192, 192, 192, 0.4),
+        0 0 50px rgba(192, 192, 192, 0.25),
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 0 20px rgba(192, 192, 192, 0.25);
+}
+
+.profile-avatar.package-silver::before,
+.profile-avatar-img.package-silver::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(192, 192, 192, 0.5);
+    pointer-events: none;
+}
+
+.profile-avatar.package-gold,
+.profile-avatar-img.package-gold {
+    border: 6px solid #ffd700;
+    box-shadow: 
+        0 0 25px rgba(255, 215, 0, 0.7),
+        0 0 45px rgba(255, 215, 0, 0.5),
+        0 0 65px rgba(255, 215, 0, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 0 25px rgba(255, 215, 0, 0.35);
+}
+
+.profile-avatar.package-gold::before,
+.profile-avatar-img.package-gold::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    pointer-events: none;
+}
+
+.profile-avatar.package-platinum,
+.profile-avatar-img.package-platinum {
+    border: 8px solid white;
+    box-shadow: 
+        0 0 35px rgba(229, 228, 226, 1),
+        0 0 55px rgba(255, 255, 255, 0.9),
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 0 35px rgba(255, 255, 255, 0.6);
+    overflow: visible;
+    position: relative;
+}
+
 
 .avatar-upload-btn {
     position: absolute;

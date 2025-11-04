@@ -47,6 +47,13 @@ spring:
             # XÓA BỎ "- StripPrefix=1"
             - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
+        - id: packages-service-route
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/packages/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
+
         - id: station-service-routes
           uri: lb://STATION-SERVICE
           predicates:

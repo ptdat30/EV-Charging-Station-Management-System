@@ -18,5 +18,7 @@ public class UserResponseDto {
     private String fullName;
     private User.UserType userType;
     private User.Status status;
+    private User.SubscriptionPackage subscriptionPackage;
+    private LocalDateTime subscriptionExpiresAt;
     private LocalDateTime createdAt;
 }

@@ -8,4 +8,5 @@ public interface WalletService {
     Wallet createWallet(CreateWalletRequestDto requestDto);
     Wallet getOrCreateWallet(Long userId);
     Wallet deposit(Long userId, java.math.BigDecimal amount);
+    Wallet deduct(Long userId, java.math.BigDecimal amount);
 }
