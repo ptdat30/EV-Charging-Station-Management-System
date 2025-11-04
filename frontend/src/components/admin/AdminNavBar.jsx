@@ -101,6 +101,12 @@ const AdminNavBar = () => {
             description: 'Reports'
         },
         {
+            path: '/admin/notifications',
+            icon: 'fas fa-bell',
+            label: 'Thông báo hệ thống',
+            description: 'System Notifications'
+        },
+        {
             path: '/admin/settings',
             icon: 'fas fa-cog',
             label: 'Cài đặt',

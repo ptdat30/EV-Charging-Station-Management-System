@@ -17,6 +17,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +30,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final JavaMailSender mailSender;
     private final Environment environment;
     private final UserServiceClient userServiceClient; // Inject User Service Client
+    private final FirebaseMessagingService firebaseMessagingService;
+    private final FcmTokenService fcmTokenService;
 
     @Override
     public NotificationResponseDto createNotification(CreateNotificationRequestDto requestDto) {
@@ -43,8 +48,11 @@ public class NotificationServiceImpl implements NotificationService {
         Notification savedNotification = notificationRepository.save(notification);
         log.info("Notification {} created successfully.", savedNotification.getNotificationId());
 
-        // --- Activate Email Sending ---
+        // --- Send Email Notification ---
         sendEmailNotification(savedNotification);
+
+        // --- Send Firebase Push Notification ---
+        sendPushNotification(savedNotification);
 
         return convertToDto(savedNotification);
     }
@@ -107,5 +115,81 @@ public class NotificationServiceImpl implements NotificationService {
         } catch (Exception e) {
             log.error("Failed to send email for notification {}: {}", notification.getNotificationId(), e.getMessage(), e);
         }
+    }
+
+    private void sendPushNotification(Notification notification) {
+        try {
+            // Get all active FCM tokens for the user
+            java.util.List<String> fcmTokens = fcmTokenService.getActiveTokensForUser(notification.getUserId());
+
+            if (fcmTokens.isEmpty()) {
+                log.debug("No active FCM tokens found for user {}. Skipping push notification.", notification.getUserId());
+                return;
+            }
+
+            // Prepare data payload
+            java.util.Map<String, String> data = new java.util.HashMap<>();
+            data.put("notificationId", notification.getNotificationId().toString());
+            data.put("notificationType", notification.getNotificationType().toString());
+            data.put("userId", notification.getUserId().toString());
+            if (notification.getReferenceId() != null) {
+                data.put("referenceId", notification.getReferenceId().toString());
+            }
+
+            // Send push notification to all user devices
+            firebaseMessagingService.sendPushNotificationToMultipleTokens(
+                    fcmTokens,
+                    notification.getTitle(),
+                    notification.getMessage(),
+                    data
+            );
+
+            log.info("Push notification sent to {} device(s) for user {}", fcmTokens.size(), notification.getUserId());
+
+        } catch (Exception e) {
+            log.error("Failed to send push notification for notification {}: {}", notification.getNotificationId(), e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<NotificationResponseDto> getNotificationsByUserId(Long userId) {
+        log.info("Fetching notifications for user {}", userId);
+        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return notifications.stream()
+                .map(this::convertToDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public NotificationResponseDto markAsRead(Long notificationId) {
+        log.info("Marking notification {} as read", notificationId);
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found: " + notificationId));
+        
+        notification.setIsRead(true);
+        Notification updated = notificationRepository.save(notification);
+        return convertToDto(updated);
+    }
+
+    @Override
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        log.info("Marking all notifications as read for user {}", userId);
+        notificationRepository.markAllAsReadByUserId(userId);
+    }
+
+    @Override
+    public void deleteNotification(Long notificationId) {
+        log.info("Deleting notification {}", notificationId);
+        if (!notificationRepository.existsById(notificationId)) {
+            throw new RuntimeException("Notification not found: " + notificationId);
+        }
+        notificationRepository.deleteById(notificationId);
+    }
+
+    @Override
+    public Long getUnreadCount(Long userId) {
+        log.debug("Getting unread count for user {}", userId);
+        return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 }

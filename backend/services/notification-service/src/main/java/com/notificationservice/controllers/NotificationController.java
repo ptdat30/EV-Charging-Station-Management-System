@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -23,11 +26,38 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdNotification);
     }
 
-    // {
-    //  "userId": 1,
-    //  "notificationType": "charging_started",
-    //  "title": "Charging Started",
-    //  "message": "Your charging session for session ID 123 has started.",
-    //  "referenceId": 123
-    //}
+    // GET /api/notifications?userId={userId}
+    @GetMapping
+    public ResponseEntity<List<NotificationResponseDto>> getNotifications(@RequestParam Long userId) {
+        List<NotificationResponseDto> notifications = notificationService.getNotificationsByUserId(userId);
+        return ResponseEntity.ok(notifications);
+    }
+
+    // GET /api/notifications/unread-count?userId={userId}
+    @GetMapping("/unread-count")
+    public ResponseEntity<Map<String, Long>> getUnreadCount(@RequestParam Long userId) {
+        Long count = notificationService.getUnreadCount(userId);
+        return ResponseEntity.ok(Map.of("count", count));
+    }
+
+    // PATCH /api/notifications/{notificationId}/read
+    @PatchMapping("/{notificationId}/read")
+    public ResponseEntity<NotificationResponseDto> markAsRead(@PathVariable Long notificationId) {
+        NotificationResponseDto updated = notificationService.markAsRead(notificationId);
+        return ResponseEntity.ok(updated);
+    }
+
+    // PATCH /api/notifications/mark-all-read?userId={userId}
+    @PatchMapping("/mark-all-read")
+    public ResponseEntity<Void> markAllAsRead(@RequestParam Long userId) {
+        notificationService.markAllAsRead(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // DELETE /api/notifications/{notificationId}
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
+        notificationService.deleteNotification(notificationId);
+        return ResponseEntity.noContent().build();
+    }
 }

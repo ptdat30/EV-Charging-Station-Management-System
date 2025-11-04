@@ -5,53 +5,64 @@ import { authService } from '../services/authService';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true);
+    const [token, setToken] = useState(null);
+    const [loading, setLoading] = useState(true); // Start with true to show loading while checking token
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+    // Restore token from sessionStorage on mount
     useEffect(() => {
-        // Kiểm tra và validate token khi component mount (refresh page)
-        const initAuth = async () => {
-            const storedToken = localStorage.getItem('token');
-            
-            if (storedToken) {
-                console.log('🔄 AuthProvider mounted - Found token, validating...');
-                setToken(storedToken);
+        const restoreSession = async () => {
+            try {
+                // Try to get token from sessionStorage first, then localStorage
+                const savedToken = sessionStorage.getItem('token') || localStorage.getItem('token');
                 
-                try {
-                    // Validate token với backend
-                    const userData = await authService.validateToken(storedToken);
-                    console.log('✅ Token validation successful:', userData);
-                    setUser(userData);
-                    setIsAuthenticated(true);
-                } catch (error) {
-                    console.error('❌ Token validation failed:', error);
-                    // Token không hợp lệ hoặc hết hạn - xóa và logout
-                    localStorage.removeItem('token');
-                    setToken(null);
-                    setIsAuthenticated(false);
-                    setUser(null);
+                if (savedToken) {
+                    console.log('🔍 Found saved token, validating...');
+                    setToken(savedToken);
+                    
+                    // Validate the token
+                    try {
+                        const userData = await authService.validateToken(savedToken);
+                        console.log('✅ Token validation successful:', userData);
+                        setUser(userData);
+                        setIsAuthenticated(true);
+                    } catch (error) {
+                        console.error('❌ Token validation failed:', error);
+                        // Clear invalid token
+                        sessionStorage.removeItem('token');
+                        localStorage.removeItem('token');
+                        setToken(null);
+                        setUser(null);
+                        setIsAuthenticated(false);
+                    }
+                } else {
+                    console.log('ℹ️ No saved token found');
                 }
-            } else {
-                console.log('🔄 AuthProvider mounted - No token found');
-                setIsAuthenticated(false);
-                setUser(null);
+            } catch (error) {
+                console.error('❌ Error restoring session:', error);
+            } finally {
+                setLoading(false);
             }
-            
-            setLoading(false);
         };
 
-        initAuth();
-    }, []); // Chỉ chạy 1 lần khi mount
+        restoreSession();
+    }, []); // Run only on mount
 
-    const validateToken = async () => {
+    const validateToken = async (tokenToValidate = token) => {
+        if (!tokenToValidate) {
+            console.warn('⚠️ No token provided for validation');
+            return;
+        }
+
+        setLoading(true);
         try {
             console.log('🔍 Validating token...');
-            const userData = await authService.validateToken(token);
+            const userData = await authService.validateToken(tokenToValidate);
 
             console.log('✅ Token validation successful:', userData);
             setUser(userData);
             setIsAuthenticated(true);
+            setToken(tokenToValidate);
         } catch (error) {
             console.error('❌ Token validation failed:', error);
             logout(); // Clear invalid token
@@ -69,7 +80,8 @@ export const AuthProvider = ({ children }) => {
                 const newToken = response.token;
 
                 console.log('✅ Login successful, validating token to get user profile');
-                localStorage.setItem('token', newToken);
+                // Save token to sessionStorage (you can also use localStorage for persistent login)
+                sessionStorage.setItem('token', newToken);
                 setToken(newToken);
 
                 // Build user object from token validation
@@ -170,10 +182,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        console.log('👋 Logging out...');
+        console.log('🚪 Logging out...');
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
+        // Clear token from both sessionStorage and localStorage
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('token');
         authService.logout();
     };
 

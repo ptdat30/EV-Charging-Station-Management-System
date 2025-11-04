@@ -75,6 +75,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       badge: null
     },
     { 
+      icon: 'fas fa-bell', 
+      text: 'Thông báo hệ thống', 
+      path: '/admin/notifications',
+      badge: null
+    },
+    { 
       icon: 'fas fa-cog', 
       text: 'Cài đặt', 
       path: '/admin/settings',

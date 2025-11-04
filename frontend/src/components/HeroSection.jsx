@@ -31,7 +31,7 @@ const HeroSection = ({ onLoginClick, onRegisterClick }) => {
       <div className="hero-overlay"></div>
 
       <div className="hero-content">
-        {/* Debug: Hiển thị nút luôn để test */}
+        {/* Hiển thị nút đăng nhập/đăng ký (cho phép mở modal ngay cả khi đã authenticated) */}
         <div className="hero-auth-buttons">
           {onLoginClick && (
             <button className="hero-btn-login" onClick={onLoginClick}>
@@ -45,8 +45,8 @@ const HeroSection = ({ onLoginClick, onRegisterClick }) => {
               Đăng Ký
             </button>
           )}
-         </div>
-       </div>
+        </div>
+      </div>
     </section>
   );
 };

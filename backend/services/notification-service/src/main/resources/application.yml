@@ -4,8 +4,8 @@
 
 spring:
   application:
-    # Đặt lại tên đúng cho service này
-    name: notification-service
+    # PHẢI VIẾT HOA, khớp với api-gateway.yml
+    name: NOTIFICATION-SERVICE
 
   # Chỉ dùng cách import mới để kết nối Config Server
   config:
@@ -27,6 +27,16 @@ spring:
     username: root
     password: huynhdat123@
 
+  # --- JPA/Hibernate Configuration ---
+  jpa:
+    hibernate:
+      ddl-auto: update  # Tự động tạo/cập nhật bảng từ entity
+    show-sql: true  # Hiển thị SQL queries trong logs
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true  # Format SQL trong logs cho dễ đọc
+
   # --- RabbitMQ Configuration ---
   rabbitmq:
     host: localhost
@@ -35,12 +45,45 @@ spring:
     password: guest
     connection-timeout: 5s # Có thể giữ hoặc bỏ timeout này
 
-# --- Application-specific RabbitMQ Configuration ---
+# --- Application-specific Configuration ---
 app:
+  # RabbitMQ Configuration
   rabbitmq:
     exchange: notification-exchange # Xem lại tên này có khớp với charging_events không?
     queue: notification-queue
     routing-key: notification-routing-key # Xem lại routing key binding
+  
+  # Notification Scheduler Configuration
+  notifications:
+    scheduler:
+      enabled: true  # Enable/disable all scheduled notifications
+    maintenance:
+      enabled: false  # Enable/disable maintenance notifications (set to true when needed)
+    promotions:
+      enabled: false  # Enable/disable promotion notifications (set to true when needed)
+
+# --- Firebase Configuration ---
+firebase:
+  enabled: true  # Firebase service account file has been set up
+  config:
+    # Path to Firebase service account JSON file
+    # File is located at: src/main/resources/firebase-service-account.json
+    # Or use environment variable: FIREBASE_CONFIG_PATH
+    path: firebase-service-account.json
 
 server:
   port: 8085
+
+# ===== QUAN TRỌNG: Eureka Client Configuration =====
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5  # Tăng tần suất fetch
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

@@ -2,12 +2,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/useNotification';
+import NotificationBell from './NotificationBell';
 import './DriverNavBar.css';
 
 const DriverNavBar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { unreadCount } = useNotification();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -82,6 +85,14 @@ const DriverNavBar = () => {
             label: 'Mua gói dịch vụ',
             description: 'Packages',
             roles: ['DRIVER'] // Chỉ driver
+        },
+        {
+            path: '/notifications',
+            icon: 'fas fa-bell',
+            label: 'Thông báo',
+            description: 'Notifications',
+            roles: ['DRIVER', 'STAFF'], // Cả 2 đều có
+            badge: true // Hiển thị badge số lượng chưa đọc
         }
     ];
 
@@ -110,12 +121,18 @@ const DriverNavBar = () => {
                             >
                                 <i className={item.icon}></i>
                                 <span className="nav-label">{item.label}</span>
+                                {item.badge && unreadCount > 0 && (
+                                    <span className="nav-badge">{unreadCount}</span>
+                                )}
                             </Link>
                         ))}
                     </div>
 
                     {/* User Section */}
                     <div className="driver-navbar-user" ref={dropdownRef}>
+                        {/* Notification Bell */}
+                        <NotificationBell />
+                        
                         <div 
                             className="user-info" 
                             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -150,6 +167,17 @@ const DriverNavBar = () => {
                                 </div>
 
                                 <nav className="dropdown-nav">
+                                    <Link 
+                                        to="/notifications" 
+                                        className={`dropdown-nav-item ${isActive('/notifications') ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-bell"></i>
+                                        <span>Thông báo</span>
+                                        {unreadCount > 0 && (
+                                            <span className="dropdown-badge">{unreadCount}</span>
+                                        )}
+                                    </Link>
                                     <Link 
                                         to="/driver/profile/info" 
                                         className={`dropdown-nav-item ${/\/info\b/.test(location.pathname) ? 'active' : ''}`}
@@ -233,7 +261,12 @@ const DriverNavBar = () => {
                         >
                             <i className={item.icon}></i>
                             <span>{item.label}</span>
-                            {isActive(item.path) && <i className="fas fa-chevron-right"></i>}
+                            <div className="mobile-nav-right">
+                                {item.badge && unreadCount > 0 && (
+                                    <span className="mobile-nav-badge">{unreadCount}</span>
+                                )}
+                                {isActive(item.path) && <i className="fas fa-chevron-right"></i>}
+                            </div>
                         </Link>
                     ))}
                 </div>

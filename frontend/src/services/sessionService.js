@@ -7,7 +7,7 @@ class SessionService {
 
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
         const config = {
             headers: {
