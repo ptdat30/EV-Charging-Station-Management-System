@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/LoginModal.css';
@@ -8,6 +8,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const loginSuccessRef = useRef(false); // Track if login was successful from this modal
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -18,13 +19,15 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       setFormData({ email: '', password: '' });
       setError('');
       setShowPassword(false);
+      loginSuccessRef.current = false; // Reset success flag when modal opens
     }
   }, [isOpen]);
 
-  // Close modal when user is authenticated
+  // Close modal when user is authenticated ONLY if login was successful from this modal
   useEffect(() => {
-    if (isAuthenticated && isOpen) {
+    if (isAuthenticated && isOpen && loginSuccessRef.current) {
       onClose();
+      loginSuccessRef.current = false; // Reset after closing
     }
   }, [isAuthenticated, isOpen, onClose]);
 
@@ -54,7 +57,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
       const result = await login(formData.email, formData.password);
 
       if (result.success) {
-        // Redirect theo role của user
+        // Set flag to indicate login was successful from this modal
+        loginSuccessRef.current = true;
+        
+        // Redirect theo role ca user
         const userRole = (result.user?.role || result.user?.roles?.[0] || '').toUpperCase();
         let redirectPath = '/dashboard';
 
