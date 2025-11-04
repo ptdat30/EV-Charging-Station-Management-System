@@ -48,7 +48,7 @@ const apiClient = axios.create({
 // Note: X-User-Id sẽ được API Gateway AuthenticationFilter tự động thêm từ token
 apiClient.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -94,6 +94,7 @@ apiClient.interceptors.response.use(
                 case 401:
                     console.log('🔒 Unauthorized - Clearing token');
                     localStorage.removeItem('token');
+                    sessionStorage.removeItem('token');
                     // Không force redirect - để AuthProvider và ProtectedRoute xử lý
                     // Tránh redirect khi đang ở homepage hoặc login page
                     break;

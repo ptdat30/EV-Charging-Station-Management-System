@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Firebase Service Account (Sensitive - DO NOT COMMIT) ###
+**/firebase-service-account.json
+**/*-firebase-adminsdk-*.json

@@ -2,10 +2,22 @@ server:
   port: 8085 # Chạy notification-service trên cổng mới
 
 spring:
+  application:
+    name: NOTIFICATION-SERVICE  # PHẢI VIẾT HOA, khớp với api-gateway.yml
+  # --- Database Configuration ---
+  datasource:
+    url: jdbc:mysql://localhost:3306/notification_service_db?allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: huynhdat123@
+  # --- JPA/Hibernate Configuration ---
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: update  # Tự động tạo/cập nhật bảng từ entity
+    show-sql: true  # Hiển thị SQL queries trong logs
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true  # Format SQL trong logs cho dễ đọc
   # Cấu hình mail server (ví dụ dùng Gmail - cần bật "Less secure app access" hoặc App Password)
   mail:
     host: smtp.gmail.com
@@ -24,7 +36,16 @@ app:
   rabbitmq:
     exchange: charging_events # Tên exchange sẽ lắng nghe
     queue: notification_queue # Tên queue sẽ lắng nghe
+# ===== QUAN TRỌNG: Eureka Client Configuration =====
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5  # Tăng tần suất fetch
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

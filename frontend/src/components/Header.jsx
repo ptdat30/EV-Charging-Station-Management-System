@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import '../styles/Header.css';
 
 const Header = ({ onLoginClick, onRegisterClick }) => {
@@ -55,6 +56,7 @@ const Header = ({ onLoginClick, onRegisterClick }) => {
             </>
           ) : (
             <div className="user-area">
+              <NotificationBell />
               <span className="user-chip"><i className="fas fa-user-circle"></i> {user?.email || 'User'}</span>
               <button className="btn-logout" onClick={handleLogout}>Đăng xuất</button>
             </div>

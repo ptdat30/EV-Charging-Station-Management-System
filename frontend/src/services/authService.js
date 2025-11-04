@@ -82,6 +82,7 @@ class AuthService {
 
     logout() {
         localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
     }
 
     async register(userData) {
