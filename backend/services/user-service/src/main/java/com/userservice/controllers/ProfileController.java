@@ -143,6 +143,7 @@ public class ProfileController {
         if (request.getPlateNumber() != null) existing.setPlateNumber(request.getPlateNumber());
         if (request.getBatteryCapacityKwh() != null) existing.setBatteryCapacityKwh(request.getBatteryCapacityKwh());
         if (request.getPreferredChargerType() != null) existing.setPreferredChargerType(request.getPreferredChargerType());
+        if (request.getImageUrl() != null) existing.setImageUrl(request.getImageUrl());
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             vehicles.forEach(v -> v.setIsDefault(false));
             existing.setIsDefault(true);
@@ -270,6 +271,34 @@ public class ProfileController {
         }
     }
 
+    // POST /vehicles/upload-image - Upload vehicle image
+    @PostMapping("/vehicles/upload-image")
+    public ResponseEntity<Map<String, String>> uploadVehicleImage(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            if (fileStorageService == null) {
+                return ResponseEntity.status(503)
+                        .body(Map.of("message", "Cloudinary is not configured"));
+            }
+
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "File is empty"));
+            }
+
+            // Upload to folder "vehicles/{userId}"
+            String imageUrl = fileStorageService.uploadAvatar(userId, file, "vehicles");
+            log.info("Vehicle image uploaded successfully for user {}: {}", userId, imageUrl);
+            
+            return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+        } catch (Exception e) {
+            log.error("Failed to upload vehicle image for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Failed to upload vehicle image: " + e.getMessage()));
+        }
+    }
+
     @Data
     public static class ProfileResponse {
         private Long userId;
@@ -305,6 +334,7 @@ public class ProfileController {
         private Double batteryCapacityKwh;
         private String preferredChargerType;
         private Boolean isDefault;
+        private String imageUrl;
     }
 }
 

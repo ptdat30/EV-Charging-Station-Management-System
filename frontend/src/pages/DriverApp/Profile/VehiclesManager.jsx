@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { addVehicle, deleteVehicle, getMyVehicles, setDefaultVehicle, updateVehicle } from '../../../services/userService';
+import apiClient from '../../../config/api';
 
 const emptyVehicle = { 
     name: '', 
@@ -19,12 +20,14 @@ export default function VehiclesManager() {
     const [showForm, setShowForm] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const load = async () => {
         setLoading(true);
         setError('');
         try {
             const { data } = await getMyVehicles();
+            console.log('🚗 Vehicles loaded:', data);
             setVehicles(data || []);
         } catch (e) {
             setError(e.response?.data?.message || e.message || 'Không thể tải danh sách xe');
@@ -42,14 +45,18 @@ export default function VehiclesManager() {
         setLoading(true);
         setError('');
         try {
+            const normalizedData = normalize(form);
+            console.log('💾 Saving vehicle:', normalizedData);
+            
             if (editingId) {
-                await updateVehicle(editingId, normalize(form));
+                await updateVehicle(editingId, normalizedData);
             } else {
-                await addVehicle(normalize(form));
+                await addVehicle(normalizedData);
             }
             setForm(emptyVehicle);
             setEditingId(null);
             setShowForm(false);
+            setImagePreview(null);
             await load();
         } catch (e) {
             setError(e.response?.data?.message || e.message || 'Lỗi lưu xe');
@@ -59,8 +66,12 @@ export default function VehiclesManager() {
     };
 
     const normalize = (v) => ({
-        ...v,
+        name: v.name,
+        plateNumber: v.plateNumber,
         batteryCapacityKwh: v.batteryCapacityKwh ? Number(v.batteryCapacityKwh) : null,
+        preferredChargerType: v.preferredChargerType,
+        isDefault: v.isDefault,
+        imageUrl: v.imageUrl || null,
     });
 
     const onEdit = (v) => {
@@ -99,6 +110,7 @@ export default function VehiclesManager() {
         setForm(emptyVehicle);
         setEditingId(null);
         setShowForm(false);
+        setImagePreview(null);
         setError('');
     };
 
@@ -109,30 +121,53 @@ export default function VehiclesManager() {
         setShowForm(true);
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            // Check file type
-            if (!file.type.startsWith('image/')) {
-                setError('Vui lòng chọn file ảnh');
-                return;
+        if (!file) return;
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            setError('Vui lòng chọn file ảnh');
+            return;
+        }
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Kích thước ảnh không được vượt quá 5MB');
+            return;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload to server
+        setUploadingImage(true);
+        setError('');
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Upload using the generic vehicle image endpoint
+            const response = await apiClient.post('/users/vehicles/upload-image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            if (response.data && response.data.imageUrl) {
+                setForm({ ...form, imageUrl: response.data.imageUrl });
+                setImagePreview(response.data.imageUrl);
             }
-            // Check file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setError('Kích thước ảnh không được vượt quá 5MB');
-                return;
-            }
-            
-            // Create preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-            
-            // Store file for upload (you can implement upload API later)
-            // For now, we'll use data URL as preview
-            setForm({ ...form, imageUrl: URL.createObjectURL(file) });
+        } catch (err) {
+            setError(err.response?.data?.message || 'Không thể tải ảnh lên. Vui lòng thử lại.');
+            setImagePreview(null);
+        } finally {
+            setUploadingImage(false);
         }
     };
 
@@ -283,15 +318,24 @@ export default function VehiclesManager() {
                                     )}
                                     <div className="image-upload-controls">
                                         <label htmlFor="vehicle-image-file" className="btn btn-secondary btn-sm">
-                                            <i className="fas fa-upload"></i>
-                                            Tải ảnh lên
+                                            {uploadingImage ? (
+                                                <>
+                                                    <span className="spinner-small"></span>
+                                                    Đang tải...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <i className="fas fa-upload"></i>
+                                                    Tải ảnh lên
+                                                </>
+                                            )}
                                         </label>
                                         <input
                                             id="vehicle-image-file"
                                             type="file"
                                             accept="image/*"
                                             onChange={handleImageChange}
-                                            disabled={loading}
+                                            disabled={loading || uploadingImage}
                                             style={{ display: 'none' }}
                                         />
                                         <span className="image-upload-or">hoặc</span>
@@ -302,7 +346,7 @@ export default function VehiclesManager() {
                                             value={form.imageUrl || ''}
                                             onChange={handleImageUrlChange}
                                             className="form-control"
-                                            disabled={loading}
+                                            disabled={loading || uploadingImage}
                                         />
                                     </div>
                                     <p className="form-caption">
