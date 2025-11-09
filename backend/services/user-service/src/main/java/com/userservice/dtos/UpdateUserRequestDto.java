@@ -13,4 +13,5 @@ public class UpdateUserRequestDto {
     // Chúng ta không cho phép cập nhật email hoặc userType qua API này.
     private String fullName;
     private String phone;
+    private String avatarUrl;
 }

@@ -31,6 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final WalletRepository walletRepository;
+    private final com.paymentservice.clients.ChargingServiceClient chargingServiceClient;
 
     @Override
     @Transactional // Đảm bảo các thao tác DB (trừ tiền, tạo payment) là một giao dịch nguyên tử
@@ -95,6 +96,18 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Payment finalPayment = paymentRepository.save(savedPayment); // Lưu lại trạng thái cuối cùng
+        
+        // Mark session as paid if payment was completed
+        if (finalPayment.getPaymentStatus() == Payment.PaymentStatus.completed) {
+            try {
+                chargingServiceClient.markSessionAsPaid(finalPayment.getSessionId(), finalPayment.getPaymentId());
+                log.info("Session {} marked as paid", finalPayment.getSessionId());
+            } catch (Exception e) {
+                log.error("Failed to mark session {} as paid: {}", finalPayment.getSessionId(), e.getMessage());
+                // Continue even if marking fails - payment was still successful
+            }
+        }
+        
         return convertToDto(finalPayment);
     }
 
@@ -320,6 +333,15 @@ public class PaymentServiceImpl implements PaymentService {
         
         Payment savedPayment = paymentRepository.save(payment);
         log.info("On-site payment processed successfully. Payment ID: {}", savedPayment.getPaymentId());
+        
+        // Mark session as paid
+        try {
+            chargingServiceClient.markSessionAsPaid(savedPayment.getSessionId(), savedPayment.getPaymentId());
+            log.info("Session {} marked as paid after on-site payment", savedPayment.getSessionId());
+        } catch (Exception e) {
+            log.error("Failed to mark session {} as paid: {}", savedPayment.getSessionId(), e.getMessage());
+            // Continue even if marking fails - payment was still successful
+        }
         
         return convertToDto(savedPayment);
     }

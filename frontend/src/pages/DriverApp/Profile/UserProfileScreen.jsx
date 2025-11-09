@@ -8,7 +8,7 @@ import VehiclesManager from './VehiclesManager';
 import TransactionsHistory from './TransactionsHistory';
 
 function UserProfileScreen({ tab }) {
-    const { user, token, isAuthenticated } = useAuth();
+    const { user, token, isAuthenticated, updateUser } = useAuth();
     const location = useLocation();
     const pathname = location.pathname;
     const [profileData, setProfileData] = useState({
@@ -42,15 +42,21 @@ function UserProfileScreen({ tab }) {
                 const response = await getMyProfile();
                 console.log('✅ Profile fetched successfully:', response.data);
 
+                const avatarUrl = response.data?.avatarUrl || user?.avatarUrl || '';
                 setProfileData({
                     fullName: response.data?.fullName || user?.fullName || '',
                     email: response.data?.email || user?.email || '',
                     phone: response.data?.phone || user?.phone || '',
                     address: response.data?.address || '',
                     emergencyContact: response.data?.emergencyContact || '',
-                    avatarUrl: response.data?.avatarUrl || user?.avatarUrl || '',
+                    avatarUrl: avatarUrl,
                 });
-                setAvatarPreview(response.data?.avatarUrl || user?.avatarUrl || null);
+                setAvatarPreview(avatarUrl || null);
+                
+                // Update user context with avatar if available
+                if (avatarUrl && updateUser) {
+                    updateUser({ avatarUrl });
+                }
             } catch (err) {
                 console.error('❌ Failed to fetch profile:', err);
 
@@ -149,8 +155,13 @@ function UserProfileScreen({ tab }) {
             const { uploadAvatar } = await import('../../../services/userService');
             const response = await uploadAvatar(formData);
             
-            if (response.data?.url) {
-                setProfileData({ ...profileData, avatarUrl: response.data.url });
+            const avatarUrl = response.data?.avatarUrl || response.data?.url;
+            if (avatarUrl) {
+                setProfileData({ ...profileData, avatarUrl });
+                // Update user context to reflect avatar in navbar
+                if (updateUser) {
+                    updateUser({ avatarUrl });
+                }
                 setError('');
                 alert('Cập nhật avatar thành công!');
             }
@@ -209,7 +220,7 @@ function UserProfileScreen({ tab }) {
                 <div className="profile-header-content">
                     <div className="profile-avatar-wrapper">
                         <div className="profile-avatar-container">
-                            {(avatarPreview || profileData.avatarUrl) ? (
+                            {(avatarPreview || profileData.avatarUrl) && (
                                 <img 
                                     src={avatarPreview || profileData.avatarUrl} 
                                     alt="Avatar" 
@@ -219,21 +230,24 @@ function UserProfileScreen({ tab }) {
                                         user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
                                     }`}
                                     onError={(e) => {
+                                        console.error('❌ Avatar load error');
                                         e.target.style.display = 'none';
-                                        e.target.nextElementSibling.style.display = 'flex';
+                                        const fallback = e.target.nextElementSibling;
+                                        if (fallback) fallback.style.display = 'flex';
                                     }}
                                 />
-                            ) : null}
-                            <div 
-                                className={`profile-avatar ${
-                                    user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
-                                    user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
-                                    user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
-                                }`}
-                                style={{ display: (avatarPreview || profileData.avatarUrl) ? 'none' : 'flex' }}
-                            >
-                                {getInitials()}
-                            </div>
+                            )}
+                            {!(avatarPreview || profileData.avatarUrl) && (
+                                <div 
+                                    className={`profile-avatar ${
+                                        user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
+                                        user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
+                                        user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
+                                    }`}
+                                >
+                                    {getInitials()}
+                                </div>
+                            )}
                             <label className="avatar-upload-btn" htmlFor="avatar-upload" title="Đổi avatar">
                                 {uploadingAvatar ? (
                                     <span className="spinner-small"></span>
@@ -252,8 +266,22 @@ function UserProfileScreen({ tab }) {
                         </div>
                     </div>
                     <div className="profile-info">
-                        <h1 className="profile-name">{profileData.fullName || user?.fullName || 'Người dùng'}</h1>
+                        <div className="profile-name-row">
+                            <h1 className="profile-name">{profileData.fullName || user?.fullName || 'Người dùng'}</h1>
+                            {user?.subscriptionPackage && (
+                                <span className={`subscription-badge ${user.subscriptionPackage.toLowerCase()}`}>
+                                    {user.subscriptionPackage === 'SILVER' && '🥈 Gói Bạc'}
+                                    {user.subscriptionPackage === 'GOLD' && '🥇 Gói Vàng'}
+                                    {user.subscriptionPackage === 'PLATINUM' && '💎 Gói Bạch Kim'}
+                                </span>
+                            )}
+                        </div>
                         <div className="profile-username">{profileData.email || user?.email || ''}</div>
+                        {user?.subscriptionExpiresAt && (
+                            <div className="subscription-expiry">
+                                Gói dịch vụ hết hạn: {new Date(user.subscriptionExpiresAt).toLocaleDateString('vi-VN')}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

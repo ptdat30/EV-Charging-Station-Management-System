@@ -11,7 +11,7 @@ spring:
 
   cloud:
     config:
-      enabled: true
+      enabled: false  # Tắt Config Server, dùng config local
       uri: http://localhost:8888
       fail-fast: false
 
@@ -36,6 +36,14 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
       file-size-threshold: 2KB
+
+# Cloudinary Configuration for Avatar Upload (FREE - No Credit Card Required)
+# Sign up at: https://cloudinary.com/users/register_free
+cloudinary:
+  enabled: true  # Set to true after getting credentials
+  cloud-name: dksgckopr  # Get from Cloudinary Dashboard
+  api-key: 149974635413495        # Get from Cloudinary Dashboard
+  api-secret: svNqRGPmlp0Ak6y72hrIVB3p4yk  # Get from Cloudinary Dashboard
 
 # ===== QUAN TRỌNG: Eureka Client Configuration =====
 eureka:

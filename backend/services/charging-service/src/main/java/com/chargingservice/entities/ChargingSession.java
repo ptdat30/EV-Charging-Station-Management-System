@@ -46,6 +46,13 @@ public class ChargingSession {
     @Column(name = "session_status")
     private SessionStatus sessionStatus;
 
+    // Payment tracking
+    @Column(name = "is_paid")
+    private Boolean isPaid = false;
+
+    @Column(name = "payment_id")
+    private Long paymentId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

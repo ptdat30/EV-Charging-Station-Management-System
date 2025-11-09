@@ -1,9 +1,11 @@
 // FILE: AuthController.java (trong auth-service)
 package com.authservice.controllers;
 
+import com.authservice.clients.UserServiceClient;
 import com.authservice.dtos.LoginRequestDto;
 import com.authservice.dtos.LoginResponseDto;
 import com.authservice.dtos.RegisterRequestDto;
+import com.authservice.dtos.internal.UserDetailDto;
 import com.authservice.services.AuthService;
 import com.authservice.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import org.slf4j.Logger; // Import Logger
 import org.slf4j.LoggerFactory; // Import LoggerFactory
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -21,6 +24,7 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class); // Thêm Logger
     private final AuthService authService;
     private final JwtUtil jwtUtil;
+    private final UserServiceClient userServiceClient;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
@@ -52,13 +56,31 @@ public class AuthController {
                 String role = jwtUtil.getRoleFromToken(token);
                 Long userId = jwtUtil.getUserIdFromToken(token);
                 log.debug("Token validation successful for user {}", username);
-                // Trả về Map chứa các thông tin cần thiết
-                return ResponseEntity.ok(Map.of(
-                        "isValid", true,
-                        "username", username,
-                        "role", role != null ? role : "UNKNOWN", // Tránh trả về null
-                        "userId", userId != null ? userId : -1L   // Tránh trả về null
-                ));
+                
+                // Fetch full user details including subscription info
+                Map<String, Object> response = new HashMap<>();
+                response.put("isValid", true);
+                response.put("username", username);
+                response.put("role", role != null ? role : "UNKNOWN");
+                response.put("userId", userId != null ? userId : -1L);
+                
+                // Try to get full user info from user-service
+                try {
+                    UserDetailDto userDetails = userServiceClient.getUserByEmail(username);
+                    if (userDetails != null) {
+                        response.put("subscriptionPackage", userDetails.getSubscriptionPackage());
+                        response.put("subscriptionExpiresAt", userDetails.getSubscriptionExpiresAt());
+                        response.put("avatarUrl", userDetails.getAvatarUrl());
+                        response.put("fullName", userDetails.getFullName());
+                        log.debug("Added user details for {}: subscription={}, avatar={}", 
+                                username, userDetails.getSubscriptionPackage(), userDetails.getAvatarUrl() != null);
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not fetch user details for {}: {}", username, e.getMessage());
+                    // Continue without full user info
+                }
+                
+                return ResponseEntity.ok(response);
             } else {
                 log.warn("Token validation failed (invalid/expired)");
                 return ResponseEntity.status(401).body(Map.of("isValid", false, "error", "Invalid or Expired Token"));

@@ -29,6 +29,9 @@ public class ProfileController {
     private final DriverProfileRepository driverProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.userservice.services.FileStorageService fileStorageService;
 
     @GetMapping("/profile")
     public ResponseEntity<ProfileResponse> getMyProfile(@RequestHeader("X-User-Id") Long userId) {
@@ -44,6 +47,7 @@ public class ProfileController {
         response.setAddress(profile.getAddress());
         response.setEmergencyContact(profile.getEmergencyContact());
         response.setPreferredPaymentMethod(profile.getPreferredPaymentMethod());
+        response.setAvatarUrl(user.getAvatarUrl());
 
         return ResponseEntity.ok(response);
     }
@@ -92,16 +96,6 @@ public class ProfileController {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công"));
-    }
-
-    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, Object>> uploadAvatar(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestPart("file") MultipartFile file
-    ) {
-        // Placeholder: In real system store to object storage and persist URL
-        log.info("Received avatar upload from user {}: {} bytes", userId, file.getSize());
-        return ResponseEntity.ok(Map.of("message", "Uploaded", "url", "/static/avatars/placeholder.png"));
     }
 
     // --- VEHICLES ---
@@ -198,6 +192,84 @@ public class ProfileController {
         }
     }
 
+    @PostMapping("/profile/avatar")
+    public ResponseEntity<Map<String, String>> uploadAvatar(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam("file") MultipartFile file) {
+        log.info("Uploading avatar for user {}", userId);
+        
+        // Check if storage service is available
+        if (fileStorageService == null) {
+            log.error("FileStorageService is not available - Cloudinary not configured");
+            return ResponseEntity.status(503).body(Map.of(
+                "error", "Avatar upload is not available. Please configure Cloudinary in application.yml"
+            ));
+        }
+        
+        try {
+            User user = userRepository.findById(userId).orElseThrow();
+            
+            // Delete old avatar if exists
+            if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+                try {
+                    fileStorageService.deleteAvatar(user.getAvatarUrl());
+                } catch (Exception e) {
+                    log.warn("Failed to delete old avatar: {}", e.getMessage());
+                }
+            }
+            
+            // Upload new avatar
+            String avatarUrl = fileStorageService.uploadAvatar(file, userId);
+            
+            // Update user
+            user.setAvatarUrl(avatarUrl);
+            userRepository.save(user);
+            
+            log.info("Avatar uploaded successfully for user {}", userId);
+            return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid avatar upload request: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            log.error("Storage service error: {}", e.getMessage());
+            return ResponseEntity.status(503).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to upload avatar for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to upload avatar"));
+        }
+    }
+    
+    @DeleteMapping("/profile/avatar")
+    public ResponseEntity<Map<String, String>> deleteAvatar(@RequestHeader("X-User-Id") Long userId) {
+        log.info("Deleting avatar for user {}", userId);
+        
+        // Check if storage service is available
+        if (fileStorageService == null) {
+            log.error("FileStorageService is not available - Cloudinary not configured");
+            return ResponseEntity.status(503).body(Map.of(
+                "error", "Avatar service is not available"
+            ));
+        }
+        
+        try {
+            User user = userRepository.findById(userId).orElseThrow();
+            
+            if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+                fileStorageService.deleteAvatar(user.getAvatarUrl());
+                user.setAvatarUrl(null);
+                userRepository.save(user);
+                log.info("Avatar deleted successfully for user {}", userId);
+            }
+            
+            return ResponseEntity.ok(Map.of("message", "Avatar deleted successfully"));
+            
+        } catch (Exception e) {
+            log.error("Failed to delete avatar for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to delete avatar"));
+        }
+    }
+
     @Data
     public static class ProfileResponse {
         private Long userId;
@@ -207,6 +279,7 @@ public class ProfileController {
         private String address;
         private String emergencyContact;
         private String preferredPaymentMethod;
+        private String avatarUrl;
     }
 
     @Data

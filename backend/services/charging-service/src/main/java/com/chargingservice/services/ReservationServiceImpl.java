@@ -3,6 +3,7 @@ package com.chargingservice.services;
 import com.chargingservice.clients.NotificationServiceClient;
 import com.chargingservice.clients.PaymentServiceClient;
 import com.chargingservice.clients.StationServiceClient;
+import com.chargingservice.clients.UserServiceClient;
 import com.chargingservice.dtos.CreateReservationRequestDto;
 import com.chargingservice.dtos.RouteBookingRequestDto;
 import com.chargingservice.dtos.internal.CreateNotificationRequestDto;
@@ -44,6 +45,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final StationServiceClient stationServiceClient;
     private final PaymentServiceClient paymentServiceClient;
     private final NotificationServiceClient notificationServiceClient;
+    private final UserServiceClient userServiceClient;
 
     @Override
     @Transactional
@@ -111,6 +113,19 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setDurationMinutes(requestDto.getDurationMinutes());
         reservation.setStatus(Reservation.ReservationStatus.confirmed); // Confirm ngay, không cần deposit
         reservation.setConfirmationCode(generateConfirmationCode());
+        
+        // Set priority based on user's subscription package
+        try {
+            Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());
+            String subscriptionPackage = (String) userResponse.get("subscriptionPackage");
+            reservation.setSubscriptionPackage(subscriptionPackage);
+            reservation.setPriorityLevel(getPriorityLevel(subscriptionPackage));
+            log.info("User {} has package {} with priority {}", 
+                    requestDto.getUserId(), subscriptionPackage, reservation.getPriorityLevel());
+        } catch (Exception e) {
+            log.warn("Could not fetch subscription for user {}: {}", requestDto.getUserId(), e.getMessage());
+            reservation.setPriorityLevel(0); // Default no priority
+        }
         
         // Save first to get reservationId
         Reservation saved = reservationRepository.save(reservation);
@@ -679,6 +694,30 @@ public class ReservationServiceImpl implements ReservationService {
         return DEFAULT_DEPOSIT_AMOUNT;
     }
 
+    /**
+     * Get priority level based on subscription package
+     * PLATINUM = 3 (highest priority)
+     * GOLD = 2
+     * SILVER = 1
+     * No package = 0
+     */
+    private Integer getPriorityLevel(String subscriptionPackage) {
+        if (subscriptionPackage == null) {
+            return 0;
+        }
+        
+        switch (subscriptionPackage.toUpperCase()) {
+            case "PLATINUM":
+                return 3;
+            case "GOLD":
+                return 2;
+            case "SILVER":
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
     @Override
     @Transactional
     public List<ReservationResponseDto> createRouteReservations(Long userId, List<RouteBookingRequestDto.RouteBookingItemDto> bookings) {
@@ -722,7 +761,6 @@ public class ReservationServiceImpl implements ReservationService {
                 // Truncate originalCode if needed to ensure total length <= 20
                 String newCode = routeGroupId + "-" + originalCode;
                 if (newCode.length() > 20) {
-                    // If too long, use only last 4 chars of originalCode
                     int maxOriginalLength = 20 - routeGroupId.length() - 1; // -1 for the dash
                     if (maxOriginalLength > 0) {
                         String truncatedOriginal = originalCode.length() > maxOriginalLength 

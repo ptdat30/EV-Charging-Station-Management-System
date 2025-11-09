@@ -87,6 +87,13 @@ public class Reservation {
     @Column(name = "reminder_sent_at")
     private LocalDateTime reminderSentAt;
 
+    // Priority level based on subscription package (0 = no subscription, 1 = SILVER, 2 = GOLD, 3 = PLATINUM)
+    @Column(name = "priority_level")
+    private Integer priorityLevel = 0;
+
+    @Column(name = "subscription_package")
+    private String subscriptionPackage;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

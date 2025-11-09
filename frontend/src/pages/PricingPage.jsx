@@ -15,6 +15,13 @@ const PricingPage = () => {
     loadBalance();
   }, []);
 
+  // Debug: Log user data to see subscription info
+  useEffect(() => {
+    console.log('🔍 [PricingPage] Current user data:', user);
+    console.log('📦 [PricingPage] Subscription package:', user?.subscriptionPackage);
+    console.log('📅 [PricingPage] Subscription expires at:', user?.subscriptionExpiresAt);
+  }, [user]);
+
   const loadBalance = async () => {
     try {
       const data = await getBalance();

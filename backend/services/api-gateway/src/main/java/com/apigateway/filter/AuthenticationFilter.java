@@ -89,14 +89,16 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                         log.warn("Token validation failed from auth-service (status {}): {}", clientResponse.statusCode(), requestPath);
                         return Mono.error(new InvalidTokenException("Invalid Token")); // Ném exception tùy chỉnh
                     })
-                    .bodyToMono(Map.class) // Lấy body response dưới dạng Map
+                    .bodyToMono(java.util.Map.class) // Lấy body response dưới dạng Map
                     .flatMap(responseMap -> {
                         // ResponseMap ví dụ: {isValid=true, username=..., role=DRIVER, userId=1}
-                        Boolean isValid = (Boolean) responseMap.getOrDefault("isValid", false);
-                        String role = (String) responseMap.get("role");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> validatedMap = (Map<String, Object>) responseMap;
+                        Boolean isValid = (Boolean) validatedMap.getOrDefault("isValid", false);
+                        String role = (String) validatedMap.get("role");
                         // Cẩn thận khi parse Long từ Map
                         Long userId = -1L; // Giá trị mặc định nếu lỗi
-                        Object userIdObj = responseMap.get("userId");
+                        Object userIdObj = validatedMap.get("userId");
                         if(userIdObj instanceof Number) {
                             userId = ((Number) userIdObj).longValue();
                         } else if (userIdObj != null) {

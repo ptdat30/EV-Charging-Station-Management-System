@@ -173,6 +173,21 @@
     transform: scale(1.05);
 }
 
+/* Avatar Image */
+.user-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.dropdown-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 /* Subscription Package Borders - Khung vòng tròn */
 .user-avatar.package-silver {
     border: 3px solid #c0c0c0;
@@ -473,6 +488,17 @@
 .dropdown-user-email {
     font-size: 14px;
     opacity: 0.9;
+}
+
+.dropdown-user-package {
+    font-size: 12px;
+    margin-top: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(10px);
 }
 
 .dropdown-nav {

@@ -11,6 +11,8 @@ public class UserDetailDto {
     private Long userId;
     private String email;
     private String passwordHash; // Bao gồm password hash
+    private String fullName;
+    private String avatarUrl;
     private User.UserType userType;
     private User.Status status;
     private User.SubscriptionPackage subscriptionPackage;

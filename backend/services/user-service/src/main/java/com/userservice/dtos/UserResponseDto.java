@@ -16,6 +16,7 @@ public class UserResponseDto {
     private String email;
     private String phone;
     private String fullName;
+    private String avatarUrl;
     private User.UserType userType;
     private User.Status status;
     private User.SubscriptionPackage subscriptionPackage;

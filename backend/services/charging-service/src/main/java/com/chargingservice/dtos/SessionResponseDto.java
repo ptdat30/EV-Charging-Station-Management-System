@@ -17,5 +17,7 @@ public class SessionResponseDto {
     private LocalDateTime endTime;
     private BigDecimal energyConsumed;
     private ChargingSession.SessionStatus sessionStatus;
+    private Boolean isPaid;
+    private Long paymentId;
     private LocalDateTime createdAt;
 }
