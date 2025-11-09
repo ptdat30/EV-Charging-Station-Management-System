@@ -6,11 +6,6 @@ import '../styles/HeroSection.css';
 const HeroSection = ({ onLoginClick, onRegisterClick }) => {
   const { isAuthenticated } = useAuth();
 
-  // Debug: log authentication state
-  console.log('HeroSection - isAuthenticated:', isAuthenticated);
-  console.log('HeroSection - onLoginClick:', onLoginClick);
-  console.log('HeroSection - onRegisterClick:', onRegisterClick);
-
   return (
     <section className="hero">
       {/* Video Background */}

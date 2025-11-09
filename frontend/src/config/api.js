@@ -54,16 +54,9 @@ apiClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        console.log(`🔄 API Request: ${config.method.toUpperCase()} ${config.url}`);
-        console.log('   Headers:', config.headers);
-        if (config.data) {
-            console.log('   Data:', config.data);
-        }
-
         return config;
     },
     (error) => {
-        console.error('❌ Request Error:', error);
         return Promise.reject(error);
     }
 );
@@ -71,59 +64,22 @@ apiClient.interceptors.request.use(
 // Response Interceptor - Xử lý response và lỗi
 apiClient.interceptors.response.use(
     (response) => {
-        console.log(`✅ API Response: ${response.status} ${response.config.url}`);
-        console.log('   Data:', response.data);
         return response;
     },
     (error) => {
-        // Log chi tiết lỗi
-        console.error('❌ API Error:', {
-            url: error.config?.url,
-            method: error.config?.method,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            message: error.message
-        });
-
         // Xử lý các mã lỗi cụ thể
         if (error.response) {
             const { status, data } = error.response;
 
-            switch (status) {
-                case 401:
-                    console.log('🔒 Unauthorized - Clearing token');
-                    localStorage.removeItem('token');
-                    sessionStorage.removeItem('token');
-                    // Không force redirect - để AuthProvider và ProtectedRoute xử lý
-                    // Tránh redirect khi đang ở homepage hoặc login page
-                    break;
-
-                case 403:
-                    console.log('🚫 Forbidden - Access denied');
-                    break;
-
-                case 404:
-                    console.log('🔍 Not Found');
-                    break;
-
-                case 500:
-                    console.log('💥 Internal Server Error');
-                    break;
-
-                default:
-                    console.log(`⚠️ Error ${status}`);
+            if (status === 401) {
+                localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
             }
 
             // Trả về lỗi với message từ backend hoặc default
             error.message = data?.message || data?.error || error.message;
         } else if (error.request) {
-            // Request được gửi nhưng không nhận được response
-            console.error('📡 No response received:', error.request);
             error.message = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
-        } else {
-            // Lỗi trong quá trình setup request
-            console.error('⚙️ Request setup error:', error.message);
         }
 
         return Promise.reject(error);
