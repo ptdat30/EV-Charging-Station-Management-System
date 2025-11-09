@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory; // Import LoggerFactory
 import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,10 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getUserById(Long userId) {
         log.debug("Fetching user by ID: {}", userId);
         User user = findUserByIdInternal(userId);
+        
+        // Check and clear expired subscription before returning
+        checkAndClearExpiredSubscription(user);
+        
         return convertToDto(user);
     }
 
@@ -78,6 +83,11 @@ public class UserServiceImpl implements UserService {
 
         existingUser.setFullName(updateUserRequestDto.getFullName());
         existingUser.setPhone(updateUserRequestDto.getPhone());
+        
+        // Update avatar URL if provided
+        if (updateUserRequestDto.getAvatarUrl() != null) {
+            existingUser.setAvatarUrl(updateUserRequestDto.getAvatarUrl());
+        }
 
         User updatedUser = userRepository.save(existingUser);
         log.info("User {} updated successfully", userId);
@@ -106,11 +116,16 @@ public class UserServiceImpl implements UserService {
                     return new ResourceNotFoundException("User not found with email: " + email);
                 });
 
+        // Check and clear expired subscription before returning
+        checkAndClearExpiredSubscription(user);
+
         // Chuyển đổi sang DTO chứa cả password hash
         UserDetailDto detailDto = new UserDetailDto();
         detailDto.setUserId(user.getId());
         detailDto.setEmail(user.getEmail());
         detailDto.setPasswordHash(user.getPasswordHash()); // Quan trọng
+        detailDto.setFullName(user.getFullName());
+        detailDto.setAvatarUrl(user.getAvatarUrl());
         detailDto.setUserType(user.getUserType());
         detailDto.setStatus(user.getStatus());
         detailDto.setSubscriptionPackage(user.getSubscriptionPackage());
@@ -139,6 +154,23 @@ public class UserServiceImpl implements UserService {
                 });
     }
 
+    // Kiểm tra và xóa subscription đã hết hạn
+    private void checkAndClearExpiredSubscription(User user) {
+        if (user.getSubscriptionPackage() != null && user.getSubscriptionExpiresAt() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            if (user.getSubscriptionExpiresAt().isBefore(now)) {
+                log.info("Clearing expired {} subscription for user {} (expired at: {})",
+                        user.getSubscriptionPackage(),
+                        user.getId(),
+                        user.getSubscriptionExpiresAt());
+                
+                user.setSubscriptionPackage(null);
+                user.setSubscriptionExpiresAt(null);
+                userRepository.save(user);
+            }
+        }
+    }
+
     // Chuyển User sang UserResponseDto (không chứa password hash)
     private UserResponseDto convertToDto(User user) {
         UserResponseDto dto = new UserResponseDto();
@@ -146,6 +178,7 @@ public class UserServiceImpl implements UserService {
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
         dto.setFullName(user.getFullName());
+        dto.setAvatarUrl(user.getAvatarUrl());
         dto.setUserType(user.getUserType());
         dto.setStatus(user.getStatus());
         dto.setSubscriptionPackage(user.getSubscriptionPackage());

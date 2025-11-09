@@ -58,7 +58,7 @@ export const changePassword = async (passwords) => {
 export const uploadAvatar = async (formData) => {
     try {
         console.log('📸 Uploading avatar...');
-        const response = await apiClient.post('/users/avatar', formData, {
+        const response = await apiClient.post('/users/profile/avatar', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }

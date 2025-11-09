@@ -48,4 +48,11 @@ public interface ChargingService {
      * @return Trạng thái sạc chi tiết
      */
     com.chargingservice.dtos.SessionStatusDto getSessionStatus(Long sessionId);
+    
+    /**
+     * Đánh dấu session đã thanh toán
+     * @param sessionId ID của phiên sạc
+     * @param paymentId ID của payment record
+     */
+    void markSessionAsPaid(Long sessionId, Long paymentId);
 }

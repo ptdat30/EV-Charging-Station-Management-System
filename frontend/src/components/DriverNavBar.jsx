@@ -137,7 +137,9 @@ const DriverNavBar = () => {
                                 user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
                                 user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
                             }`}>
-                                {user?.email ? (
+                                {user?.avatarUrl ? (
+                                    <img src={user.avatarUrl} alt="Avatar" className="avatar-img" />
+                                ) : user?.email ? (
                                     <span>{user.email.charAt(0).toUpperCase()}</span>
                                 ) : (
                                     <i className="fas fa-user"></i>
@@ -155,7 +157,9 @@ const DriverNavBar = () => {
                                             user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
                                             user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
                                         }`}>
-                                            {user?.email ? (
+                                            {user?.avatarUrl ? (
+                                                <img src={user.avatarUrl} alt="Avatar" className="avatar-img" />
+                                            ) : user?.email ? (
                                                 <span>{user.email.charAt(0).toUpperCase()}</span>
                                             ) : (
                                                 <i className="fas fa-user-circle"></i>
@@ -164,6 +168,13 @@ const DriverNavBar = () => {
                                         <div>
                                             <div className="dropdown-user-name">{user?.fullName || 'Driver'}</div>
                                             <div className="dropdown-user-email">{user?.email || ''}</div>
+                                            {user?.subscriptionPackage && (
+                                                <div className="dropdown-user-package">
+                                                    {user.subscriptionPackage === 'SILVER' && '🥈 Gói Bạc'}
+                                                    {user.subscriptionPackage === 'GOLD' && '🥇 Gói Vàng'}
+                                                    {user.subscriptionPackage === 'PLATINUM' && '💎 Gói Bạch Kim'}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

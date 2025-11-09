@@ -143,6 +143,18 @@ public class ChargingController {
     }
     
     /**
+     * Mark session as paid (called by payment-service)
+     * PUT /api/sessions/{id}/mark-paid?paymentId={paymentId}
+     */
+    @PutMapping("/{id}/mark-paid")
+    public ResponseEntity<Void> markSessionAsPaid(
+            @PathVariable Long id,
+            @RequestParam Long paymentId) {
+        chargingService.markSessionAsPaid(id, paymentId);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Get energy usage chart data
      * GET /api/sessions/energy-usage?period=week
      */

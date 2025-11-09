@@ -1,13 +1,15 @@
 // src/components/admin/SettingsPage.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../config/api';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/AdminSettingsPage.css';
 
 const SettingsPage = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('profile');
 
   // General Settings
   const [generalSettings, setGeneralSettings] = useState({
@@ -62,9 +64,28 @@ const SettingsPage = () => {
     maxLoginAttempts: 5,
   });
 
+  // Profile Settings
+  const [profileSettings, setProfileSettings] = useState({
+    fullName: user?.fullName || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    avatarUrl: user?.avatarUrl || '',
+  });
+
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      setProfileSettings({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        avatarUrl: user.avatarUrl || '',
+      });
+    }
+  }, [user]);
 
   const fetchSettings = async () => {
     try {
@@ -118,6 +139,14 @@ const SettingsPage = () => {
     setSecuritySettings({
       ...securitySettings,
       [name]: type === 'checkbox' ? checked : (type === 'number' ? parseInt(value) : value),
+    });
+  };
+
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+    setProfileSettings({
+      ...profileSettings,
+      [name]: value,
     });
   };
 
@@ -201,6 +230,30 @@ const SettingsPage = () => {
     }
   };
 
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+      
+      // Call API to update user profile
+      await apiClient.put(`/users/${user.userId}`, {
+        fullName: profileSettings.fullName,
+        phone: profileSettings.phone,
+        avatarUrl: profileSettings.avatarUrl,
+      });
+      
+      setSuccess('✅ Đã cập nhật hồ sơ thành công! Vui lòng đăng xuất và đăng nhập lại để thấy thay đổi.');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError(err.response?.data?.message || 'Không thể cập nhật hồ sơ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResetSettings = () => {
     if (!window.confirm('Bạn có chắc chắn muốn đặt lại tất cả cài đặt về mặc định?')) {
       return;
@@ -211,6 +264,7 @@ const SettingsPage = () => {
   };
 
   const tabs = [
+    { id: 'profile', label: 'Hồ sơ cá nhân', icon: 'fa-user' },
     { id: 'general', label: 'Cài đặt chung', icon: 'fa-cog' },
     { id: 'payment', label: 'Thanh toán', icon: 'fa-credit-card' },
     { id: 'notification', label: 'Thông báo', icon: 'fa-bell' },
@@ -265,6 +319,124 @@ const SettingsPage = () => {
 
       {/* Settings Content */}
       <div className="settings-content">
+        {/* Profile Settings */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleSaveProfile} className="settings-form">
+            <div className="settings-section">
+              <h3>
+                <i className="fas fa-user"></i>
+                Thông tin cá nhân
+              </h3>
+              
+              {/* Avatar Preview */}
+              <div className="form-field">
+                <label>Ảnh đại diện hiện tại</label>
+                <div className="avatar-preview-container">
+                  {profileSettings.avatarUrl ? (
+                    <img 
+                      src={profileSettings.avatarUrl} 
+                      alt="Avatar preview" 
+                      className="avatar-preview-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="avatar-preview-placeholder" 
+                    style={{ display: profileSettings.avatarUrl ? 'none' : 'flex' }}
+                  >
+                    <i className="fas fa-user"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-field">
+                  <label htmlFor="fullName">
+                    Họ và tên <span className="required">*</span>
+                  </label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    name="fullName"
+                    value={profileSettings.fullName}
+                    onChange={handleProfileChange}
+                    required
+                    className="form-control"
+                    disabled={loading}
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="phone">
+                    Số điện thoại
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    value={profileSettings.phone}
+                    onChange={handleProfileChange}
+                    className="form-control"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="email">
+                  Email (không thể thay đổi)
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={profileSettings.email}
+                  className="form-control"
+                  disabled
+                  style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="avatarUrl">
+                  URL ảnh đại diện
+                </label>
+                <input
+                  id="avatarUrl"
+                  type="url"
+                  name="avatarUrl"
+                  value={profileSettings.avatarUrl}
+                  onChange={handleProfileChange}
+                  className="form-control"
+                  disabled={loading}
+                  placeholder="https://example.com/avatar.jpg"
+                />
+                <p className="form-caption">
+                  💡 Nhập link ảnh từ Imgur, Cloudinary hoặc bất kỳ nguồn nào khác
+                </p>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-save"></i>
+                    Lưu hồ sơ
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* General Settings */}
         {activeTab === 'general' && (
           <form onSubmit={handleSaveGeneral} className="settings-form">

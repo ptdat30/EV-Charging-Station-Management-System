@@ -54,7 +54,10 @@
     object-fit: cover;
     border: 4px solid #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
 }
 
 /* Subscription Package Borders - Profile Page */
@@ -155,19 +158,80 @@
     padding-top: 16px;
 }
 
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
 .profile-name {
     font-size: 32px;
     font-weight: 600;
     line-height: 1.25;
     color: #24292f;
-    margin: 0 0 8px 0;
+    margin: 0;
+}
+
+/* Subscription Badge */
+.subscription-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid;
+    animation: badgeGlow 2s ease-in-out infinite;
+}
+
+.subscription-badge.silver {
+    background: linear-gradient(135deg, #e8e8e8 0%, #c0c0c0 100%);
+    color: #4a4a4a;
+    border-color: #c0c0c0;
+    box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
+}
+
+.subscription-badge.gold {
+    background: linear-gradient(135deg, #fff4cc 0%, #ffd700 100%);
+    color: #996800;
+    border-color: #ffd700;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.subscription-badge.platinum {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e0e0e0 100%);
+    color: #4a148c;
+    border-color: #e0e0e0;
+    box-shadow: 
+        0 2px 8px rgba(255, 255, 255, 0.5),
+        0 0 15px rgba(131, 56, 236, 0.3);
+}
+
+@keyframes badgeGlow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
 }
 
 .profile-username {
     font-size: 20px;
     font-weight: 300;
     color: #656d76;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
+}
+
+/* Subscription Expiry */
+.subscription-expiry {
+    font-size: 14px;
+    color: #57606a;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    font-style: italic;
 }
 
 /* Navigation Tabs */

@@ -129,7 +129,7 @@
     0 0 75px rgba(58, 134, 255, 0.25),
     0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   animation: platinumCardGlow 3s ease-in-out infinite;
 }
 
@@ -138,6 +138,8 @@
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   border-radius: 0.75rem;
@@ -157,6 +159,7 @@
   z-index: 0;
   pointer-events: none;
   filter: blur(6px);
+  overflow: hidden;
 }
 
 .pricing-card.platinum > * {
@@ -215,9 +218,36 @@
 }
 
 
-/* Current Package Badge - Hidden */
-.current-package-badge {
-  display: none;
+/* Active Package Badge */
+.pricing-card.active-package::after {
+  content: 'ĐANG SỬ DỤNG';
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  z-index: 100;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+/* Fix badge position for platinum card specifically */
+.pricing-card.platinum.active-package::after {
+  z-index: 100;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3);
+  }
 }
 
 /* Dim other packages when one is active */
@@ -228,8 +258,100 @@
 }
 
 .pricing-card.active-package {
-  opacity: 1;
-  filter: grayscale(0);
+  opacity: 1 !important;
+  filter: grayscale(0) !important;
+  transform: scale(1.02);
+}
+
+/* Enhanced glow for active packages */
+.pricing-card.active-package.silver {
+  animation: silverActiveGlow 2s ease-in-out infinite !important;
+  border-width: 4px !important;
+}
+
+.pricing-card.active-package.gold {
+  animation: goldActiveGlow 2s ease-in-out infinite !important;
+  border-width: 4px !important;
+}
+
+.pricing-card.active-package.platinum {
+  animation: platinumActiveGlow 2.5s ease-in-out infinite !important;
+  border-width: 4px !important;
+}
+
+@keyframes silverActiveGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 25px rgba(192, 192, 192, 0.8),
+      0 0 45px rgba(192, 192, 192, 0.6),
+      0 8px 20px rgba(192, 192, 192, 0.5),
+      inset 0 0 25px rgba(192, 192, 192, 0.4);
+  }
+  50% {
+    box-shadow: 
+      0 0 35px rgba(192, 192, 192, 1),
+      0 0 55px rgba(192, 192, 192, 0.8),
+      0 8px 25px rgba(192, 192, 192, 0.7),
+      inset 0 0 30px rgba(192, 192, 192, 0.5);
+  }
+}
+
+@keyframes goldActiveGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 28px rgba(255, 215, 0, 0.8),
+      0 0 50px rgba(255, 215, 0, 0.6),
+      0 0 70px rgba(255, 215, 0, 0.4),
+      0 8px 20px rgba(255, 215, 0, 0.6),
+      inset 0 0 28px rgba(255, 215, 0, 0.35);
+  }
+  50% {
+    box-shadow: 
+      0 0 35px rgba(255, 215, 0, 1),
+      0 0 60px rgba(255, 215, 0, 0.8),
+      0 0 85px rgba(255, 215, 0, 0.6),
+      0 8px 25px rgba(255, 215, 0, 0.8),
+      inset 0 0 35px rgba(255, 215, 0, 0.45);
+  }
+}
+
+@keyframes platinumActiveGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 25px rgba(229, 228, 226, 0.8),
+      0 0 40px rgba(255, 255, 255, 0.7),
+      0 0 55px rgba(255, 0, 110, 0.6),
+      0 0 70px rgba(131, 56, 236, 0.5),
+      0 0 85px rgba(58, 134, 255, 0.4),
+      0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+  25% {
+    box-shadow: 
+      0 0 28px rgba(255, 255, 255, 0.9),
+      0 0 43px rgba(229, 228, 226, 0.8),
+      0 0 58px rgba(131, 56, 236, 0.7),
+      0 0 73px rgba(58, 134, 255, 0.6),
+      0 0 88px rgba(6, 255, 165, 0.5),
+      0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(229, 228, 226, 0.9),
+      0 0 45px rgba(255, 255, 255, 0.8),
+      0 0 60px rgba(58, 134, 255, 0.75),
+      0 0 75px rgba(6, 255, 165, 0.7),
+      0 0 90px rgba(255, 190, 11, 0.6),
+      0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+  75% {
+    box-shadow: 
+      0 0 28px rgba(255, 255, 255, 0.9),
+      0 0 43px rgba(229, 228, 226, 0.8),
+      0 0 58px rgba(6, 255, 165, 0.7),
+      0 0 73px rgba(255, 190, 11, 0.6),
+      0 0 88px rgba(251, 86, 7, 0.5),
+      0 4px 15px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* Message Banner */

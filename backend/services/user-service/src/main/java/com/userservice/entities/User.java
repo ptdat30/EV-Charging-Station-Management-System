@@ -41,6 +41,9 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     // [COMMAND]: @Enumerated(EnumType.STRING) chỉ định rằng khi lưu enum này vào database, hãy lưu dưới dạng chuỗi ("driver", "staff") thay vì số (0, 1).
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", nullable = false)

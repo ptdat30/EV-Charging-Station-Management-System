@@ -16,14 +16,17 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.chargingservice.clients.UserServiceClient;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,10 @@ public class ChargingServiceImpl implements ChargingService {
     private final StationServiceClient stationServiceClient;
     private final PaymentServiceClient paymentServiceClient;
     private final NotificationServiceClient notificationServiceClient; // Inject Notification client
+    private final UserServiceClient userServiceClient;
+    
+    // Base price per kWh
+    private static final BigDecimal BASE_PRICE_PER_KWH = new BigDecimal("3000.00");
 
     // --- CREATE ---
     @Override
@@ -189,7 +196,7 @@ public class ChargingServiceImpl implements ChargingService {
             statusDto.setSessionId(session.getSessionId());
             statusDto.setStatus(session.getSessionStatus());
             statusDto.setEnergyCharged(session.getEnergyConsumed() != null ? session.getEnergyConsumed() : BigDecimal.ZERO);
-            statusDto.setPricePerKwh(new BigDecimal("3000.00")); // Default price
+            statusDto.setPricePerKwh(calculatePriceWithDiscount(session.getUserId()));
             return statusDto;
         }
         
@@ -220,8 +227,8 @@ public class ChargingServiceImpl implements ChargingService {
             }
         }
         
-        // Đơn giá
-        BigDecimal pricePerKwh = new BigDecimal("3000.00"); // VND/kWh
+        // Đơn giá với discount dựa trên subscription package
+        BigDecimal pricePerKwh = calculatePriceWithDiscount(session.getUserId());
         BigDecimal currentCost = energyCharged.multiply(pricePerKwh).setScale(0, RoundingMode.HALF_UP);
         BigDecimal estimatedTotalCost = batteryCapacity.multiply(pricePerKwh).setScale(0, RoundingMode.HALF_UP);
         
@@ -279,6 +286,58 @@ public class ChargingServiceImpl implements ChargingService {
         }
     }
 
+    // Tính giá với discount dựa trên subscription package
+    private BigDecimal calculatePriceWithDiscount(Long userId) {
+        try {
+            // Get user subscription package
+            Map<String, Object> userResponse = userServiceClient.getUserById(userId);
+            String subscriptionPackage = (String) userResponse.get("subscriptionPackage");
+            
+            if (subscriptionPackage == null) {
+                log.debug("User {} has no subscription package, using base price", userId);
+                return BASE_PRICE_PER_KWH;
+            }
+            
+            // Apply discount based on package
+            BigDecimal discountRate = getDiscountRate(subscriptionPackage);
+            BigDecimal discountedPrice = BASE_PRICE_PER_KWH.multiply(BigDecimal.ONE.subtract(discountRate));
+            
+            log.info("User {} with package {} gets {}% discount. Price: {} VND/kWh", 
+                    userId, subscriptionPackage, discountRate.multiply(new BigDecimal("100")), discountedPrice);
+            
+            return discountedPrice.setScale(2, RoundingMode.HALF_UP);
+            
+        } catch (Exception e) {
+            log.error("Error getting subscription for user {}: {}", userId, e.getMessage());
+            return BASE_PRICE_PER_KWH;
+        }
+    }
+    
+    // Get discount rate based on subscription package
+    private BigDecimal getDiscountRate(String packageType) {
+        switch (packageType.toUpperCase()) {
+            case "SILVER":
+                return new BigDecimal("0.25"); // 25% discount
+            case "GOLD":
+                return new BigDecimal("0.40"); // 40% discount
+            case "PLATINUM":
+                return new BigDecimal("0.50"); // 50% discount
+            default:
+                return BigDecimal.ZERO;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void markSessionAsPaid(Long sessionId, Long paymentId) {
+        log.info("Marking session {} as paid with payment {}", sessionId, paymentId);
+        ChargingSession session = findSessionById(sessionId);
+        session.setIsPaid(true);
+        session.setPaymentId(paymentId);
+        sessionRepository.save(session);
+        log.info("Session {} marked as paid", sessionId);
+    }
+
     // Chuyển đổi Entity sang DTO
     private SessionResponseDto convertToDto(ChargingSession session) {
         SessionResponseDto dto = new SessionResponseDto();
@@ -291,6 +350,8 @@ public class ChargingServiceImpl implements ChargingService {
         dto.setEndTime(session.getEndTime());
         dto.setEnergyConsumed(session.getEnergyConsumed());
         dto.setSessionStatus(session.getSessionStatus());
+        dto.setIsPaid(session.getIsPaid() != null ? session.getIsPaid() : false);
+        dto.setPaymentId(session.getPaymentId());
         dto.setCreatedAt(session.getCreatedAt());
         return dto;
     }

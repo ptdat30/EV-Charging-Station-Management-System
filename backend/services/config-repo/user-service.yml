@@ -20,6 +20,13 @@ spring:
       max-request-size: 10MB
       file-size-threshold: 2KB
 
+# Cloudinary Configuration for Avatar Upload
+cloudinary:
+  enabled: true
+  cloud-name: dksgckopr
+  api-key: 149974635413495
+  api-secret: svNqRGPmlp0Ak6y72hrIVB3p4yk
+
 # Cấu hình để user-service đăng ký với eureka
 eureka:
   client:

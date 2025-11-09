@@ -59,7 +59,14 @@ const SystemNotificationsManagement = () => {
           getAllUsersForNotification(),
           getAllStationsForNotification()
         ]);
-        setUsers(usersData);
+        
+        // Deduplicate users by userId to prevent duplicate keys
+        const uniqueUsers = Array.from(
+          new Map((usersData || []).map(user => [user.userId || user.id, user])).values()
+        );
+        
+        console.log(`✅ Loaded ${usersData?.length || 0} users, ${uniqueUsers.length} unique`);
+        setUsers(uniqueUsers);
         setStations(stationsData);
       } catch (error) {
         console.error('Error loading data:', error);
