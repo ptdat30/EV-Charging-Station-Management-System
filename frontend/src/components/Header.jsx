@@ -78,9 +78,7 @@ const Header = ({ onLoginClick, onRegisterClick }) => {
         <Link to="/map" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Tìm trạm sạc</Link>
         {isAuthenticated && (
           <>
-            <Link to="/driver/profile/history" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Lịch sử sạc</Link>
-            <Link to="/driver/profile/info" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Hồ sơ cá nhân</Link>
-            <Link to="/driver/profile/vehicles" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Quản lý xe</Link>
+            <Link to="/driver/profile" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Hồ sơ cá nhân</Link>
             <Link to="/payment" className="mobile-link" onClick={() => setIsMobileMenuOpen(false)}>Ví điện tử</Link>
             <button className="mobile-link" onClick={()=>{ setIsMobileMenuOpen(false); handleLogout(); }}>Đăng xuất</button>
           </>

@@ -12,6 +12,15 @@ public interface FileStorageService {
     String uploadAvatar(MultipartFile file, Long userId) throws Exception;
     
     /**
+     * Upload image to Cloudinary with custom folder
+     * @param userId User ID
+     * @param file Image file
+     * @param folderPrefix Folder prefix (e.g., "avatars", "vehicles")
+     * @return Public URL of uploaded image
+     */
+    String uploadAvatar(Long userId, MultipartFile file, String folderPrefix) throws Exception;
+    
+    /**
      * Delete avatar from Cloudinary
      * @param imageUrl URL of image to delete
      */

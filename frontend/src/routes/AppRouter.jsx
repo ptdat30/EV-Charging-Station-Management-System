@@ -48,19 +48,9 @@ function AppRouter() {
                         <Dashboard />
                     </DriverLayout>
                 } />
-                <Route path="driver/profile/info" element={
+                <Route path="driver/profile" element={
                     <DriverLayout>
-                        <UserProfileScreen tab="info" />
-                    </DriverLayout>
-                } />
-                <Route path="driver/profile/vehicles" element={
-                    <DriverLayout>
-                        <UserProfileScreen tab="vehicles" />
-                    </DriverLayout>
-                } />
-                <Route path="driver/profile/history" element={
-                    <DriverLayout>
-                        <UserProfileScreen tab="history" />
+                        <UserProfileScreen />
                     </DriverLayout>
                 } />
                 <Route path="payment" element={

@@ -43,7 +43,15 @@ const UsersManagement = () => {
       setError(null);
       const response = await getAllUsers();
       const data = response.data || response || [];
-      setUsers(Array.isArray(data) ? data : []);
+      
+      // Deduplicate users by userId to prevent duplicate keys
+      const usersArray = Array.isArray(data) ? data : [];
+      const uniqueUsers = Array.from(
+        new Map(usersArray.map(user => [user.userId || user.id, user])).values()
+      );
+      
+      console.log(`✅ Loaded ${usersArray.length} users, ${uniqueUsers.length} unique`);
+      setUsers(uniqueUsers);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Không thể tải danh sách người dùng');

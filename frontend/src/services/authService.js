@@ -62,7 +62,7 @@ class AuthService {
         const result = await this.request(`/auth/validate?token=${encodeURIComponent(token)}`, {
             method: 'GET',
         });
-        // result: { isValid, username, role, userId }
+        // result: { isValid, username, role, userId, subscriptionPackage, subscriptionExpiresAt, avatarUrl, fullName }
         // Backend trả về role dạng lowercase (staff, driver, admin)
         console.log('🔍 Token validation result:', result);
         if (result?.isValid) {
@@ -73,8 +73,13 @@ class AuthService {
                 role: role, // role từ backend là "staff", "driver", "admin" (lowercase)
                 userType: role, // Tương tự role
                 userId: result.userId,
+                fullName: result.fullName || null,
+                avatarUrl: result.avatarUrl || null,
+                subscriptionPackage: result.subscriptionPackage || null,
+                subscriptionExpiresAt: result.subscriptionExpiresAt || null,
             };
             console.log('✅ Validated user data:', userData);
+            console.log('🖼️ Avatar URL:', userData.avatarUrl);
             return userData;
         }
         throw new Error('Invalid token');

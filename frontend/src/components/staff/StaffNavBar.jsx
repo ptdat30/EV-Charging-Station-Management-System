@@ -141,7 +141,7 @@ const StaffNavBar = () => {
 
                                 <div className="staff-dropdown-nav">
                                     <Link
-                                        to="/driver/profile/info"
+                                        to="/driver/profile"
                                         className="staff-dropdown-nav-item"
                                         onClick={() => setIsUserDropdownOpen(false)}
                                     >
