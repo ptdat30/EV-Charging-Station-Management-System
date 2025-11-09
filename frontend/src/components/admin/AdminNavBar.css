@@ -167,6 +167,14 @@
     transform: scale(1.05);
 }
 
+.admin-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
 /* User Profile Dropdown */
 .admin-user-dropdown {
     position: absolute;

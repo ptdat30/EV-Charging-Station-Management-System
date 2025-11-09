@@ -189,28 +189,12 @@ const DriverNavBar = () => {
                                         <span>Thông báo</span>
                                     </Link>
                                     <Link 
-                                        to="/driver/profile/info" 
-                                        className={`dropdown-nav-item ${/\/info\b/.test(location.pathname) ? 'active' : ''}`}
+                                        to="/driver/profile" 
+                                        className={`dropdown-nav-item ${location.pathname.startsWith('/driver/profile') ? 'active' : ''}`}
                                         onClick={() => setIsUserDropdownOpen(false)}
                                     >
                                         <i className="fas fa-user"></i>
-                                        <span>Thông tin cá nhân</span>
-                                    </Link>
-                                    <Link 
-                                        to="/driver/profile/vehicles" 
-                                        className={`dropdown-nav-item ${/\/vehicles\b/.test(location.pathname) ? 'active' : ''}`}
-                                        onClick={() => setIsUserDropdownOpen(false)}
-                                    >
-                                        <i className="fas fa-car"></i>
-                                        <span>Quản lý xe</span>
-                                    </Link>
-                                    <Link 
-                                        to="/driver/profile/history" 
-                                        className={`dropdown-nav-item ${/\/history\b/.test(location.pathname) ? 'active' : ''}`}
-                                        onClick={() => setIsUserDropdownOpen(false)}
-                                    >
-                                        <i className="fas fa-history"></i>
-                                        <span>Lịch sử giao dịch</span>
+                                        <span>Hồ sơ cá nhân</span>
                                     </Link>
                                 </nav>
 

@@ -2,15 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { getMyProfile, updateMyProfile } from '../../../services/userService';
-import { NavLink, useLocation } from 'react-router-dom';
 import './UserProfile.css';
 import VehiclesManager from './VehiclesManager';
-import TransactionsHistory from './TransactionsHistory';
 
-function UserProfileScreen({ tab }) {
+function UserProfileScreen() {
     const { user, token, isAuthenticated, updateUser } = useAuth();
-    const location = useLocation();
-    const pathname = location.pathname;
     const [profileData, setProfileData] = useState({
         fullName: '',
         email: '',
@@ -28,19 +24,16 @@ function UserProfileScreen({ tab }) {
     useEffect(() => {
         const fetchProfile = async () => {
             if (!isAuthenticated || !token) {
-                console.log('❌ Not authenticated, skipping profile fetch');
                 setLoading(false);
                 setError('Bạn cần đăng nhập để xem thông tin hồ sơ');
                 return;
             }
 
-            console.log('🔄 Fetching profile... Token:', token ? 'exists' : 'missing');
             setLoading(true);
             setError('');
 
             try {
                 const response = await getMyProfile();
-                console.log('✅ Profile fetched successfully:', response.data);
 
                 const avatarUrl = response.data?.avatarUrl || user?.avatarUrl || '';
                 setProfileData({
@@ -53,12 +46,12 @@ function UserProfileScreen({ tab }) {
                 });
                 setAvatarPreview(avatarUrl || null);
                 
-                // Update user context with avatar if available
-                if (avatarUrl && updateUser) {
+                // Update user context with avatar if available (only if different)
+                if (avatarUrl && updateUser && user?.avatarUrl !== avatarUrl) {
                     updateUser({ avatarUrl });
                 }
             } catch (err) {
-                console.error('❌ Failed to fetch profile:', err);
+                console.error('Failed to fetch profile:', err);
 
                 if (err.response?.status === 404) {
                     setError('Không tìm thấy thông tin hồ sơ. Vui lòng tạo hồ sơ mới.');
@@ -84,7 +77,7 @@ function UserProfileScreen({ tab }) {
         };
 
         fetchProfile();
-    }, [token, isAuthenticated, user]);
+    }, [token, isAuthenticated]);
 
     const handleChange = (e) => {
         setProfileData({ ...profileData, [e.target.name]: e.target.value });
@@ -100,8 +93,6 @@ function UserProfileScreen({ tab }) {
         setLoading(true);
         setError('');
 
-        console.log('🔄 Updating profile...', profileData);
-
         try {
             const dataToUpdate = {
                 address: profileData.address,
@@ -110,13 +101,12 @@ function UserProfileScreen({ tab }) {
                 phone: profileData.phone,
             };
 
-            const response = await updateMyProfile(dataToUpdate);
-            console.log('✅ Profile updated successfully:', response.data);
+            await updateMyProfile(dataToUpdate);
 
             setIsEditing(false);
             alert('Cập nhật hồ sơ thành công!');
         } catch (err) {
-            console.error('❌ Failed to update profile:', err);
+            console.error('Failed to update profile:', err);
             setError(err.response?.data?.message || 'Cập nhật hồ sơ thất bại. Vui lòng thử lại.');
         } finally {
             setLoading(false);
@@ -166,7 +156,6 @@ function UserProfileScreen({ tab }) {
                 alert('Cập nhật avatar thành công!');
             }
         } catch (err) {
-            console.error('❌ Failed to upload avatar:', err);
             setError(err.response?.data?.message || 'Không thể tải lên avatar. Vui lòng thử lại.');
             setAvatarPreview(null);
         } finally {
@@ -209,9 +198,9 @@ function UserProfileScreen({ tab }) {
         );
     }
 
-    const activeTab = /\/info\b/.test(pathname) ? 'info' :
-                     /\/vehicles\b/.test(pathname) ? 'vehicles' :
-                     /\/history\b/.test(pathname) ? 'history' : 'info';
+
+    // Prefer preview, then user profile avatar URL, finally a local fallback image
+    const avatarSrc = avatarPreview || profileData.avatarUrl || '/pic_1.png';
 
     return (
         <div className="github-profile-container">
@@ -220,34 +209,25 @@ function UserProfileScreen({ tab }) {
                 <div className="profile-header-content">
                     <div className="profile-avatar-wrapper">
                         <div className="profile-avatar-container">
-                            {(avatarPreview || profileData.avatarUrl) && (
+                            <div className={`profile-avatar-circle ${
+                                user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
+                                user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
+                                user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
+                            }`}>
                                 <img 
-                                    src={avatarPreview || profileData.avatarUrl} 
-                                    alt="Avatar" 
-                                    className={`profile-avatar-img ${
-                                        user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
-                                        user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
-                                        user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
-                                    }`}
+                                    src={avatarSrc}
+                                    alt="Avatar"
+                                    referrerPolicy="no-referrer"
+                                    className="profile-avatar-img"
                                     onError={(e) => {
-                                        console.error('❌ Avatar load error');
-                                        e.target.style.display = 'none';
-                                        const fallback = e.target.nextElementSibling;
-                                        if (fallback) fallback.style.display = 'flex';
+                                        // Fall back to local default image if external URL fails
+                                        if (e.target.src.indexOf('/pic_1.png') === -1) {
+                                            e.target.src = '/pic_1.png';
+                                        }
+                                        e.target.style.display = 'block';
                                     }}
                                 />
-                            )}
-                            {!(avatarPreview || profileData.avatarUrl) && (
-                                <div 
-                                    className={`profile-avatar ${
-                                        user?.subscriptionPackage === 'SILVER' ? 'package-silver' :
-                                        user?.subscriptionPackage === 'GOLD' ? 'package-gold' :
-                                        user?.subscriptionPackage === 'PLATINUM' ? 'package-platinum' : ''
-                                    }`}
-                                >
-                                    {getInitials()}
-                                </div>
-                            )}
+                            </div>
                             <label className="avatar-upload-btn" htmlFor="avatar-upload" title="Đổi avatar">
                                 {uploadingAvatar ? (
                                     <span className="spinner-small"></span>
@@ -286,30 +266,6 @@ function UserProfileScreen({ tab }) {
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="profile-nav-container">
-                <nav className="profile-nav">
-                    <NavLink 
-                        to="/driver/profile/info" 
-                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
-                    >
-                        <span className="nav-item-text">Thông tin</span>
-                    </NavLink>
-                    <NavLink 
-                        to="/driver/profile/vehicles" 
-                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
-                    >
-                        <span className="nav-item-text">Quản lý xe</span>
-                    </NavLink>
-                    <NavLink 
-                        to="/driver/profile/history" 
-                        className={({ isActive }) => `nav-item ${isActive ? 'selected' : ''}`}
-                    >
-                        <span className="nav-item-text">Lịch sử giao dịch</span>
-                    </NavLink>
-                </nav>
-            </div>
-
             {/* Content Area */}
             <div className="profile-content">
                 {error && (
@@ -319,9 +275,8 @@ function UserProfileScreen({ tab }) {
                     </div>
                 )}
 
-                {/* Info Tab */}
-                {activeTab === 'info' && (
-                    <div className="profile-section">
+                {/* Info Section */}
+                <div className="profile-section">
                         <div className="section-header">
                             <h2>Thông tin cá nhân</h2>
                             {!isEditing && (
@@ -336,52 +291,70 @@ function UserProfileScreen({ tab }) {
                         </div>
 
                         <form onSubmit={handleSubmit} className="profile-form-github">
-                            <div className="form-field">
-                                <label htmlFor="email">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={profileData.email}
-                                    disabled
-                                    className="form-control form-control-disabled"
-                                />
-                                <p className="form-caption">Email không thể thay đổi</p>
-                            </div>
+                            <div className="form-grid-2col">
+                                <div className="form-field">
+                                    <label htmlFor="email">
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        value={profileData.email}
+                                        disabled
+                                        className="form-control form-control-disabled"
+                                    />
+                                    <p className="form-caption">Email không thể thay đổi</p>
+                                </div>
 
-                            <div className="form-field">
-                                <label htmlFor="fullName">
-                                    Họ và tên
-                                </label>
-                                <input
-                                    type="text"
-                                    id="fullName"
-                                    name="fullName"
-                                    value={profileData.fullName}
-                                    onChange={handleChange}
-                                    disabled={!isEditing || loading}
-                                    required
-                                    className="form-control"
-                                    placeholder="Nhập họ và tên"
-                                />
-                            </div>
+                                <div className="form-field">
+                                    <label htmlFor="fullName">
+                                        Họ và tên <span className="required">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="fullName"
+                                        name="fullName"
+                                        value={profileData.fullName}
+                                        onChange={handleChange}
+                                        disabled={!isEditing || loading}
+                                        required
+                                        className="form-control"
+                                        placeholder="Nhập họ và tên"
+                                    />
+                                </div>
 
-                            <div className="form-field">
-                                <label htmlFor="phone">
-                                    Số điện thoại
-                                </label>
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    name="phone"
-                                    value={profileData.phone || ''}
-                                    onChange={handleChange}
-                                    disabled={!isEditing || loading}
-                                    className="form-control"
-                                    placeholder="0912345678"
-                                />
+                                <div className="form-field">
+                                    <label htmlFor="phone">
+                                        Số điện thoại
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        name="phone"
+                                        value={profileData.phone || ''}
+                                        onChange={handleChange}
+                                        disabled={!isEditing || loading}
+                                        className="form-control"
+                                        placeholder="0912345678"
+                                    />
+                                </div>
+
+                                <div className="form-field">
+                                    <label htmlFor="emergencyContact">
+                                        Liên hệ khẩn cấp
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id="emergencyContact"
+                                        name="emergencyContact"
+                                        value={profileData.emergencyContact || ''}
+                                        onChange={handleChange}
+                                        disabled={!isEditing || loading}
+                                        className="form-control"
+                                        placeholder="0987654321"
+                                    />
+                                </div>
                             </div>
 
                             <div className="form-field">
@@ -398,22 +371,6 @@ function UserProfileScreen({ tab }) {
                                     className="form-control"
                                     placeholder="Nhập địa chỉ của bạn"
                                 />
-                            </div>
-
-                            <div className="form-field">
-                                <label htmlFor="emergencyContact">
-                                    Liên hệ khẩn cấp
-                                </label>
-                                    <input
-                                        type="tel"
-                                        id="emergencyContact"
-                                        name="emergencyContact"
-                                        value={profileData.emergencyContact || ''}
-                                        onChange={handleChange}
-                                        disabled={!isEditing || loading}
-                                        className="form-control"
-                                        placeholder="0987654321"
-                                    />
                             </div>
 
                             {isEditing && (
@@ -446,44 +403,15 @@ function UserProfileScreen({ tab }) {
                                 </div>
                             )}
                         </form>
-                    </div>
-                )}
+                </div>
 
-                {/* Vehicles Tab */}
-                {activeTab === 'vehicles' && (
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Quản lý xe</h2>
-                        </div>
-                        <VehiclesManager />
+                {/* Vehicles Section */}
+                <div className="profile-section" style={{marginTop: '24px'}}>
+                    <div className="section-header">
+                        <h2>Quản lý xe</h2>
                     </div>
-                )}
-
-                {/* History Tab */}
-                {activeTab === 'history' && (
-                    <div className="profile-section">
-                        <div className="section-header">
-                            <h2>Lịch sử giao dịch</h2>
-                        </div>
-                        <TransactionsHistory />
-                    </div>
-                )}
-
-                {/* Debug Info (Dev Only) */}
-                {import.meta.env.DEV && (
-                    <div className="debug-info">
-                        <details>
-                            <summary>🔍 Debug Info</summary>
-                            <pre>{JSON.stringify({
-                                isAuthenticated,
-                                hasToken: !!token,
-                                hasUser: !!user,
-                                profileData,
-                                activeTab
-                            }, null, 2)}</pre>
-                        </details>
-                    </div>
-                )}
+                    <VehiclesManager />
+                </div>
             </div>
         </div>
     );

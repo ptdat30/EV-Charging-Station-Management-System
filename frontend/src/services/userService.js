@@ -7,13 +7,9 @@ import apiClient from '../config/api';
  */
 export const getMyProfile = async () => {
     try {
-        console.log('📥 Fetching user profile...');
-        // 🚨 SỬA: Chỉ cần /users/profile vì apiClient (từ api.js) đã có baseURL: '/api'
         const response = await apiClient.get('/users/profile');
-        console.log('✅ Profile fetched:', response.data);
         return response;
     } catch (error) {
-        console.error('❌ Failed to fetch profile:', error);
         throw error;
     }
 };
@@ -76,12 +72,10 @@ export const uploadAvatar = async (formData) => {
  */
 export const getMyVehicles = async () => {
     try {
-        console.log('🚗 Fetching vehicles...');
         const response = await apiClient.get('/users/vehicles');
-        console.log('✅ Vehicles fetched:', response.data);
         return response;
     } catch (error) {
-        console.error('❌ Failed to fetch vehicles:', error);
+        console.error('Failed to fetch vehicles:', error);
         throw error;
     }
 };
@@ -92,23 +86,20 @@ export const getMyVehicles = async () => {
  */
 export const addVehicle = async (vehicleData) => {
     try {
-        console.log('➕ Adding vehicle...', vehicleData);
         const response = await apiClient.post('/users/vehicles', vehicleData);
-        console.log('✅ Vehicle added:', response.data);
         return response;
     } catch (error) {
-        console.error('❌ Failed to add vehicle:', error);
+        console.error('Failed to add vehicle:', error);
         throw error;
     }
 };
 
 export const updateVehicle = async (vehicleId, vehicleData) => {
     try {
-        console.log('✏️ Updating vehicle...', vehicleId, vehicleData);
         const response = await apiClient.put(`/users/vehicles/${vehicleId}`, vehicleData);
         return response;
     } catch (error) {
-        console.error('❌ Failed to update vehicle:', error);
+        console.error('Failed to update vehicle:', error);
         throw error;
     }
 };

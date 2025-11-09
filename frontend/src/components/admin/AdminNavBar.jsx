@@ -151,7 +151,9 @@ const AdminNavBar = () => {
                             style={{ cursor: 'pointer' }}
                         >
                             <div className="admin-user-avatar">
-                                {user?.email ? (
+                                {user?.avatarUrl ? (
+                                    <img src={user.avatarUrl} alt="Avatar" className="admin-avatar-img" />
+                                ) : user?.email ? (
                                     <span>{user.email.charAt(0).toUpperCase()}</span>
                                 ) : (
                                     <i className="fas fa-user"></i>
@@ -165,7 +167,9 @@ const AdminNavBar = () => {
                                 <div className="admin-dropdown-header">
                                     <div className="admin-dropdown-user-info">
                                         <div className="admin-dropdown-avatar">
-                                            {user?.email ? (
+                                            {user?.avatarUrl ? (
+                                                <img src={user.avatarUrl} alt="Avatar" className="admin-avatar-img" />
+                                            ) : user?.email ? (
                                                 <span>{user.email.charAt(0).toUpperCase()}</span>
                                             ) : (
                                                 <i className="fas fa-user-circle"></i>
@@ -231,7 +235,9 @@ const AdminNavBar = () => {
                 <div className="admin-mobile-menu-header">
                     <div className="admin-mobile-user-info">
                         <div className="admin-mobile-avatar">
-                            {user?.email ? (
+                            {user?.avatarUrl ? (
+                                <img src={user.avatarUrl} alt="Avatar" className="admin-avatar-img" />
+                            ) : user?.email ? (
                                 <span>{user.email.charAt(0).toUpperCase()}</span>
                             ) : (
                                 <i className="fas fa-user-circle"></i>

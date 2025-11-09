@@ -24,6 +24,8 @@ export const AuthProvider = ({ children }) => {
                     try {
                         const userData = await authService.validateToken(savedToken);
                         console.log('✅ Token validation successful:', userData);
+                        console.log('📦 Subscription Package:', userData?.subscriptionPackage);
+                        console.log('📅 Subscription Expires At:', userData?.subscriptionExpiresAt);
                         setUser(userData);
                         setIsAuthenticated(true);
                     } catch (error) {
@@ -86,6 +88,9 @@ export const AuthProvider = ({ children }) => {
 
                 // Build user object from token validation
                 const validated = await authService.validateToken(newToken);
+                console.log('✅ Login validated user data:', validated);
+                console.log('📦 Login - Subscription Package:', validated?.subscriptionPackage);
+                console.log('📅 Login - Subscription Expires At:', validated?.subscriptionExpiresAt);
                 setUser(validated);
                 setIsAuthenticated(true);
 
@@ -201,7 +206,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (userData) => {
-        console.log('🔄 Updating user context:', userData);
         setUser(prevUser => ({
             ...prevUser,
             ...userData

@@ -82,6 +82,64 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
     
     @Override
+    public String uploadAvatar(Long userId, MultipartFile file, String folderPrefix) throws Exception {
+        log.info("=== UPLOAD IMAGE DEBUG ===");
+        log.info("Folder prefix: {}", folderPrefix);
+        log.info("Cloudinary enabled: {}", cloudinaryEnabled);
+        log.info("Cloudinary bean is null: {}", cloudinary == null);
+        
+        if (!cloudinaryEnabled || cloudinary == null) {
+            log.error("Cloudinary is not configured - enabled: {}, bean null: {}", cloudinaryEnabled, cloudinary == null);
+            throw new IllegalStateException("Cloudinary is not configured");
+        }
+        
+        // Validate file
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+        
+        // Validate file type
+        String contentType = file.getContentType();
+        log.info("File content type: {}", contentType);
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("File must be an image");
+        }
+        
+        // Validate file size (max 5MB)
+        log.info("File size: {} bytes", file.getSize());
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size must be less than 5MB");
+        }
+        
+        try {
+            log.info("Starting Cloudinary upload for user {} to folder {}", userId, folderPrefix);
+            
+            // Upload to Cloudinary with options
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderPrefix + "/" + userId,  // e.g., "vehicles/123"
+                "public_id", UUID.randomUUID().toString(),
+                "resource_type", "image",
+                "overwrite", false
+            ));
+            
+            // Get secure URL
+            String secureUrl = (String) uploadResult.get("secure_url");
+            
+            log.info("✅ Successfully uploaded image for user {} to Cloudinary", userId);
+            log.info("Image URL: {}", secureUrl);
+            
+            return secureUrl;
+            
+        } catch (Exception e) {
+            log.error("❌ Cloudinary upload failed for user {}", userId);
+            log.error("Error class: {}", e.getClass().getName());
+            log.error("Error message: {}", e.getMessage());
+            log.error("Stack trace:", e);
+            throw new Exception("Failed to upload image: " + e.getMessage());
+        }
+    }
+    
+    @Override
     public void deleteAvatar(String imageUrl) {
         if (!cloudinaryEnabled || cloudinary == null) {
             log.warn("Cloudinary is not configured, cannot delete avatar");
