@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import HeroSection from './HeroSection';
+import StatsSection from './StatsSection';
+import FeaturesSection from './FeaturesSection';
+import HowItWorksSection from './HowItWorksSection';
+import CTASection from './CTASection';
 import Footer from './Footer';
-import HomePageMap from './HomePageMap';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 
@@ -33,7 +36,10 @@ const HomePage = () => {
         onLoginClick={handleOpenLoginModal} 
         onRegisterClick={handleOpenRegisterModal}
       />
-      <HomePageMap />
+      <StatsSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <CTASection onRegisterClick={handleOpenRegisterModal} />
       <Footer />
       <LoginModal 
         isOpen={isLoginModalOpen} 
