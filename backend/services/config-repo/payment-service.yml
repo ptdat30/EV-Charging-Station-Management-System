@@ -12,6 +12,12 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
 eureka:
   client:
@@ -22,3 +28,14 @@ eureka:
     ip-address: 127.0.0.1
     non-secure-port: 8083
     instance-id: ${spring.application.name}:${server.port}
+
+# App-specific configuration
+app:
+  rabbitmq:
+    queue: payment.success
+
+# Logging
+logging:
+  level:
+    com.paymentservice: DEBUG
+    org.springframework.amqp: DEBUG

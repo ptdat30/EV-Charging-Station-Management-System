@@ -32,8 +32,10 @@ public class ChargingController {
 
     // [COMMAND]: POST /api/sessions/{id}/stop
     @PostMapping("/{id}/stop")
-    public ResponseEntity<SessionResponseDto> stopChargingSession(@PathVariable Long id) {
-        SessionResponseDto stoppedSession = chargingService.stopSession(id);
+    public ResponseEntity<SessionResponseDto> stopChargingSession(
+            @PathVariable Long id,
+            @RequestBody(required = false) com.chargingservice.dtos.StopSessionRequestDto requestDto) {
+        SessionResponseDto stoppedSession = chargingService.stopSession(id, requestDto);
         return ResponseEntity.ok(stoppedSession);
     }
 
@@ -68,11 +70,13 @@ public class ChargingController {
     
     /**
      * Get real-time charging status (SOC%, time remaining, cost)
-     * GET /api/sessions/{id}/status
+     * GET /api/sessions/{id}/status?speedMultiplier=1
      */
     @GetMapping("/{id}/status")
-    public ResponseEntity<com.chargingservice.dtos.SessionStatusDto> getSessionStatus(@PathVariable Long id) {
-        return ResponseEntity.ok(chargingService.getSessionStatus(id));
+    public ResponseEntity<com.chargingservice.dtos.SessionStatusDto> getSessionStatus(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") int speedMultiplier) {
+        return ResponseEntity.ok(chargingService.getSessionStatus(id, speedMultiplier));
     }
     
     /**

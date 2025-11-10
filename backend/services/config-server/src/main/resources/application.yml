@@ -10,8 +10,8 @@ spring:
     config:
       server:
         native:
-          # [4]
-          search-locations: "file:///C:/Users/DAT/OneDrive - ut.edu.vn/Documents/Desktop/EV-Charging-Station-Management-System---Project/backend/services/config-repo"
+          # [4] Path to config repo
+          search-locations: "file:///C:/Users/DAT/OneDrive - ut.edu.vn/Documents/Desktop/New folder (2)/EV-Charging-Station-Management-System/backend/services/config-repo"
 
 eureka:
   client:

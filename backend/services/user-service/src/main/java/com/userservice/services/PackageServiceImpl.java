@@ -25,12 +25,13 @@ public class PackageServiceImpl implements PackageService {
     private static final Logger log = LoggerFactory.getLogger(PackageServiceImpl.class);
     private final UserRepository userRepository;
     private final WalletServiceClient walletServiceClient;
+    private final com.userservice.repositories.PackageRepository packageRepository;
 
-    // Giá cố định của các gói
+    // Fallback values if package not found in database
     private static final BigDecimal SILVER_PRICE = new BigDecimal("299000");
     private static final BigDecimal GOLD_PRICE = new BigDecimal("599000");
     private static final BigDecimal PLATINUM_PRICE = new BigDecimal("999000");
-    private static final int SUBSCRIPTION_DURATION_DAYS = 30;
+    private static final int DEFAULT_SUBSCRIPTION_DURATION_DAYS = 30;
 
     @Override
     @Transactional
@@ -49,8 +50,24 @@ public class PackageServiceImpl implements PackageService {
             throw new IllegalArgumentException("Invalid package type: " + requestDto.getPackageType());
         }
 
-        // 3. Lấy giá gói
-        BigDecimal packagePrice = getPackagePrice(packageType);
+        // 3. Lấy giá gói và duration từ database
+        com.userservice.entities.Package pkg = packageRepository
+                .findByPackageType(convertToPackageType(packageType))
+                .orElse(null);
+        
+        BigDecimal packagePrice;
+        int durationDays;
+        
+        if (pkg != null) {
+            packagePrice = pkg.getPrice();
+            durationDays = pkg.getDurationDays();
+            log.info("Using package price from database: {}", packagePrice);
+        } else {
+            // Fallback to hardcoded prices
+            packagePrice = getFallbackPackagePrice(packageType);
+            durationDays = 30;
+            log.warn("Package not found in database, using fallback price: {}", packagePrice);
+        }
 
         // 4. Kiểm tra số dư ví
         Map<String, Object> balanceResponse = walletServiceClient.getBalance(userId);
@@ -71,7 +88,7 @@ public class PackageServiceImpl implements PackageService {
 
         // 6. Cập nhật subscription cho user
         user.setSubscriptionPackage(packageType);
-        user.setSubscriptionExpiresAt(LocalDateTime.now().plusDays(SUBSCRIPTION_DURATION_DAYS));
+        user.setSubscriptionExpiresAt(LocalDateTime.now().plusDays(durationDays));
         
         User savedUser = userRepository.save(user);
         log.info("Package {} purchased successfully for user {}", packageType, userId);
@@ -109,7 +126,12 @@ public class PackageServiceImpl implements PackageService {
             if (requestDto.getExpiresAt() != null) {
                 user.setSubscriptionExpiresAt(requestDto.getExpiresAt());
             } else {
-                user.setSubscriptionExpiresAt(LocalDateTime.now().plusDays(SUBSCRIPTION_DURATION_DAYS));
+                // Try to get duration from database package
+                com.userservice.entities.Package pkg = packageRepository
+                        .findByPackageType(convertToPackageType(packageType))
+                        .orElse(null);
+                int durationDays = (pkg != null) ? pkg.getDurationDays() : DEFAULT_SUBSCRIPTION_DURATION_DAYS;
+                user.setSubscriptionExpiresAt(LocalDateTime.now().plusDays(durationDays));
             }
         }
 
@@ -119,7 +141,7 @@ public class PackageServiceImpl implements PackageService {
         return convertToDto(savedUser);
     }
 
-    private BigDecimal getPackagePrice(User.SubscriptionPackage packageType) {
+    private BigDecimal getFallbackPackagePrice(User.SubscriptionPackage packageType) {
         switch (packageType) {
             case SILVER:
                 return SILVER_PRICE;
@@ -130,6 +152,10 @@ public class PackageServiceImpl implements PackageService {
             default:
                 throw new IllegalArgumentException("Unknown package type: " + packageType);
         }
+    }
+    
+    private com.userservice.entities.Package.PackageType convertToPackageType(User.SubscriptionPackage subscriptionPackage) {
+        return com.userservice.entities.Package.PackageType.valueOf(subscriptionPackage.name());
     }
 
     private UserResponseDto convertToDto(User user) {

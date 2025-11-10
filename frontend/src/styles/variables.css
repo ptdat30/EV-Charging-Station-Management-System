@@ -12,8 +12,8 @@
   --color-primary-lighter: #475569;
   
   /* Secondary Colors */
-  --color-secondary: #2196F3;
-  --color-secondary-dark: #1976D2;
+  --color-secondary: #1e293b;
+  --color-secondary-dark: #0f172a;
   
   /* Neutral Colors */
   --color-white: #FFFFFF;
@@ -120,6 +120,7 @@
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-primary: 0 4px 15px rgba(30, 41, 59, 0.3);
   --shadow-primary-lg: 0 6px 20px rgba(30, 41, 59, 0.4);
+  --shadow-primary-xl: 0 8px 32px rgba(30, 41, 59, 0.25);
   
   /* === TRANSITIONS === */
   --transition-fast: 150ms ease;

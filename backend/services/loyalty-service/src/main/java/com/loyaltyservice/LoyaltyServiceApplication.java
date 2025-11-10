@@ -14,5 +14,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class LoyaltyServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(LoyaltyServiceApplication.class, args);
+        System.out.println("✅ Loyalty Service started with RabbitMQ listener enabled");
     }
 }

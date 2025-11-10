@@ -1,26 +1,43 @@
 /* BookingPage.css */
+@import './ModernPageLayout.css';
+
 .booking-page {
   min-height: 100vh;
-  background: var(--color-bg-tertiary);
+  background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+  font-family: 'Inter', sans-serif;
   padding: var(--spacing-6) var(--spacing-4);
 }
 
 .booking-page-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .booking-page-header {
-  background: var(--color-bg-primary);
-  border-radius: var(--border-radius-xl);
-  padding: var(--spacing-8);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: 20px;
+  padding: 2rem;
   margin-bottom: var(--spacing-6);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 32px rgba(30, 41, 59, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--spacing-6);
   flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.booking-page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(30%, -30%);
 }
 
 .booking-header-actions {
@@ -56,24 +73,29 @@
 }
 
 .booking-page-header h1 {
-  font-size: var(--font-size-4xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-2);
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .booking-page-header h1 i {
-  color: var(--color-primary);
-  font-size: var(--font-size-3xl);
+  color: white;
+  font-size: 2rem;
 }
 
 .booking-page-header p {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-base);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.125rem;
+  font-weight: 500;
   margin: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .booking-stats {

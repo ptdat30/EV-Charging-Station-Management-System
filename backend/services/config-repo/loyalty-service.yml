@@ -1,34 +1,59 @@
+# ===============================================================
+# FILE: loyalty-service.yml
+# LOCATION: config-repo/loyalty-service.yml
+# ===============================================================
+
 server:
-  port: 8088 # Cổng mới cho loyalty-service
+  port: 8088
 
 spring:
+  application:
+    name: LOYALTY-SERVICE
+  
   datasource:
     url: jdbc:mysql://localhost:3306/loyalty_service_db?useSSL=false
-    username: root # Thay bằng username của bạn
-    password: huynhdat123@ # Thay bằng mật khẩu của bạn
+    username: root
+    password: huynhdat123@
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
 
-  # Cấu hình kết nối RabbitMQ
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
 
+# Eureka Client Configuration
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+    registry-fetch-interval-seconds: 5
   instance:
     prefer-ip-address: true
-    ip-address: 127.0.0.1
-    non-secure-port: ${server.port}
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
-# Cấu hình tên exchange/queue cho RabbitMQ (sẽ dùng ở bước sau)
+# App-specific configuration
 app:
   rabbitmq:
-    exchange: payment_events # Giả sử lắng nghe sự kiện từ payment
-    queue: loyalty_queue
+    queue: payment.success
+
+# Logging
+logging:
+  level:
+    com.loyaltyservice: DEBUG
+    com.netflix.discovery: DEBUG
+    org.springframework.cloud: DEBUG
+    org.springframework.amqp: DEBUG

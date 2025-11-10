@@ -1,13 +1,16 @@
 /* src/styles/Wallet.css */
+@import './ModernPageLayout.css';
+
 .wallet-page {
     width: 100%;
     min-height: 100vh;
-    background: var(--color-bg-secondary);
-    padding: var(--spacing-8) var(--container-padding);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+    font-family: 'Inter', sans-serif;
+    padding: var(--spacing-6) var(--spacing-4);
 }
 
 .wallet-container {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 

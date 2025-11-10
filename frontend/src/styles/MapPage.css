@@ -1,22 +1,31 @@
 /* src/styles/MapPage.css */
+@import './ModernPageLayout.css';
+
 .map-page {
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
     min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
   }
   
   .search-bar {
-    background: white;
-    padding: var(--spacing-4) var(--spacing-6);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    padding: 1.5rem 2rem;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-3);
+    gap: 1rem;
     align-items: center;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     margin: var(--spacing-4) var(--spacing-4) var(--spacing-6);
     position: relative;
     z-index: 10;
-    border-radius: var(--border-radius-lg);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+  
+  .search-bar:hover {
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.12);
   }
   
   .search-input-wrapper {

@@ -12,9 +12,12 @@ import com.paymentservice.entities.Wallet;
 import com.paymentservice.exceptions.ResourceNotFoundException;
 import com.paymentservice.repositories.PaymentRepository;
 import com.paymentservice.repositories.WalletRepository;
+import com.paymentservice.events.PaymentSuccessEvent;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,10 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final WalletRepository walletRepository;
     private final com.paymentservice.clients.ChargingServiceClient chargingServiceClient;
+    private final RabbitTemplate rabbitTemplate;
+    
+    @Value("${app.rabbitmq.queue:payment.success}")
+    private String paymentSuccessQueue;
 
     @Override
     @Transactional // Đảm bảo các thao tác DB (trừ tiền, tạo payment) là một giao dịch nguyên tử
@@ -97,6 +104,13 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment finalPayment = paymentRepository.save(savedPayment); // Lưu lại trạng thái cuối cùng
         
+        log.info("💰 Payment created - ID: {}, Status: {}, Amount: {}, User: {}, Session: {}", 
+                finalPayment.getPaymentId(), 
+                finalPayment.getPaymentStatus(), 
+                finalPayment.getAmount(), 
+                finalPayment.getUserId(), 
+                finalPayment.getSessionId());
+        
         // Mark session as paid if payment was completed
         if (finalPayment.getPaymentStatus() == Payment.PaymentStatus.completed) {
             try {
@@ -106,6 +120,12 @@ public class PaymentServiceImpl implements PaymentService {
                 log.error("Failed to mark session {} as paid: {}", finalPayment.getSessionId(), e.getMessage());
                 // Continue even if marking fails - payment was still successful
             }
+            
+            // Publish event to loyalty service để cộng điểm thưởng
+            publishPaymentSuccessEvent(finalPayment);
+        } else {
+            log.warn("⚠️ Payment {} NOT completed, status: {}. Loyalty points will NOT be awarded.", 
+                    finalPayment.getPaymentId(), finalPayment.getPaymentStatus());
         }
         
         return convertToDto(finalPayment);
@@ -343,6 +363,9 @@ public class PaymentServiceImpl implements PaymentService {
             // Continue even if marking fails - payment was still successful
         }
         
+        // Publish event to loyalty service để cộng điểm thưởng
+        publishPaymentSuccessEvent(savedPayment);
+        
         return convertToDto(savedPayment);
     }
 
@@ -354,6 +377,28 @@ public class PaymentServiceImpl implements PaymentService {
                 .toList();
     }
 
+    /**
+     * Publish payment success event đến RabbitMQ để loyalty service lắng nghe và cộng điểm
+     */
+    private void publishPaymentSuccessEvent(Payment payment) {
+        try {
+            PaymentSuccessEvent event = new PaymentSuccessEvent(
+                    payment.getUserId(),
+                    payment.getSessionId(),
+                    payment.getPaymentId(),
+                    payment.getAmount().doubleValue(),
+                    payment.getPaymentMethod().name()
+            );
+            
+            rabbitTemplate.convertAndSend(paymentSuccessQueue, event);
+            log.info("✅ Published PaymentSuccessEvent to queue '{}': {}", paymentSuccessQueue, event);
+        } catch (Exception e) {
+            log.error("❌ Failed to publish PaymentSuccessEvent for payment {}: {}", 
+                    payment.getPaymentId(), e.getMessage(), e);
+            // Don't throw exception - payment was still successful, just loyalty points may be delayed
+        }
+    }
+    
     private PaymentResponseDto convertToDto(Payment payment) {
         PaymentResponseDto dto = new PaymentResponseDto();
         dto.setPaymentId(payment.getPaymentId());

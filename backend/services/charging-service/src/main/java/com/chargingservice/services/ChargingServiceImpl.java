@@ -75,7 +75,7 @@ public class ChargingServiceImpl implements ChargingService {
 
     // --- UPDATE (STOP) ---
     @Override
-    public SessionResponseDto stopSession(Long sessionId) {
+    public SessionResponseDto stopSession(Long sessionId, com.chargingservice.dtos.StopSessionRequestDto requestDto) {
         log.info("Attempting to stop session {}", sessionId);
         ChargingSession session = findSessionById(sessionId);
 
@@ -88,11 +88,20 @@ public class ChargingServiceImpl implements ChargingService {
         session.setEndTime(LocalDateTime.now());
         session.setSessionStatus(ChargingSession.SessionStatus.completed);
 
-        // Tính toán năng lượng tiêu thụ (0.6 kWh/phút = 36 kW)
-        long durationInMinutes = Duration.between(session.getStartTime(), session.getEndTime()).toMinutes();
-        if (durationInMinutes <= 0) durationInMinutes = 1; // Tính ít nhất 1 phút
-        double energy = durationInMinutes * 0.6; // 0.6 kWh/phút
-        session.setEnergyConsumed(BigDecimal.valueOf(energy).setScale(2, RoundingMode.HALF_UP));
+        // Sử dụng energyCharged từ frontend nếu có, nếu không thì tính dựa trên thời gian
+        if (requestDto != null && requestDto.getEnergyCharged() != null && requestDto.getEnergyCharged().compareTo(BigDecimal.ZERO) > 0) {
+            // Sử dụng energy từ frontend (đã tính với speedMultiplier)
+            session.setEnergyConsumed(requestDto.getEnergyCharged().setScale(2, RoundingMode.HALF_UP));
+            log.info("Using energy from frontend: {} kWh (SOC: {}%)", 
+                    requestDto.getEnergyCharged(), requestDto.getCurrentSOC());
+        } else {
+            // Fallback: Tính toán năng lượng tiêu thụ dựa trên thời gian (0.6 kWh/phút = 36 kW)
+            long durationInMinutes = Duration.between(session.getStartTime(), session.getEndTime()).toMinutes();
+            if (durationInMinutes <= 0) durationInMinutes = 1; // Tính ít nhất 1 phút
+            double energy = durationInMinutes * 0.6; // 0.6 kWh/phút
+            session.setEnergyConsumed(BigDecimal.valueOf(energy).setScale(2, RoundingMode.HALF_UP));
+            log.info("Using time-based calculation: {} minutes = {} kWh", durationInMinutes, energy);
+        }
         
         // Tính SOC cuối cùng
         BigDecimal batteryCapacity = new BigDecimal("80.00"); // kWh
@@ -186,8 +195,12 @@ public class ChargingServiceImpl implements ChargingService {
     }
     
     @Override
-    public com.chargingservice.dtos.SessionStatusDto getSessionStatus(Long sessionId) {
+    public com.chargingservice.dtos.SessionStatusDto getSessionStatus(Long sessionId, int speedMultiplier) {
         ChargingSession session = findSessionById(sessionId);
+        
+        // Validate speedMultiplier (allow up to 100 for instant full charge)
+        if (speedMultiplier < 1) speedMultiplier = 1;
+        if (speedMultiplier > 100) speedMultiplier = 100;
         
         // Chỉ tính toán cho session đang charging
         if (session.getSessionStatus() != ChargingSession.SessionStatus.charging) {
@@ -200,30 +213,55 @@ public class ChargingServiceImpl implements ChargingService {
             return statusDto;
         }
         
-        // Tính toán trạng thái sạc real-time
+        // Tính toán trạng thái sạc real-time với speed multiplier
         LocalDateTime now = LocalDateTime.now();
-        long minutesElapsed = Duration.between(session.getStartTime(), now).toMinutes();
-        if (minutesElapsed < 0) minutesElapsed = 0;
+        long actualMinutesElapsed = Duration.between(session.getStartTime(), now).toMinutes();
+        if (actualMinutesElapsed < 0) actualMinutesElapsed = 0;
         
         // Giả lập: tốc độ sạc 0.01 kWh/giây = 0.6 kWh/phút = 36 kW
         BigDecimal chargingPower = new BigDecimal("36.00"); // kW
-        BigDecimal energyCharged = BigDecimal.valueOf(minutesElapsed * 0.6).setScale(2, RoundingMode.HALF_UP);
-        
-        // Giả lập SOC: bắt đầu từ 20%, sạc lên 100%
-        // Giả sử cần 80% để sạc đầy = 80 kWh (giả lập)
         BigDecimal batteryCapacity = new BigDecimal("80.00"); // kWh (giả lập)
-        BigDecimal socPercentage = BigDecimal.valueOf(20.0 + (energyCharged.doubleValue() / batteryCapacity.doubleValue() * 80.0));
-        if (socPercentage.doubleValue() > 100.0) socPercentage = new BigDecimal("100.0");
+        
+        // Special case: speedMultiplier = 100 → instant full charge
+        long minutesElapsed;
+        BigDecimal energyCharged;
+        BigDecimal socPercentage;
+        
+        if (speedMultiplier >= 100) {
+            // Force sạc đầy ngay lập tức
+            minutesElapsed = 134; // Đủ để sạc từ 20% → 100%
+            energyCharged = batteryCapacity; // 80 kWh
+            socPercentage = new BigDecimal("100.0");
+            log.info("Session {}: INSTANT FULL CHARGE (x100 mode)", sessionId);
+        } else {
+            // Apply speed multiplier để tua nhanh
+            minutesElapsed = actualMinutesElapsed * speedMultiplier;
+            energyCharged = BigDecimal.valueOf(minutesElapsed * 0.6).setScale(2, RoundingMode.HALF_UP);
+            
+            // Tính SOC: bắt đầu từ 20%, sạc lên 100%
+            double calculatedSOC = 20.0 + (energyCharged.doubleValue() / batteryCapacity.doubleValue() * 80.0);
+            socPercentage = BigDecimal.valueOf(Math.min(100.0, calculatedSOC));
+            
+            log.info("Session {}: actual={}min, multiplier=x{}, simulated={}min, SOC={}%", 
+                    sessionId, actualMinutesElapsed, speedMultiplier, minutesElapsed, socPercentage.doubleValue());
+        }
         
         // Tính thời gian còn lại (phút)
         BigDecimal remainingEnergy = batteryCapacity.subtract(energyCharged);
         if (remainingEnergy.doubleValue() < 0) remainingEnergy = BigDecimal.ZERO;
         int estimatedMinutesRemaining = 0;
-        if (chargingPower.doubleValue() > 0 && remainingEnergy.doubleValue() > 0) {
+        
+        // Nếu đã đầy (SOC >= 100%), thời gian còn lại = 0
+        if (socPercentage.doubleValue() >= 100.0) {
+            estimatedMinutesRemaining = 0;
+        } else if (chargingPower.doubleValue() > 0 && remainingEnergy.doubleValue() > 0) {
             // kW to kWh/min: chargingPower (kW) / 60 = kWh per minute
             BigDecimal chargingRatePerMinute = chargingPower.divide(new BigDecimal("60"), 4, RoundingMode.HALF_UP);
             if (chargingRatePerMinute.doubleValue() > 0) {
                 estimatedMinutesRemaining = (int) Math.ceil(remainingEnergy.divide(chargingRatePerMinute, 0, RoundingMode.UP).doubleValue());
+                // Chia cho speedMultiplier để hiển thị thời gian thực tế còn lại
+                estimatedMinutesRemaining = estimatedMinutesRemaining / speedMultiplier;
+                if (estimatedMinutesRemaining < 0) estimatedMinutesRemaining = 0;
             }
         }
         
@@ -231,6 +269,9 @@ public class ChargingServiceImpl implements ChargingService {
         BigDecimal pricePerKwh = calculatePriceWithDiscount(session.getUserId());
         BigDecimal currentCost = energyCharged.multiply(pricePerKwh).setScale(0, RoundingMode.HALF_UP);
         BigDecimal estimatedTotalCost = batteryCapacity.multiply(pricePerKwh).setScale(0, RoundingMode.HALF_UP);
+        
+        log.info("Session {}: energyCharged={}kWh, pricePerKwh={}VND, cost={}VND", 
+                sessionId, energyCharged, pricePerKwh, currentCost);
         
         // Tạo DTO
         com.chargingservice.dtos.SessionStatusDto statusDto = new com.chargingservice.dtos.SessionStatusDto();
