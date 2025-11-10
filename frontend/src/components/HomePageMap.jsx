@@ -107,13 +107,29 @@ const HomePageMap = () => {
 
   return (
     <section className="homepage-map-section">
+      {/* Subtle Particles */}
+      <div className="particles-container">
+        {[...Array(8)].map((_, i) => (
+          <div 
+            key={i} 
+            className="particle" 
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 8}s`,
+              animationDuration: `${8 + Math.random() * 6}s`
+            }}
+          />
+        ))}
+      </div>
+
       <div className="homepage-map-container">
         <h2 className="homepage-map-title">
           <i className="fas fa-map-marked-alt"></i>
           Bản Đồ Trạm Sạc
         </h2>
         <p className="homepage-map-subtitle">
-
+          Khám phá mạng lưới trạm sạc trên toàn quốc
         </p>
 
         {loading ? (
