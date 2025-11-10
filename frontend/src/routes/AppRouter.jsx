@@ -18,6 +18,7 @@ import Dashboard from '../components/Dashboard';
 import UserProfileScreen from '../pages/DriverApp/Profile/UserProfileScreen';
 import PaymentPage from '../pages/PaymentPage';
 import WalletPage from '../pages/Wallet/WalletPage.jsx';
+import LoyaltyPage from '../pages/DriverApp/Loyalty/LoyaltyPage.jsx';
 import BookingPage from '../pages/DriverApp/Booking/BookingPage.jsx';
 import QRScanner from '../pages/DriverApp/QR/QRScanner.jsx';
 import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
@@ -61,6 +62,11 @@ function AppRouter() {
                 <Route path="wallet" element={
                     <DriverLayout>
                         <WalletPage />
+                    </DriverLayout>
+                } />
+                <Route path="loyalty" element={
+                    <DriverLayout>
+                        <LoyaltyPage />
                     </DriverLayout>
                 } />
                 <Route path="stations/booking" element={

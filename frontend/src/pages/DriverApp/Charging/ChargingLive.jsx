@@ -1,7 +1,7 @@
 // src/pages/DriverApp/Charging/ChargingLive.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getActiveSession, getSessionStatus, stopSession } from '../../../services/chargingService';
+import { getActiveSession, getSessionStatus, stopSession, getSessionById } from '../../../services/chargingService';
 import PaymentMethodModal from '../../../components/PaymentMethodModal';
 import '../../../styles/ChargingLive.css';
 
@@ -14,20 +14,88 @@ export default function ChargingLive() {
     const [stopping, setStopping] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [completedSession, setCompletedSession] = useState(null);
+    const [speedMultiplier, setSpeedMultiplier] = useState(1); // x1, x2, x4, x8
     const pollingIntervalRef = useRef(null);
 
-    // Load active session
+    // Load active session and restore pending payment from localStorage
     useEffect(() => {
-        loadActiveSession();
+        // Kiểm tra xem có pending payment session không
+        const pendingSession = localStorage.getItem('pendingPaymentSession');
+        if (pendingSession) {
+            try {
+                const sessionData = JSON.parse(pendingSession);
+                console.log('🔄 Restored pending payment session from localStorage:', sessionData);
+                setCompletedSession(sessionData);
+                setSession(sessionData); // Set session để hiển thị info
+                setShowPaymentModal(true); // Tự động hiện modal thanh toán
+                setLoading(false);
+            } catch (err) {
+                console.error('Error parsing pending session:', err);
+                localStorage.removeItem('pendingPaymentSession');
+                loadActiveSession();
+            }
+        } else {
+            loadActiveSession();
+        }
     }, []);
 
-    // Polling status mỗi 5 giây
+    // Polling status với tốc độ có thể điều chỉnh
     useEffect(() => {
         if (session?.sessionId) {
-            loadStatus();
-            pollingIntervalRef.current = setInterval(() => {
-                loadStatus();
-            }, 5000); // Update mỗi 5 giây
+            // Load ngay khi mount hoặc speed thay đổi
+            const fetchStatus = async () => {
+                try {
+                    console.log(`⚡ Fetching status with speed multiplier: x${speedMultiplier}`);
+                    const statusData = await getSessionStatus(session.sessionId, speedMultiplier);
+                    console.log(`📊 Current SOC: ${statusData.currentSOC}%, Status: ${statusData.status}`);
+                    
+                    // [FIX]: Detect khi session bị staff stop
+                    if (statusData.status === 'completed' && session.sessionStatus !== 'completed') {
+                        console.log('🛑 Session stopped by staff! Triggering payment modal...');
+                        
+                        // Stop polling
+                        if (pollingIntervalRef.current) {
+                            clearInterval(pollingIntervalRef.current);
+                        }
+                        
+                        // Reload session để có data mới nhất
+                        const updatedSession = await getSessionById(session.sessionId);
+                        
+                        // Prepare completed session data với energyCharged từ status
+                        const completedData = {
+                            ...updatedSession,
+                            energyConsumed: statusData.energyCharged || updatedSession.energyConsumed,
+                            pricePerKwh: statusData.pricePerKwh
+                        };
+                        
+                        // Lưu vào localStorage để persist
+                        localStorage.setItem('pendingPaymentSession', JSON.stringify(completedData));
+                        
+                        // Update state và show payment modal
+                        setSession(completedData);
+                        setCompletedSession(completedData);
+                        setShowPaymentModal(true);
+                        
+                        return; // Don't update status anymore
+                    }
+                    
+                    setStatus(statusData);
+                } catch (err) {
+                    console.error('Error loading status:', err);
+                }
+            };
+            
+            fetchStatus(); // Load ngay lập tức
+            
+            // Giảm interval khi tăng speed
+            let interval;
+            if (speedMultiplier >= 100) {
+                interval = 1000; // x100: update mỗi 1s thôi, không cần spam
+            } else {
+                interval = Math.max(500, 5000 / speedMultiplier);
+            }
+            
+            pollingIntervalRef.current = setInterval(fetchStatus, interval);
 
             return () => {
                 if (pollingIntervalRef.current) {
@@ -35,7 +103,7 @@ export default function ChargingLive() {
                 }
             };
         }
-    }, [session?.sessionId]);
+    }, [session?.sessionId, speedMultiplier]); // Thêm speedMultiplier vào dependency
 
     const loadActiveSession = async () => {
         try {
@@ -56,25 +124,6 @@ export default function ChargingLive() {
         }
     };
 
-    const loadStatus = async () => {
-        if (!session?.sessionId) return;
-        
-        try {
-            const statusData = await getSessionStatus(session.sessionId);
-            setStatus(statusData);
-        } catch (err) {
-            console.error('Error loading status:', err);
-            // Nếu session không còn tồn tại hoặc đã hoàn thành, dừng polling
-            if (err.response?.status === 404 || err.response?.status === 400) {
-                if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current);
-                }
-                setError('Phiên sạc đã kết thúc');
-                setStatus(null);
-            }
-        }
-    };
-
     const handleStopSession = async () => {
         if (!session?.sessionId) return;
         
@@ -84,18 +133,34 @@ export default function ChargingLive() {
 
         setStopping(true);
         try {
-            const result = await stopSession(session.sessionId);
+            // Lấy status hiện tại trước khi stop để gửi energyCharged thực tế
+            const currentStatus = await getSessionStatus(session.sessionId, speedMultiplier);
+            console.log('🛑 Stopping session with energy:', currentStatus.energyCharged, 'kWh, SOC:', currentStatus.currentSOC, '%');
+            
+            // Gửi energyCharged và currentSOC từ status thực tế
+            const stopData = {
+                energyCharged: currentStatus.energyCharged,
+                currentSOC: currentStatus.currentSOC
+            };
+            
+            const result = await stopSession(session.sessionId, stopData);
             
             // Dừng polling
             if (pollingIntervalRef.current) {
                 clearInterval(pollingIntervalRef.current);
             }
             
-            // Lưu session đã hoàn thành và hiển thị payment modal
-            setCompletedSession({
+            // Lưu session đã hoàn thành vào localStorage để persist sau khi F5
+            const completedData = {
                 ...result,
-                sessionId: result.sessionId || session.sessionId
-            });
+                sessionId: result.sessionId || session.sessionId,
+                energyConsumed: result.energyConsumed || currentStatus.energyCharged,
+                pricePerKwh: currentStatus.pricePerKwh // Lưu giá để tính toán đúng khi restore
+            };
+            localStorage.setItem('pendingPaymentSession', JSON.stringify(completedData));
+            
+            // Hiển thị payment modal
+            setCompletedSession(completedData);
             setShowPaymentModal(true);
             
         } catch (err) {
@@ -115,6 +180,9 @@ export default function ChargingLive() {
               `Phương thức: ${methodName}\n` +
               `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`);
         
+        // Clear localStorage khi thanh toán thành công
+        localStorage.removeItem('pendingPaymentSession');
+        
         // Đóng modal và navigate ngay lập tức
         setShowPaymentModal(false);
         setCompletedSession(null);
@@ -123,10 +191,13 @@ export default function ChargingLive() {
     };
 
     const handlePaymentModalClose = () => {
-        // Đóng modal và navigate đi ngay, không kẹt ở đây
+        // Đóng modal NHƯNG KHÔNG navigate, giữ session để user có thể quay lại thanh toán
         setShowPaymentModal(false);
-        setCompletedSession(null);
-        navigate('/stations/booking');
+        // KHÔNG setCompletedSession(null) - giữ session
+        // KHÔNG navigate - ở lại trang này để hiển thị trạng thái "Chờ thanh toán"
+        
+        // Reload session để hiện trạng thái mới
+        loadActiveSession();
     };
 
     const formatCurrency = (amount) => {
@@ -190,6 +261,9 @@ export default function ChargingLive() {
         );
     }
 
+    // Kiểm tra xem session đã completed chưa thanh toán
+    const isCompletedUnpaid = session?.sessionStatus === 'completed' && !session?.isPaid;
+
     return (
         <div className="charging-live">
             <div className="charging-container">
@@ -197,31 +271,107 @@ export default function ChargingLive() {
                     <div>
                         <h1>
                             <i className="fas fa-bolt"></i>
-                            Phiên sạc đang diễn ra
+                            {isCompletedUnpaid ? 'Phiên sạc đã hoàn thành' : 'Phiên sạc đang diễn ra'}
                         </h1>
                         <p>Session ID: {session?.sessionId}</p>
-                    </div>
-                    <button
-                        className="btn-stop-charging"
-                        onClick={handleStopSession}
-                        disabled={stopping || status?.status !== 'charging'}
-                    >
-                        {stopping ? (
-                            <>
-                                <i className="fas fa-spinner fa-spin"></i>
-                                Đang xử lý...
-                            </>
-                        ) : (
-                            <>
-                                <i className="fas fa-stop-circle"></i>
-                                Kết thúc sạc
-                            </>
+                        {isCompletedUnpaid && (
+                            <p style={{ color: '#ff9800', fontWeight: 600, marginTop: '8px' }}>
+                                <i className="fas fa-exclamation-triangle"></i>
+                                Chưa thanh toán - Vui lòng hoàn tất thanh toán
+                            </p>
                         )}
-                    </button>
+                    </div>
+                    
+                    {isCompletedUnpaid ? (
+                        <button
+                            className="btn-payment"
+                            onClick={() => {
+                                setCompletedSession(session);
+                                setShowPaymentModal(true);
+                            }}
+                        >
+                            <i className="fas fa-credit-card"></i>
+                            Thanh toán ngay
+                        </button>
+                    ) : (
+                        <button
+                            className="btn-stop-charging"
+                            onClick={handleStopSession}
+                            disabled={stopping || status?.status !== 'charging'}
+                        >
+                            {stopping ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                    Đang xử lý...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fas fa-stop-circle"></i>
+                                    Kết thúc sạc
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
+                {/* Speed Control (for testing/demo) - Chỉ hiện khi đang sạc */}
+                {!isCompletedUnpaid && status?.status === 'charging' && (
+                    <div className="speed-control">
+                        <span className="speed-label">
+                            <i className="fas fa-tachometer-alt"></i>
+                            Tốc độ demo:
+                        </span>
+                        <div className="speed-buttons">
+                            {[1, 2, 4, 8].map(speed => (
+                                <button
+                                    key={speed}
+                                    className={`speed-btn ${speedMultiplier === speed ? 'active' : ''}`}
+                                    onClick={() => setSpeedMultiplier(speed)}
+                                >
+                                    x{speed}
+                                </button>
+                            ))}
+                            <button
+                                className="speed-btn instant-btn"
+                                onClick={() => setSpeedMultiplier(100)}
+                                title="Sạc đầy ngay lập tức"
+                            >
+                                <i className="fas fa-forward"></i>
+                                100%
+                            </button>
+                        </div>
+                        <span className="speed-info">
+                            {speedMultiplier === 100 ? 'Sạc đầy ngay!' : `Update mỗi ${(5000 / speedMultiplier / 1000).toFixed(1)}s`}
+                        </span>
+                    </div>
+                )}
+
+                {/* Summary Card for Completed Unpaid Session */}
+                {isCompletedUnpaid && (
+                    <div className="payment-summary-card">
+                        <h3>
+                            <i className="fas fa-receipt"></i>
+                            Tóm tắt phiên sạc
+                        </h3>
+                        <div className="summary-details">
+                            <div className="summary-item">
+                                <span>Năng lượng đã sạc:</span>
+                                <strong>{session.energyConsumed || 0} kWh</strong>
+                            </div>
+                            <div className="summary-item">
+                                <span>Thời gian sạc:</span>
+                                <strong>{formatTime(status?.minutesElapsed || 0)}</strong>
+                            </div>
+                            <div className="summary-item total">
+                                <span>Tổng chi phí:</span>
+                                <strong className="total-cost">{formatCurrency(status?.currentCost || 0)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* SOC Progress */}
-                {status && (
+                {status && !isCompletedUnpaid && (
                     <div className="soc-progress-card">
                         <div className="soc-header">
                             <h2>

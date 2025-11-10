@@ -100,6 +100,20 @@ spring:
             # XÓA BỎ "- StripPrefix=1"
             - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
 
+        - id: fcm-tokens-route
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/fcm-tokens/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
+
+        - id: loyalty-service-route
+          uri: lb://LOYALTY-SERVICE
+          predicates:
+            - Path=/api/loyalty/**
+          filters:
+            - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC
+
       # [COMMAND]: XÓA BỎ HOẶC COMMENT LẠI globalcors
       # globalcors:
       #   corsConfigurations:

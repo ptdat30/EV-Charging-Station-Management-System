@@ -32,52 +32,28 @@ const PackagesManagement = () => {
       setLoading(true);
       setError(null);
       
-      // ⚠️ NOTE: Package service không có trong backend hiện tại
-      // Đang sử dụng mock data cho mục đích demo/development
-      // TODO: Khi backend package service được implement, thay thế bằng:
-      // const response = await getAllPackages();
-      // const data = response.data || response || [];
-      // setPackages(Array.isArray(data) ? data : []);
+      // Fetch packages from backend API
+      const response = await getAllPackages();
+      const data = response.data || response || [];
       
-      // Cố định 3 gói dịch vụ: Bạc, Vàng, Bạch Kim
-      const mockPackages = [
-        {
-          id: 1,
-          name: 'Gói Bạc',
-          description: 'Gói dịch vụ cơ bản cho driver',
-          type: 'SILVER',
-          price: 299000,
-          durationDays: 30,
-          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 25%', 'Ưu tiên booking', 'Hỗ trợ email 48h'],
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          name: 'Gói Vàng',
-          description: 'Gói dịch vụ nâng cao cho driver',
-          type: 'GOLD',
-          price: 599000,
-          durationDays: 30,
-          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 40%', 'Ưu tiên cao', 'Hỗ trợ chat 24/7', 'Báo cáo chi tiết'],
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 3,
-          name: 'Gói Bạch Kim',
-          description: 'Gói dịch vụ cao cấp cho driver',
-          type: 'PLATINUM',
-          price: 999000,
-          durationDays: 30,
-          features: ['Sạc không giới hạn trong 30 ngày', 'Tiết kiệm 50%', 'Ưu tiên cao nhất', 'Hỗ trợ VIP 24/7', 'Báo cáo nâng cao'],
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      setPackages(mockPackages);
+      // Transform data to match frontend format
+      const transformedData = Array.isArray(data) ? data.map(pkg => ({
+        id: pkg.packageId,
+        name: pkg.name,
+        description: pkg.description,
+        type: pkg.packageType,
+        price: pkg.price,
+        durationDays: pkg.durationDays,
+        features: pkg.features || [],
+        discountPercentage: pkg.discountPercentage,
+        isActive: pkg.isActive,
+        createdAt: pkg.createdAt,
+        updatedAt: pkg.updatedAt
+      })) : [];
       
-      // Uncomment when backend is ready:
+      setPackages(transformedData);
+      
+      // Backend API is now ready and working!
       // const response = await getAllPackages();
       // const data = response.data || response || [];
       // setPackages(Array.isArray(data) ? data : []);

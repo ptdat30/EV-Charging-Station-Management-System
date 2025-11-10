@@ -236,7 +236,7 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   text-decoration: none;
   border-radius: 8px;

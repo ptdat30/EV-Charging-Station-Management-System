@@ -1,9 +1,13 @@
 /* Route Planning Page Styles */
+@import './ModernPageLayout.css';
+
 .route-planning-page {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  min-height: calc(100vh - 200px);
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+  font-family: 'Inter', sans-serif;
 }
 
 .route-header {
@@ -23,7 +27,7 @@
 }
 
 .route-header h2 i {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .route-header p {
@@ -66,8 +70,8 @@
 
 .input-group input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
 }
 
 .input-with-button {
@@ -133,19 +137,19 @@
 }
 
 .route-type-btn:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--color-primary);
+  background: #e8eaf0;
 }
 
 .route-type-btn.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  background: #e8eaf0;
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
 }
 
 .route-type-btn i {
   font-size: 1.5rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   margin-top: 0.25rem;
 }
 
@@ -171,7 +175,7 @@
 .btn-calculate-route {
   width: 100%;
   padding: 1rem;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -186,9 +190,9 @@
 }
 
 .btn-calculate-route:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--color-primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
 }
 
 .btn-calculate-route:disabled {
@@ -226,9 +230,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eff6ff;
+  background: #e8eaf0;
   border-radius: 12px;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-size: 1.5rem;
   flex-shrink: 0;
 }
@@ -267,7 +271,7 @@
 }
 
 .route-stations-list h3 i {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .route-station-item {
@@ -292,7 +296,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border-radius: 50%;
   font-weight: 700;
@@ -339,7 +343,7 @@
 }
 
 .station-timings i {
-  color: #3b82f6;
+  color: var(--color-primary);
   font-size: 0.75rem;
 }
 
@@ -366,7 +370,7 @@
 
 .btn-book-route {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -382,7 +386,7 @@
 
 .btn-book-route:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 20px rgba(30, 41, 59, 0.3);
 }
 
 .btn-book-route:disabled {
@@ -419,7 +423,7 @@
 }
 
 .routes-list-section h3 i {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .routes-grid {
@@ -439,15 +443,15 @@
 }
 
 .route-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.15);
   transform: translateY(-2px);
 }
 
 .route-card.selected {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary);
+  background: #e8eaf0;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
 }
 
 .route-card-header {
@@ -471,7 +475,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
 }
 
@@ -498,14 +502,14 @@
 }
 
 .route-info-item i {
-  color: #3b82f6;
+  color: var(--color-primary);
   width: 16px;
 }
 
 .btn-select-route {
   width: 100%;
   padding: 0.75rem;
-  background: #3b82f6;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -520,7 +524,7 @@
 }
 
 .btn-select-route:hover {
-  background: #2563eb;
+  background: var(--color-primary-dark);
 }
 
 .route-card.selected .btn-select-route {

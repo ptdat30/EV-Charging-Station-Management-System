@@ -85,6 +85,13 @@ const DriverNavBar = () => {
             roles: ['DRIVER'] // Chỉ driver
         },
         {
+            path: '/loyalty',
+            icon: 'fas fa-award',
+            label: 'Điểm thưởng',
+            description: 'Loyalty',
+            roles: ['DRIVER'] // Chỉ driver
+        },
+        {
             path: '/pricing',
             icon: 'fas fa-box',
             label: 'Mua gói dịch vụ',

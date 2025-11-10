@@ -19,17 +19,23 @@ export const getSessionById = async (sessionId) => {
 
 /**
  * Lấy trạng thái sạc real-time (SOC%, thời gian còn lại, chi phí)
+ * @param {number} sessionId - ID của session
+ * @param {number} speedMultiplier - Tốc độ tua nhanh (1, 2, 4, 8, 100) - default 1
  */
-export const getSessionStatus = async (sessionId) => {
-    const response = await apiClient.get(`/sessions/${sessionId}/status`);
+export const getSessionStatus = async (sessionId, speedMultiplier = 1) => {
+    console.log(`🔍 API call: /sessions/${sessionId}/status?speedMultiplier=${speedMultiplier}`);
+    const response = await apiClient.get(`/sessions/${sessionId}/status?speedMultiplier=${speedMultiplier}`);
+    console.log('📥 Response SOC:', response.data?.currentSOC);
     return response.data;
 };
 
 /**
  * Kết thúc phiên sạc
+ * @param {number} sessionId - ID của session
+ * @param {object} stopData - {energyCharged, currentSOC} từ status hiện tại
  */
-export const stopSession = async (sessionId) => {
-    const response = await apiClient.post(`/sessions/${sessionId}/stop`);
+export const stopSession = async (sessionId, stopData = null) => {
+    const response = await apiClient.post(`/sessions/${sessionId}/stop`, stopData);
     return response.data;
 };
 

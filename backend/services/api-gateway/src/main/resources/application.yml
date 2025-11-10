@@ -1,11 +1,8 @@
 # ===============================================================
 # FILE: application.yml
 # LOCATION: api-gateway/src/main/resources/application.yml
-# MỤC ĐÍCH: Local overrides (ưu tiên thấp hơn Config Server)
+# MỤC ĐÍCH: Local overrides only (chủ yếu lấy từ Config Server)
 # ===============================================================
-
-# Chỉ giữ những config CẦN override local
-# Phần lớn config sẽ lấy từ Config Server
 
 spring:
   codec:

@@ -1,6 +1,8 @@
 /* src/styles/Pricing.css */
+@import './ModernPageLayout.css';
+
 .pricing-page {
-  background: #f8fafc;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
   min-height: calc(100vh - 70px);
   font-family: 'Inter', sans-serif;
 }

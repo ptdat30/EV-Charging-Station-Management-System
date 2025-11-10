@@ -13,6 +13,14 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
     const [error, setError] = useState('');
     const [processing, setProcessing] = useState(false);
 
+    // Xử lý đóng modal với confirm
+    const handleClose = () => {
+        if (!confirm('⚠️ Bạn chưa hoàn tất thanh toán. Phiên sạc sẽ được giữ lại để thanh toán sau.\n\nXác nhận đóng?')) {
+            return;
+        }
+        onClose();
+    };
+
     useEffect(() => {
         if (isOpen && user) {
             loadWalletBalance();
@@ -31,7 +39,8 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
     const calculateTotal = () => {
         if (!session || !session.energyConsumed) return 0;
         const energy = parseFloat(session.energyConsumed) || 0;
-        const pricePerKwh = 3000; // Giá cố định
+        // Sử dụng pricePerKwh từ session nếu có, nếu không dùng giá mặc định
+        const pricePerKwh = session.pricePerKwh || 3000;
         return energy * pricePerKwh;
     };
 
@@ -54,11 +63,12 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
 
         try {
             // Gọi API để xử lý thanh toán
+            const pricePerKwh = session.pricePerKwh || 3000;
             const response = await apiClient.post('/payments/process', {
                 sessionId: session.sessionId,
                 userId: user?.userId || user?.id,
                 energyConsumed: session.energyConsumed,
-                pricePerKwh: 3000,
+                pricePerKwh: pricePerKwh,
                 paymentMethod: selectedMethod
             });
 
@@ -85,14 +95,14 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
     };
 
     return (
-        <div className="payment-method-modal-overlay" onClick={onClose}>
+        <div className="payment-method-modal-overlay" onClick={handleClose}>
             <div className="payment-method-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="payment-method-modal-header">
                     <h2>
                         <i className="fas fa-credit-card"></i>
                         Chọn phương thức thanh toán
                     </h2>
-                    <button className="payment-method-modal-close" onClick={onClose}>
+                    <button className="payment-method-modal-close" onClick={handleClose}>
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
@@ -114,7 +124,7 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
                         </div>
                         <div className="summary-item">
                             <span>Đơn giá:</span>
-                            <strong>3.000 ₫/kWh</strong>
+                            <strong>{formatCurrency(session?.pricePerKwh || 3000)}/kWh</strong>
                         </div>
                         <div className="summary-item total">
                             <span>Tổng thanh toán:</span>
@@ -188,7 +198,7 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
                 <div className="payment-method-modal-footer">
                     <button
                         className="btn-cancel"
-                        onClick={onClose}
+                        onClick={handleClose}
                         disabled={processing}
                     >
                         Hủy
