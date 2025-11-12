@@ -1,4 +1,4 @@
-# EV-Charging-Station-Management-System---Project
+# EV-Charging-Station-Management-System
 # 🚗 EV Charging Station Management System
 
 ## 🎯 1. Project Goals
