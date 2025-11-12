@@ -47,18 +47,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(132, 204, 22, 0.1) 0%, rgba(96, 165, 250, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(132, 204, 22, 0.08) 0%, rgba(96, 165, 250, 0.08) 100%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
 
 .stat-card:hover {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border-color: rgba(132, 204, 22, 0.4);
   transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Dynamic hover colors for each card */
+.stat-card[data-color]:hover {
+  border-color: color-mix(in srgb, var(--hover-color, #84cc16) 40%, transparent);
   box-shadow: 
     0 15px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(132, 204, 22, 0.2);
+    0 0 0 1px color-mix(in srgb, var(--hover-color, #84cc16) 20%, transparent);
 }
 
 .stat-card:hover::before {
@@ -70,7 +75,6 @@
   width: 70px;
   height: 70px;
   margin: 0 auto 1rem;
-  background: linear-gradient(135deg, rgba(132, 204, 22, 0.2) 0%, rgba(96, 165, 250, 0.2) 100%);
   border-radius: 20px;
   display: flex;
   align-items: center;
@@ -82,21 +86,16 @@
 }
 
 .stat-card:hover .stat-icon {
-  background: linear-gradient(135deg, rgba(132, 204, 22, 0.3) 0%, rgba(96, 165, 250, 0.3) 100%);
   transform: scale(1.15) rotate(-5deg);
-  box-shadow: 0 8px 30px rgba(132, 204, 22, 0.3);
 }
 
 .stat-icon i {
   font-size: 2rem;
-  color: #84cc16;
-  filter: drop-shadow(0 4px 12px rgba(132, 204, 22, 0.4));
   transition: all 0.4s ease;
 }
 
 .stat-card:hover .stat-icon i {
-  color: #a3e635;
-  filter: drop-shadow(0 6px 20px rgba(132, 204, 22, 0.6));
+  filter: brightness(1.2);
 }
 
 /* Stat Number */
@@ -111,9 +110,9 @@
   line-height: 1.1;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 2px 10px rgba(132, 204, 22, 0.2));
   word-break: break-word;
   max-width: 100%;
+  transition: filter 0.4s ease;
 }
 
 /* Stat Label */

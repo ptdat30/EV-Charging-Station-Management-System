@@ -456,7 +456,9 @@ const StationsManagement = () => {
   );
 };
 
-// Station Detail Modal Component
+// ==========================================
+// Station Detail Modal Component - REBUILT
+// ==========================================
 const StationDetailModal = ({ 
   station, 
   chargers, 
@@ -465,8 +467,7 @@ const StationDetailModal = ({
   onUpdateChargerStatus,
   onRefreshChargers
 }) => {
-  const [showChargerModal, setShowChargerModal] = useState(false);
-  const [selectedCharger, setSelectedCharger] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -500,37 +501,68 @@ const StationDetailModal = ({
   };
 
   const handleRemoteControl = async (type, id, action) => {
-    if (type === 'station') {
-      let newStatus;
-      if (action === 'start') {
-        newStatus = 'online';
-      } else if (action === 'stop') {
-        newStatus = 'offline';
-      } else if (action === 'maintenance') {
-        newStatus = 'maintenance';
+    setIsUpdating(true);
+    try {
+      if (type === 'station') {
+        let newStatus;
+        if (action === 'start') newStatus = 'online';
+        else if (action === 'stop') newStatus = 'offline';
+        else if (action === 'maintenance') newStatus = 'maintenance';
+        
+        if (newStatus) {
+          await onUpdateStationStatus(id, newStatus);
+        }
+      } else if (type === 'charger') {
+        let newStatus;
+        if (action === 'start') newStatus = 'available';
+        else if (action === 'stop') newStatus = 'offline';
+        else if (action === 'maintenance') newStatus = 'maintenance';
+        
+        if (newStatus) {
+          await onUpdateChargerStatus(id, newStatus);
+        }
       }
-      if (newStatus) {
-        await onUpdateStationStatus(id, newStatus);
-      }
-    } else if (type === 'charger') {
-      let newStatus;
-      if (action === 'start') {
-        newStatus = 'available';
-      } else if (action === 'stop') {
-        newStatus = 'offline';
-      }
-      if (newStatus) {
-        await onUpdateChargerStatus(id, newStatus);
-      }
+    } catch (error) {
+      console.error('Remote control error:', error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
+  if (!station) return null;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div 
+        className="modal-content station-detail-modal" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '800px', maxHeight: '90vh', overflow: 'auto' }}
+      >
         <div className="modal-header">
-          <h3>Chi tiết Trạm Sạc</h3>
-          <button className="modal-close" onClick={onClose}>
+          <div>
+            <h3>
+              <i className="fas fa-charging-station" style={{ marginRight: '10px', color: '#10b981' }}></i>
+              Chi tiết Trạm Sạc
+            </h3>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+              Thông tin và điều khiển trạm sạc
+            </p>
+          </div>
+          <button 
+            className="modal-close" 
+            onClick={onClose}
+            style={{ 
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#6b7280',
+              padding: '8px',
+              borderRadius: '6px'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          >
             <i className="fas fa-times"></i>
           </button>
         </div>

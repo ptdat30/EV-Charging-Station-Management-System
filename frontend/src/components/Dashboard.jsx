@@ -6,6 +6,8 @@ import { LazyEnergyChart } from './LazyChart';
 import { getDashboardStats, getRecentSessions, getEnergyUsageChart } from '../services/dashboardService';
 import { getBalance } from '../services/walletService';
 import { getMyProfile } from '../services/userService';
+import { getFavoriteStations } from '../services/favoritesService';
+import { getAllStations } from '../services/stationService';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
@@ -18,6 +20,7 @@ const Dashboard = () => {
   const [energyData, setEnergyData] = useState([]);
   const [driverName, setDriverName] = useState('');
   const [error, setError] = useState('');
+  const [favoriteStations, setFavoriteStations] = useState([]);
 
   // Redirect staff to staff dashboard
   useEffect(() => {
@@ -69,13 +72,37 @@ const Dashboard = () => {
           console.warn('Could not load wallet balance:', err);
         }
         
-        // Load recent sessions
+        // Load recent sessions - chỉ lấy sessions đã hoàn thành (cho lịch sử)
         const recentData = await getRecentSessions(5);
-        setRecentSessions(Array.isArray(recentData) ? recentData : []);
+        const allRecentSessions = Array.isArray(recentData) ? recentData : [];
+        
+        // Filter: Chỉ hiển thị sessions đã hoàn thành (completed)
+        // Không hiển thị: cancelled, charging (đang sạc thì không phải "lịch sử")
+        const completedSessions = allRecentSessions.filter(session => {
+          const status = (session.sessionStatus || '').toLowerCase();
+          return status === 'completed';
+        });
+        
+        setRecentSessions(completedSessions);
         
         // Load energy usage chart
         const chartData = await getEnergyUsageChart('week');
         setEnergyData(Array.isArray(chartData) ? chartData : []);
+        
+        // Load favorite stations
+        try {
+          const favoriteIds = getFavoriteStations();
+          if (favoriteIds.length > 0) {
+            const allStations = await getAllStations();
+            const favorites = (Array.isArray(allStations) ? allStations : allStations.data || [])
+              .filter(station => favoriteIds.includes(station.stationId || station.id))
+              .slice(0, 3); // Limit to 3 favorites
+            setFavoriteStations(favorites);
+            console.log('✅ Loaded favorite stations:', favorites.length);
+          }
+        } catch (err) {
+          console.warn('Could not load favorite stations:', err);
+        }
       } catch (err) {
         console.error('Error loading dashboard data:', err);
         setError(err.response?.data?.message || err.message || 'Không thể tải dữ liệu dashboard');
@@ -265,10 +292,43 @@ const Dashboard = () => {
             <Link to="/map" className="view-all">Tìm thêm →</Link>
           </div>
           <div className="stations-list-driver">
-            <div className="stations-empty-driver">
-              <p>Chưa có trạm yêu thích</p>
-              <Link to="/map" className="view-all">Tìm trạm ngay →</Link>
-            </div>
+            {favoriteStations.length > 0 ? (
+              favoriteStations.map((station) => (
+                <div key={station.stationId || station.id} className="favorite-station-item">
+                  <div className="station-icon">
+                    <i className="fas fa-charging-station"></i>
+                  </div>
+                  <div className="station-info">
+                    <div className="station-name">{station.stationName || station.stationCode}</div>
+                    <div className="station-address">
+                      <i className="fas fa-map-marker-alt"></i>
+                      {(() => {
+                        try {
+                          const loc = typeof station.location === 'string' 
+                            ? JSON.parse(station.location) 
+                            : station.location;
+                          return loc?.address || loc?.location || 'Chưa có địa chỉ';
+                        } catch {
+                          return 'Chưa có địa chỉ';
+                        }
+                      })()}
+                    </div>
+                  </div>
+                  <Link to="/map" className="btn-navigate-small">
+                    <i className="fas fa-arrow-right"></i>
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <div className="stations-empty-driver">
+                <i className="fas fa-heart"></i>
+                <p>Chưa có trạm yêu thích</p>
+                <Link to="/map" className="btn-find-stations">
+                  <i className="fas fa-search"></i>
+                  Tìm trạm ngay
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

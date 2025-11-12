@@ -14,7 +14,7 @@ export default function ChargingLive() {
     const [stopping, setStopping] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [completedSession, setCompletedSession] = useState(null);
-    const [speedMultiplier, setSpeedMultiplier] = useState(1); // x1, x2, x4, x8
+    const [speedMultiplier, setSpeedMultiplier] = useState(1); // x1, x2, x4, x8 (MAX = 8, no instant charge)
     const pollingIntervalRef = useRef(null);
 
     // Load active session and restore pending payment from localStorage
@@ -87,11 +87,13 @@ export default function ChargingLive() {
             
             fetchStatus(); // Load ngay lập tức
             
-            // Giảm interval khi tăng speed
+            // Điều chỉnh tần suất polling theo speedMultiplier
             let interval;
             if (speedMultiplier >= 100) {
-                interval = 1000; // x100: update mỗi 1s thôi, không cần spam
+                // x100: Update nhanh để show 100% instantly
+                interval = 500; // 0.5 second
             } else {
+                // Normal speeds: x1, x2, x4, x8
                 interval = Math.max(500, 5000 / speedMultiplier);
             }
             
@@ -317,32 +319,58 @@ export default function ChargingLive() {
                 {/* Speed Control (for testing/demo) - Chỉ hiện khi đang sạc */}
                 {!isCompletedUnpaid && status?.status === 'charging' && (
                     <div className="speed-control">
-                        <span className="speed-label">
-                            <i className="fas fa-tachometer-alt"></i>
-                            Tốc độ demo:
-                        </span>
-                        <div className="speed-buttons">
-                            {[1, 2, 4, 8].map(speed => (
-                                <button
-                                    key={speed}
-                                    className={`speed-btn ${speedMultiplier === speed ? 'active' : ''}`}
-                                    onClick={() => setSpeedMultiplier(speed)}
-                                >
-                                    x{speed}
-                                </button>
-                            ))}
-                            <button
-                                className="speed-btn instant-btn"
-                                onClick={() => setSpeedMultiplier(100)}
-                                title="Sạc đầy ngay lập tức"
-                            >
-                                <i className="fas fa-forward"></i>
-                                100%
-                            </button>
+                        <div className="speed-control-header">
+                            <span className="speed-label">
+                                <i className="fas fa-tachometer-alt"></i>
+                                Tốc độ mô phỏng (Demo):
+                            </span>
+                            <span className="speed-info">
+                                {speedMultiplier === 100 
+                                    ? '⚡ Sạc đầy tức thì (Demo)' 
+                                    : `Update mỗi ${(5000 / Math.min(speedMultiplier, 8) / 1000).toFixed(1)}s`}
+                            </span>
                         </div>
-                        <span className="speed-info">
-                            {speedMultiplier === 100 ? 'Sạc đầy ngay!' : `Update mỗi ${(5000 / speedMultiplier / 1000).toFixed(1)}s`}
-                        </span>
+                        <div className="speed-buttons-grid">
+                            <div className="speed-buttons-normal">
+                                <span className="speed-group-label">Tốc độ thông thường:</span>
+                                {[1, 2, 4, 8].map(speed => (
+                                    <button
+                                        key={speed}
+                                        className={`speed-btn ${speedMultiplier === speed ? 'active' : ''}`}
+                                        onClick={() => setSpeedMultiplier(speed)}
+                                        title={`Tua nhanh gấp ${speed} lần`}
+                                    >
+                                        <i className="fas fa-forward"></i>
+                                        x{speed}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="speed-buttons-instant">
+                                <span className="speed-group-label">Demo nhanh:</span>
+                                <button
+                                    className={`speed-btn instant-btn ${speedMultiplier === 100 ? 'active' : ''}`}
+                                    onClick={() => {
+                                        if (!confirm('⚡ CHẾ ĐỘ DEMO: Sạc đầy ngay lập tức\n\n' +
+                                                    'Chế độ này chỉ dùng để demo/test, sẽ tua session lên 100% ngay.\n' +
+                                                    'Bạn có chắc chắn muốn tiếp tục?')) {
+                                            return;
+                                        }
+                                        setSpeedMultiplier(100);
+                                    }}
+                                    title="Sạc đầy ngay lập tức (chỉ dùng để demo)"
+                                >
+                                    <i className="fas fa-bolt"></i>
+                                    Sạc đầy ngay
+                                    <span className="instant-badge">DEMO</span>
+                                </button>
+                            </div>
+                        </div>
+                        {speedMultiplier > 1 && (
+                            <div className="speed-warning">
+                                <i className="fas fa-info-circle"></i>
+                                Đang ở chế độ demo - Thời gian sạc được tua nhanh để test
+                            </div>
+                        )}
                     </div>
                 )}
 

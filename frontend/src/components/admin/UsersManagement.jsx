@@ -499,100 +499,219 @@ const UsersManagement = () => {
   );
 };
 
-// Subscription Management Modal Component
+// ==========================================
+// Subscription Management Modal - REBUILT
+// ==========================================
 const SubscriptionManagementModal = ({ user, onClose, onUpdate, loading }) => {
-  const [packageType, setPackageType] = useState(user.subscriptionPackage || '');
-  const [expiresAt, setExpiresAt] = useState(
-    user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).toISOString().split('T')[0] : ''
-  );
+  const [packageType, setPackageType] = useState(user?.subscriptionPackage || '');
+  const [expiresAt, setExpiresAt] = useState(() => {
+    if (user?.subscriptionExpiresAt) {
+      try {
+        return new Date(user.subscriptionExpiresAt).toISOString().split('T')[0];
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!packageType && !window.confirm('Bạn có chắc chắn muốn gỡ bỏ gói dịch vụ?')) {
+      return;
+    }
     const expiresAtDate = expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null;
     onUpdate(packageType || null, expiresAtDate);
   };
 
   const handleRemove = () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ của người dùng này?')) {
+    if (window.confirm('⚠️ Bạn có chắc chắn muốn xóa gói dịch vụ của người dùng này? Hành động này không thể hoàn tác.')) {
       onUpdate(null, null);
     }
   };
 
+  if (!user) return null;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div 
+        className="modal-content modal-subscription" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '600px' }}
+      >
         <div className="modal-header">
-          <h3>Quản lý Gói Dịch vụ</h3>
-          <button className="modal-close" onClick={onClose} disabled={loading}>
+          <div>
+            <h3>
+              <i className="fas fa-box" style={{ marginRight: '10px', color: '#8b5cf6' }}></i>
+              Quản lý Gói Dịch vụ
+            </h3>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+              Cấp hoặc thay đổi gói dịch vụ cho người dùng
+            </p>
+          </div>
+          <button 
+            className="modal-close" 
+            onClick={onClose} 
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              color: '#6b7280',
+              padding: '8px',
+              borderRadius: '6px',
+              opacity: loading ? 0.5 : 1
+            }}
+          >
             <i className="fas fa-times"></i>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="subscription-form">
+        <form onSubmit={handleSubmit} className="subscription-form" style={{ padding: '24px' }}>
           <div className="form-field">
-            <label>Người dùng:</label>
-            <div className="user-info-display">
-              <strong>{user.fullName || user.email}</strong>
-              <span className="email-text">{user.email}</span>
+            <label style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Người dùng:
+            </label>
+            <div className="user-info-display" style={{
+              background: '#f9fafb',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <strong style={{ fontSize: '15px' }}>{user.fullName || 'Chưa có tên'}</strong>
+                <span className="email-text" style={{ fontSize: '14px', color: '#6b7280' }}>
+                  <i className="fas fa-envelope" style={{ marginRight: '6px' }}></i>
+                  {user.email}
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="form-field">
-            <label htmlFor="package-type">Gói dịch vụ:</label>
+            <label htmlFor="package-type" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Gói dịch vụ:
+            </label>
             <select
               id="package-type"
               value={packageType}
               onChange={(e) => setPackageType(e.target.value)}
               className="form-control"
               disabled={loading}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
             >
               <option value="">Không có gói</option>
-              <option value="SILVER">Gói Bạc</option>
-              <option value="GOLD">Gói Vàng</option>
-              <option value="PLATINUM">Gói Bạch Kim</option>
+              <option value="SILVER">🥈 Gói Bạc</option>
+              <option value="GOLD">🥇 Gói Vàng</option>
+              <option value="PLATINUM">💎 Gói Bạch Kim</option>
             </select>
           </div>
 
           <div className="form-field">
-            <label htmlFor="expires-at">Ngày hết hạn:</label>
+            <label htmlFor="expires-at" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Ngày hết hạn:
+            </label>
             <input
               id="expires-at"
               type="date"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
               className="form-control"
-              disabled={loading}
+              disabled={loading || !packageType}
               min={new Date().toISOString().split('T')[0]}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
             />
-            <p className="form-caption">Để trống sẽ tự động set 30 ngày từ hiện tại</p>
+            <p className="form-caption" style={{ 
+              marginTop: '6px', 
+              fontSize: '13px', 
+              color: '#6b7280',
+              fontStyle: 'italic' 
+            }}>
+              💡 Để trống sẽ tự động set 30 ngày từ hiện tại
+            </p>
           </div>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-danger"
-              onClick={handleRemove}
-              disabled={loading || !user.subscriptionPackage}
-            >
-              <i className="fas fa-trash"></i>
-              Xóa gói
-            </button>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+          <div className="form-actions" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '12px',
+            marginTop: '24px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            {user.subscriptionPackage && (
               <button
                 type="button"
-                className="btn btn-secondary"
+                onClick={handleRemove}
+                disabled={loading}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#fee2e2',
+                  color: '#dc2626',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <i className="fas fa-trash"></i>
+                Xóa gói
+              </button>
+            )}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
                 onClick={onClose}
                 disabled={loading}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid #d1d5db',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1
+                }}
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="btn btn-primary"
                 disabled={loading}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: loading ? '#9ca3af' : '#8b5cf6',
+                  color: 'white',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
               >
                 {loading ? (
                   <>
-                    <span className="spinner-small"></span>
+                    <i className="fas fa-spinner fa-spin"></i>
                     Đang lưu...
                   </>
                 ) : (
@@ -705,25 +824,55 @@ const UserDetailModal = ({ user, onClose }) => {
   );
 };
 
-// Edit User Modal Component
+// ==========================================
+// Edit User Modal - REBUILT
+// ==========================================
 const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading }) => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  if (!user) return null;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div 
+        className="modal-content modal-edit-user" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '600px' }}
+      >
         <div className="modal-header">
-          <h3>Chỉnh sửa người dùng</h3>
-          <button className="modal-close" onClick={onClose}>
+          <div>
+            <h3>
+              <i className="fas fa-user-edit" style={{ marginRight: '10px', color: '#3b82f6' }}></i>
+              Chỉnh sửa người dùng
+            </h3>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+              Cập nhật thông tin người dùng
+            </p>
+          </div>
+          <button 
+            className="modal-close" 
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              color: '#6b7280',
+              padding: '8px',
+              borderRadius: '6px',
+              opacity: loading ? 0.5 : 1
+            }}
+          >
             <i className="fas fa-times"></i>
           </button>
         </div>
-        <form onSubmit={onSubmit} className="edit-user-form">
-          <div className="form-field">
-            <label htmlFor="edit-fullName">
-              Họ và tên <span className="required">*</span>
+        <form onSubmit={onSubmit} className="edit-user-form" style={{ padding: '24px' }}>
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="edit-fullName" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Họ và tên <span className="required" style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
               id="edit-fullName"
@@ -734,11 +883,20 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
               required
               className="form-control"
               disabled={loading}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
             />
           </div>
 
-          <div className="form-field">
-            <label htmlFor="edit-email">Email</label>
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="edit-email" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Email
+            </label>
             <input
               id="edit-email"
               type="email"
@@ -746,12 +904,31 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
               value={formData.email}
               disabled
               className="form-control form-control-disabled"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                fontSize: '14px',
+                background: '#f9fafb',
+                color: '#6b7280',
+                cursor: 'not-allowed'
+              }}
             />
-            <p className="form-caption">Email không thể thay đổi</p>
+            <p className="form-caption" style={{ 
+              marginTop: '6px', 
+              fontSize: '13px', 
+              color: '#9ca3af',
+              fontStyle: 'italic' 
+            }}>
+              🔒 Email không thể thay đổi
+            </p>
           </div>
 
-          <div className="form-field">
-            <label htmlFor="edit-phone">Số điện thoại</label>
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="edit-phone" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Số điện thoại
+            </label>
             <input
               id="edit-phone"
               type="tel"
@@ -761,11 +938,20 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
               className="form-control"
               disabled={loading}
               placeholder="0912345678"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
             />
           </div>
 
-          <div className="form-field">
-            <label htmlFor="edit-userType">Loại người dùng</label>
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="edit-userType" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Loại người dùng
+            </label>
             <select
               id="edit-userType"
               name="userType"
@@ -773,25 +959,76 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
               onChange={handleChange}
               className="form-control"
               disabled={loading || user.userType === 'admin'}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px',
+                background: (loading || user.userType === 'admin') ? '#f9fafb' : 'white',
+                cursor: (loading || user.userType === 'admin') ? 'not-allowed' : 'pointer'
+              }}
             >
-              <option value="driver">Tài xế</option>
-              <option value="staff">Nhân viên</option>
-              {user.userType === 'admin' && <option value="admin">Quản trị viên</option>}
+              <option value="driver">👤 Tài xế</option>
+              <option value="staff">👨‍💼 Nhân viên</option>
+              {user.userType === 'admin' && <option value="admin">👑 Quản trị viên</option>}
             </select>
             {user.userType === 'admin' && (
-              <p className="form-caption">Không thể thay đổi loại của quản trị viên</p>
+              <p className="form-caption" style={{ 
+                marginTop: '6px', 
+                fontSize: '13px', 
+                color: '#9ca3af',
+                fontStyle: 'italic' 
+              }}>
+                🔒 Không thể thay đổi loại của quản trị viên
+              </p>
             )}
           </div>
 
-          <div className="form-actions">
+          <div className="form-actions" style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            marginTop: '24px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                background: '#f3f4f6',
+                color: '#374151',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1
+              }}
+            >
+              Hủy
+            </button>
             <button
               type="submit"
-              className="btn btn-primary"
               disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: loading ? '#9ca3af' : '#3b82f6',
+                color: 'white',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
             >
               {loading ? (
                 <>
-                  <span className="spinner-small"></span>
+                  <i className="fas fa-spinner fa-spin"></i>
                   Đang lưu...
                 </>
               ) : (
@@ -800,14 +1037,6 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
                   Lưu thay đổi
                 </>
               )}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Hủy
             </button>
           </div>
         </form>

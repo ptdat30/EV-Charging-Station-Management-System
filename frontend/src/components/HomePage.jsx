@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import HeroSection from './HeroSection';
-import StatsSection from './StatsSection';
 import FeaturesSection from './FeaturesSection';
 import HowItWorksSection from './HowItWorksSection';
 import CTASection from './CTASection';
@@ -36,7 +35,6 @@ const HomePage = () => {
         onLoginClick={handleOpenLoginModal} 
         onRegisterClick={handleOpenRegisterModal}
       />
-      <StatsSection />
       <FeaturesSection />
       <HowItWorksSection />
       <CTASection onRegisterClick={handleOpenRegisterModal} />

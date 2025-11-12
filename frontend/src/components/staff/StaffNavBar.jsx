@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from '../NotificationBell';
 import './StaffNavBar.css';
 
 const StaffNavBar = () => {
@@ -103,6 +104,9 @@ const StaffNavBar = () => {
                             </Link>
                         ))}
                     </div>
+
+                    {/* Notification Bell */}
+                    <NotificationBell />
 
                     {/* User Section */}
                     <div className="staff-navbar-user" ref={dropdownRef}>

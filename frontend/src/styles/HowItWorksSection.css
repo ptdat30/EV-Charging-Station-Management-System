@@ -7,6 +7,9 @@
   padding: 6rem 2rem;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   overflow: hidden;
+  
+  /* Define default step color (will be overridden by inline styles) */
+  --step-color: #84cc16;
 }
 
 /* Subtle background pattern */

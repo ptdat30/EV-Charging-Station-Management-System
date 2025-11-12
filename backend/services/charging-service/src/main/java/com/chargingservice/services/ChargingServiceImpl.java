@@ -47,6 +47,22 @@ public class ChargingServiceImpl implements ChargingService {
     @Override
     public SessionResponseDto startSession(StartSessionRequestDto requestDto) {
         log.info("Starting new charging session for user {} at charger {}", requestDto.getUserId(), requestDto.getChargerId());
+        
+        // VALIDATION: Check if user already has an active session
+        List<ChargingSession> activeSessions = sessionRepository.findActiveSessionsByUserId(requestDto.getUserId());
+        if (!activeSessions.isEmpty()) {
+            ChargingSession existingSession = activeSessions.get(0);
+            log.warn("⚠️ User {} already has an active session: {}", requestDto.getUserId(), existingSession.getSessionId());
+            throw new IllegalStateException(
+                String.format("User already has an active charging session (ID: %d, Status: %s). " +
+                            "Please complete the current session before starting a new one.",
+                            existingSession.getSessionId(), existingSession.getSessionStatus())
+            );
+        }
+        
+        // Calculate price with discount for this user at session start time
+        BigDecimal currentPrice = calculatePriceWithDiscount(requestDto.getUserId());
+        
         ChargingSession session = new ChargingSession();
         session.setUserId(requestDto.getUserId());
         session.setStationId(requestDto.getStationId());
@@ -54,9 +70,11 @@ public class ChargingServiceImpl implements ChargingService {
         session.setSessionCode(UUID.randomUUID().toString());
         session.setStartTime(LocalDateTime.now());
         session.setSessionStatus(ChargingSession.SessionStatus.charging);
+        // Store price at the time of session creation
+        session.setPricePerKwh(currentPrice);
 
         ChargingSession savedSession = sessionRepository.save(session);
-        log.info("Session {} created successfully", savedSession.getSessionId());
+        log.info("✅ Session {} created successfully with price per kWh: {}", savedSession.getSessionId(), currentPrice);
 
         // Gọi sang station-service để cập nhật trụ sạc thành "in_use"
         updateChargerStatus(savedSession.getChargerId(), UpdateChargerStatusDto.ChargerStatus.in_use);
@@ -198,9 +216,12 @@ public class ChargingServiceImpl implements ChargingService {
     public com.chargingservice.dtos.SessionStatusDto getSessionStatus(Long sessionId, int speedMultiplier) {
         ChargingSession session = findSessionById(sessionId);
         
-        // Validate speedMultiplier (allow up to 100 for instant full charge)
+        // Validate speedMultiplier (support up to 100 for demo/testing)
         if (speedMultiplier < 1) speedMultiplier = 1;
-        if (speedMultiplier > 100) speedMultiplier = 100;
+        if (speedMultiplier > 100) {
+            log.warn("⚠️ speedMultiplier {} too high, capping at 100", speedMultiplier);
+            speedMultiplier = 100;
+        }
         
         // Chỉ tính toán cho session đang charging
         if (session.getSessionStatus() != ChargingSession.SessionStatus.charging) {
@@ -222,19 +243,19 @@ public class ChargingServiceImpl implements ChargingService {
         BigDecimal chargingPower = new BigDecimal("36.00"); // kW
         BigDecimal batteryCapacity = new BigDecimal("80.00"); // kWh (giả lập)
         
-        // Special case: speedMultiplier = 100 → instant full charge
+        // Apply speed multiplier để tua nhanh
         long minutesElapsed;
         BigDecimal energyCharged;
         BigDecimal socPercentage;
         
         if (speedMultiplier >= 100) {
-            // Force sạc đầy ngay lập tức
-            minutesElapsed = 134; // Đủ để sạc từ 20% → 100%
-            energyCharged = batteryCapacity; // 80 kWh
+            // x100 mode: Instant demo - sạc đầy ngay lập tức (for testing/demo only)
+            minutesElapsed = 134; // Equivalent time to charge from 20% → 100%
+            energyCharged = batteryCapacity.multiply(new BigDecimal("0.80")); // 80% of 80kWh = 64kWh
             socPercentage = new BigDecimal("100.0");
-            log.info("Session {}: INSTANT FULL CHARGE (x100 mode)", sessionId);
+            log.info("⚡ Session {}: DEMO MODE x100 - Instant full charge", sessionId);
         } else {
-            // Apply speed multiplier để tua nhanh
+            // Normal mode: Apply speed multiplier
             minutesElapsed = actualMinutesElapsed * speedMultiplier;
             energyCharged = BigDecimal.valueOf(minutesElapsed * 0.6).setScale(2, RoundingMode.HALF_UP);
             
@@ -242,8 +263,8 @@ public class ChargingServiceImpl implements ChargingService {
             double calculatedSOC = 20.0 + (energyCharged.doubleValue() / batteryCapacity.doubleValue() * 80.0);
             socPercentage = BigDecimal.valueOf(Math.min(100.0, calculatedSOC));
             
-            log.info("Session {}: actual={}min, multiplier=x{}, simulated={}min, SOC={}%", 
-                    sessionId, actualMinutesElapsed, speedMultiplier, minutesElapsed, socPercentage.doubleValue());
+            log.info("Session {}: actual={}min, multiplier=x{}, simulated={}min, energyCharged={}kWh, SOC={}%", 
+                    sessionId, actualMinutesElapsed, speedMultiplier, minutesElapsed, energyCharged, socPercentage.doubleValue());
         }
         
         // Tính thời gian còn lại (phút)

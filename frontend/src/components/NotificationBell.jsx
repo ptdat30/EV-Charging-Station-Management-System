@@ -65,6 +65,10 @@ const NotificationBell = () => {
       case 'wallet_low_balance':
         navigate('/wallet');
         break;
+      case 'incident_reported':
+        // Navigate to incidents page for staff/admin
+        navigate('/staff/incidents');
+        break;
       default:
         // No navigation for other types
         break;
@@ -94,6 +98,8 @@ const NotificationBell = () => {
       case 'reservation_reminder':
       case 'reservation_cancelled':
         return <i className="fas fa-calendar-check"></i>;
+      case 'incident_reported':
+        return <i className="fas fa-exclamation-triangle"></i>;
       case 'promotion':
         return <i className="fas fa-gift"></i>;
       case 'system_maintenance':
@@ -112,6 +118,7 @@ const NotificationBell = () => {
         return 'success';
       case 'charging_failed':
       case 'payment_failed':
+      case 'incident_reported':
         return 'error';
       case 'wallet_low_balance':
       case 'system_maintenance':

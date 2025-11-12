@@ -318,10 +318,119 @@
 }
 
 .speed-info {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    background: rgba(30, 41, 59, 0.05);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+/* New Speed Control Styles */
+.speed-control-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.speed-buttons-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.speed-buttons-normal,
+.speed-buttons-instant {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.speed-group-label {
     font-size: 0.8125rem;
-    color: #999;
-    margin-left: auto;
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.speed-buttons-normal .speed-btn,
+.speed-buttons-instant .speed-btn {
+    flex: 1;
+}
+
+.speed-buttons-normal {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.speed-btn.instant-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 2px solid #10b981;
+    color: white;
+    font-weight: 700;
+    padding: 14px 24px;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    position: relative;
+    width: 100%;
+}
+
+.speed-btn.instant-btn:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border-color: #059669;
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.speed-btn.instant-btn.active {
+    background: linear-gradient(135deg, #84cc16 0%, #65a30d 100%);
+    border-color: #84cc16;
+    animation: instantPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes instantPulse {
+    0%, 100% {
+        box-shadow: 0 4px 20px rgba(132, 204, 22, 0.4);
+    }
+    50% {
+        box-shadow: 0 6px 28px rgba(132, 204, 22, 0.7);
+    }
+}
+
+.instant-badge {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    margin-left: 8px;
+    letter-spacing: 0.5px;
+}
+
+.speed-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+.speed-warning i {
+    color: #f59e0b;
+    font-size: 1.125rem;
 }
 
 /* SOC Progress Card - Glass Style */
