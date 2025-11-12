@@ -47,10 +47,19 @@ const SessionManagement = () => {
       let sessionsList = [];
       let stationsList = [];
 
-      // Fetch sessions
+      // Fetch sessions - chỉ lấy sessions đang hoạt động (không lấy completed/cancelled)
       try {
         const sessionsResponse = await apiClient.get('/sessions').catch(() => ({ data: [] }));
-        sessionsList = Array.isArray(sessionsResponse.data) ? sessionsResponse.data : [];
+        const allSessions = Array.isArray(sessionsResponse.data) ? sessionsResponse.data : [];
+        
+        // Filter: Chỉ giữ lại sessions đang hoạt động (charging, reserved, starting)
+        // Bỏ qua: completed, cancelled (admin có thể xem trong reports nếu cần)
+        sessionsList = allSessions.filter(session => {
+          const status = (session.sessionStatus || '').toLowerCase();
+          return status !== 'completed' && status !== 'cancelled';
+        });
+        
+        console.log(`📊 Filtered ${allSessions.length} sessions → ${sessionsList.length} active sessions`);
       } catch (err) {
         console.error('Error fetching sessions:', err);
         sessionsList = [];
@@ -307,11 +316,11 @@ const SessionManagement = () => {
         </div>
       </div>
 
-      {/* Stats Summary */}
+      {/* Stats Summary - Only Active Sessions */}
       <div className="stats-summary">
         <div className="stat-item">
           <div className="stat-value">{sessions.length}</div>
-          <div className="stat-label">Tổng phiên sạc</div>
+          <div className="stat-label">Phiên đang hoạt động</div>
         </div>
         <div className="stat-item">
           <div className="stat-value" style={{ color: '#3b82f6' }}>
@@ -323,22 +332,22 @@ const SessionManagement = () => {
           <div className="stat-label">Đang sạc</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#10b981' }}>
+          <div className="stat-value" style={{ color: '#f59e0b' }}>
             {sessions.filter(s => {
               const status = s.sessionStatus?.toLowerCase() || '';
-              return status === 'completed';
+              return status === 'reserved' || status === 'starting';
             }).length}
           </div>
-          <div className="stat-label">Hoàn thành</div>
+          <div className="stat-label">Chờ bắt đầu</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#ef4444' }}>
+          <div className="stat-value" style={{ color: '#8b5cf6' }}>
             {sessions.filter(s => {
               const status = s.sessionStatus?.toLowerCase() || '';
-              return status === 'cancelled';
+              return status === 'paused';
             }).length}
           </div>
-          <div className="stat-label">Đã hủy</div>
+          <div className="stat-label">Tạm dừng</div>
         </div>
       </div>
 
@@ -374,11 +383,11 @@ const SessionManagement = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">Tất cả</option>
+              <option value="all">Tất cả đang hoạt động</option>
               <option value="charging">Đang sạc</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
               <option value="reserved">Đã đặt chỗ</option>
+              <option value="starting">Đang khởi động</option>
+              <option value="paused">Tạm dừng</option>
             </select>
           </div>
 

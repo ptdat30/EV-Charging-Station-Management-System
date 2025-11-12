@@ -8,6 +8,7 @@ const IncidentReport = () => {
   const [loading, setLoading] = useState(true);
   const [incidents, setIncidents] = useState([]);
   const [stations, setStations] = useState([]);
+  const [staffList, setStaffList] = useState([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [reportForm, setReportForm] = useState({
@@ -21,6 +22,7 @@ const IncidentReport = () => {
 
   useEffect(() => {
     fetchStations();
+    fetchStaffList();
     fetchIncidents();
     // Auto refresh every 30 seconds
     const interval = setInterval(fetchIncidents, 30000);
@@ -29,13 +31,35 @@ const IncidentReport = () => {
 
   const fetchStations = async () => {
     try {
-      const response = await getAllStations().catch(() => ({ data: [] }));
-      const stationsList = Array.isArray(response.data) 
+      const response = await getAllStations();
+      // Handle different response formats
+      const stationsList = Array.isArray(response) 
+        ? response 
+        : Array.isArray(response?.data) 
         ? response.data 
-        : response.data || [];
+        : [];
       setStations(stationsList);
+      console.log('✅ Loaded stations for incident report:', stationsList.length, stationsList);
     } catch (error) {
       console.error('Error fetching stations:', error);
+      setStations([]);
+    }
+  };
+
+  const fetchStaffList = async () => {
+    try {
+      const response = await apiClient.get('/users/getall');
+      const usersList = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      // Filter staff users (case insensitive)
+      const staff = usersList.filter(u => {
+        const role = (u.role || u.userType || '').toUpperCase();
+        return role === 'STAFF' || u.roles?.some(r => r.toUpperCase() === 'STAFF');
+      });
+      setStaffList(staff);
+      console.log('✅ Loaded staff list:', staff.length, 'from', usersList.length, 'users');
+    } catch (error) {
+      console.error('Error fetching staff list:', error);
+      setStaffList([]);
     }
   };
 
@@ -73,8 +97,8 @@ const IncidentReport = () => {
       const payload = {
         stationId: parseInt(reportForm.stationId),
         chargerId: reportForm.chargerId ? parseInt(reportForm.chargerId) : null,
-        incidentType: reportForm.incidentType.toUpperCase(),
-        severity: reportForm.severity.toUpperCase(),
+        incidentType: reportForm.incidentType.toLowerCase(),
+        severity: reportForm.severity.toLowerCase(),
         description: reportForm.description,
         reportedBy: reportForm.reportedBy || null,
       };
@@ -128,7 +152,8 @@ const IncidentReport = () => {
       'high': { label: 'Cao', color: '#ef4444', bg: '#fee2e2' },
       'critical': { label: 'Nghiêm trọng', color: '#991b1b', bg: '#fee2e2' },
     };
-    const config = severityMap[severity] || severityMap.medium;
+    const normalizedSeverity = (severity || 'medium').toLowerCase();
+    const config = severityMap[normalizedSeverity] || severityMap.medium;
     return (
       <span className="severity-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}
@@ -142,7 +167,8 @@ const IncidentReport = () => {
       'in_progress': { label: 'Đang xử lý', color: '#3b82f6', bg: '#dbeafe' },
       'resolved': { label: 'Đã xử lý', color: '#10b981', bg: '#d1fae5' },
     };
-    const config = statusMap[status] || statusMap.pending;
+    const normalizedStatus = (status || 'pending').toLowerCase();
+    const config = statusMap[normalizedStatus] || statusMap.pending;
     return (
       <span className="status-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}
@@ -218,12 +244,12 @@ const IncidentReport = () => {
           </div>
         ) : (
           filteredIncidents.map((incident) => (
-            <div key={incident.id} className="incident-card">
+            <div key={incident.incidentId || incident.id} className="incident-card">
               <div className="incident-card-header">
                 <div>
                   <h4>
                     <i className="fas fa-exclamation-triangle"></i>
-                    Sự cố #{incident.id}
+                    Sự cố #{incident.incidentId || incident.id}
                   </h4>
                   <p className="incident-meta">
                     {incident.stationName} 
@@ -241,10 +267,13 @@ const IncidentReport = () => {
                   <div className="detail-item">
                     <label>Loại sự cố:</label>
                     <span>
-                      {incident.incidentType === 'equipment' ? 'Thiết bị' :
-                       incident.incidentType === 'power' ? 'Điện năng' :
-                       incident.incidentType === 'network' ? 'Mạng' :
-                       incident.incidentType === 'other' ? 'Khác' : incident.incidentType}
+                      {(() => {
+                        const type = (incident.incidentType || '').toLowerCase();
+                        return type === 'equipment' ? 'Thiết bị' :
+                               type === 'power' ? 'Điện năng' :
+                               type === 'network' ? 'Mạng' :
+                               type === 'other' ? 'Khác' : incident.incidentType;
+                      })()}
                     </span>
                   </div>
                   <div className="detail-item">
@@ -268,10 +297,20 @@ const IncidentReport = () => {
                   <div className="incident-actions">
                     <button
                       className="btn-resolve"
-                      onClick={() => handleResolveIncident(incident.id)}
+                      onClick={() => handleResolveIncident(incident.incidentId || incident.id)}
+                      disabled={actionLoading === (incident.incidentId || incident.id)}
                     >
-                      <i className="fas fa-check"></i>
-                      Đánh dấu đã xử lý
+                      {actionLoading === (incident.incidentId || incident.id) ? (
+                        <>
+                          <i className="fas fa-spinner fa-spin"></i>
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-check"></i>
+                          Đánh dấu đã xử lý
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -309,12 +348,21 @@ const IncidentReport = () => {
                   required
                 >
                   <option value="">Chọn trạm sạc</option>
-                  {stations.map(station => (
-                    <option key={station.stationId || station.id} value={station.stationId || station.id}>
-                      {station.stationName || station.stationCode}
-                    </option>
-                  ))}
+                  {stations.length > 0 ? (
+                    stations.map(station => (
+                      <option key={station.stationId || station.id} value={station.stationId || station.id}>
+                        {station.stationName || station.stationCode || `Trạm #${station.stationId || station.id}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Đang tải danh sách trạm...</option>
+                  )}
                 </select>
+                {stations.length === 0 && (
+                  <p className="form-caption" style={{ color: '#f59e0b', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                    <i className="fas fa-info-circle"></i> Không tìm thấy trạm sạc. Đang tải dữ liệu...
+                  </p>
+                )}
               </div>
 
               {reportForm.stationId && (
@@ -377,15 +425,30 @@ const IncidentReport = () => {
 
               <div className="form-field">
                 <label>
-                  Người báo cáo
+                  Người báo cáo <span className="required">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   className="form-control"
                   value={reportForm.reportedBy}
                   onChange={(e) => setReportForm({ ...reportForm, reportedBy: e.target.value })}
-                  placeholder="Tên nhân viên hoặc người báo cáo"
-                />
+                  required
+                >
+                  <option value="">Chọn nhân viên báo cáo</option>
+                  {staffList.length > 0 ? (
+                    staffList.map(staff => (
+                      <option key={staff.userId || staff.id} value={staff.fullName || staff.email}>
+                        {staff.fullName || staff.email} {staff.phone ? `(${staff.phone})` : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Đang tải danh sách nhân viên...</option>
+                  )}
+                </select>
+                {staffList.length === 0 && (
+                  <p className="form-caption" style={{ color: '#f59e0b', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                    <i className="fas fa-info-circle"></i> Không tìm thấy nhân viên. Đang tải dữ liệu...
+                  </p>
+                )}
               </div>
 
               <div className="form-field">

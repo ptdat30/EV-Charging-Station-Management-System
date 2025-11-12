@@ -1,7 +1,9 @@
 // FILE: IncidentServiceImpl.java
 package com.stationservice.services;
 
+import com.stationservice.clients.NotificationServiceClient;
 import com.stationservice.dtos.CreateIncidentRequestDto;
+import com.stationservice.dtos.CreateNotificationRequestDto;
 import com.stationservice.dtos.IncidentResponseDto;
 import com.stationservice.dtos.UpdateIncidentRequestDto;
 import com.stationservice.entities.Incident;
@@ -25,6 +27,7 @@ public class IncidentServiceImpl implements IncidentService {
     private static final Logger log = LoggerFactory.getLogger(IncidentServiceImpl.class);
     private final IncidentRepository incidentRepository;
     private final StationRepository stationRepository;
+    private final NotificationServiceClient notificationServiceClient;
 
     @Override
     @Transactional
@@ -47,6 +50,34 @@ public class IncidentServiceImpl implements IncidentService {
 
         Incident savedIncident = incidentRepository.save(incident);
         log.info("Incident created successfully. Incident ID: {}", savedIncident.getIncidentId());
+
+        // Send notification to all admins about new incident
+        try {
+            String severityLabel = getSeverityLabel(savedIncident.getSeverity());
+            String typeLabel = getIncidentTypeLabel(savedIncident.getIncidentType());
+            
+            CreateNotificationRequestDto notification = new CreateNotificationRequestDto(
+                null, // null userId = send to all admins
+                CreateNotificationRequestDto.NotificationType.incident_reported,
+                "🚨 Sự cố mới tại " + station.getStationName(),
+                String.format("Sự cố %s (Mức độ: %s) đã được báo cáo tại trạm %s%s. " +
+                              "Người báo cáo: %s. Mô tả: %s",
+                    typeLabel,
+                    severityLabel,
+                    station.getStationName(),
+                    savedIncident.getChargerId() != null ? " - Điểm sạc #" + savedIncident.getChargerId() : "",
+                    savedIncident.getReportedBy() != null ? savedIncident.getReportedBy() : "Không rõ",
+                    savedIncident.getDescription() != null ? savedIncident.getDescription() : "Không có mô tả"),
+                savedIncident.getIncidentId()
+            );
+            
+            notificationServiceClient.createNotification(notification);
+            log.info("Notification sent to admins about incident {}", savedIncident.getIncidentId());
+        } catch (Exception e) {
+            log.warn("Failed to send notification to admins about incident {}: {}", 
+                savedIncident.getIncidentId(), e.getMessage());
+            // Continue even if notification fails
+        }
 
         return convertToDto(savedIncident, station);
     }
@@ -137,6 +168,24 @@ public class IncidentServiceImpl implements IncidentService {
         dto.setUpdatedAt(incident.getUpdatedAt());
         dto.setResolvedAt(incident.getResolvedAt());
         return dto;
+    }
+
+    private String getSeverityLabel(Incident.Severity severity) {
+        return switch (severity) {
+            case low -> "Thấp";
+            case medium -> "Trung bình";
+            case high -> "Cao";
+            case critical -> "Nghiêm trọng";
+        };
+    }
+
+    private String getIncidentTypeLabel(Incident.IncidentType type) {
+        return switch (type) {
+            case equipment -> "Thiết bị";
+            case power -> "Điện năng";
+            case network -> "Mạng";
+            case other -> "Khác";
+        };
     }
 }
 

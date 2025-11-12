@@ -68,6 +68,8 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setSessionId(requestDto.getSessionId());
         payment.setUserId(requestDto.getUserId());
         payment.setAmount(amountToPay);
+        payment.setPricePerKwh(requestDto.getPricePerKwh()); // Store price at time of payment
+        payment.setEnergyConsumed(requestDto.getEnergyConsumed()); // Store energy consumed
         payment.setPaymentMethod(paymentMethodEnum);
         payment.setPaymentStatus(Payment.PaymentStatus.pending);
         Payment savedPayment = paymentRepository.save(payment);

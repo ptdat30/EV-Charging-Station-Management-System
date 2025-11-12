@@ -57,7 +57,7 @@ spring:
         - id: station-service-routes
           uri: lb://STATION-SERVICE
           predicates:
-            - Path=/api/stations/**, /api/chargers/**
+            - Path=/api/stations/**, /api/chargers/**, /api/incidents/**
           filters:
             # XÓA BỎ "- StripPrefix=1"
             - AuthenticationFilter # <-- ÁP DỤNG FILTER XÁC THỰC

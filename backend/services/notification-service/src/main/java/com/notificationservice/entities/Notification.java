@@ -45,6 +45,6 @@ public class Notification {
         reservation_confirmed, reservation_reminder, reservation_cancelled,
         payment_success, payment_failed, wallet_low_balance,
         promotion, system_maintenance, station_offline,
-        review_request, account_update
+        review_request, account_update, incident_reported
     }
 }

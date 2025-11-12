@@ -42,6 +42,11 @@ public class ChargingSession {
     @Column(name = "energy_consumed", precision = 10, scale = 2)
     private BigDecimal energyConsumed;
 
+    // Store price per kWh at the time of session creation
+    // This ensures old transactions are not affected by price changes
+    @Column(name = "price_per_kwh", precision = 10, scale = 2)
+    private BigDecimal pricePerKwh;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "session_status")
     private SessionStatus sessionStatus;

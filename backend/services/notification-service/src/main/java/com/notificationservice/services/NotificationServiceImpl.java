@@ -37,6 +37,11 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationResponseDto createNotification(CreateNotificationRequestDto requestDto) {
         log.info("Creating notification for user {}: {}", requestDto.getUserId(), requestDto.getTitle());
 
+        // Special case: userId == null means send to all admins
+        if (requestDto.getUserId() == null) {
+            return createNotificationForAllAdmins(requestDto);
+        }
+
         Notification notification = new Notification();
         notification.setUserId(requestDto.getUserId());
         notification.setNotificationType(requestDto.getNotificationType());
@@ -55,6 +60,61 @@ public class NotificationServiceImpl implements NotificationService {
         sendPushNotification(savedNotification);
 
         return convertToDto(savedNotification);
+    }
+
+    /**
+     * Create notification for all admin users
+     * Used for system-wide alerts like incident reports
+     */
+    private NotificationResponseDto createNotificationForAllAdmins(CreateNotificationRequestDto requestDto) {
+        log.info("Creating notification for all admins: {}", requestDto.getTitle());
+        
+        try {
+            // Fetch all admin users from user-service
+            List<UserEmailDto> allUsers = userServiceClient.getAllUsers();
+            List<Long> adminUserIds = allUsers.stream()
+                .filter(user -> "ADMIN".equalsIgnoreCase(user.getRole()) || 
+                               "admin".equalsIgnoreCase(user.getUserType()))
+                .map(UserEmailDto::getUserId)
+                .toList();
+            
+            log.info("Found {} admin users to notify", adminUserIds.size());
+            
+            // Create notification for each admin
+            Notification firstNotification = null;
+            for (Long adminId : adminUserIds) {
+                Notification notification = new Notification();
+                notification.setUserId(adminId);
+                notification.setNotificationType(requestDto.getNotificationType());
+                notification.setTitle(requestDto.getTitle());
+                notification.setMessage(requestDto.getMessage());
+                notification.setReferenceId(requestDto.getReferenceId());
+                notification.setIsRead(false);
+                
+                Notification saved = notificationRepository.save(notification);
+                if (firstNotification == null) {
+                    firstNotification = saved;
+                }
+                
+                // Send email and push notification
+                sendEmailNotification(saved);
+                sendPushNotification(saved);
+            }
+            
+            // Return the first notification as response
+            if (firstNotification != null) {
+                return convertToDto(firstNotification);
+            }
+        } catch (Exception e) {
+            log.error("Error creating notifications for admins: {}", e.getMessage(), e);
+        }
+        
+        // Fallback: return a dummy response
+        NotificationResponseDto dto = new NotificationResponseDto();
+        dto.setNotificationId(0L);
+        dto.setTitle(requestDto.getTitle());
+        dto.setMessage(requestDto.getMessage());
+        return dto;
     }
 
     private NotificationResponseDto convertToDto(Notification notification) {

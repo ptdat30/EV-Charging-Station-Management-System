@@ -28,6 +28,15 @@ public class Payment {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
+    // Store price per kWh used for this payment
+    // This ensures old payments are not affected by price changes
+    @Column(name = "price_per_kwh", precision = 10, scale = 2)
+    private BigDecimal pricePerKwh;
+
+    // Store energy consumed for this payment (optional, for reporting)
+    @Column(name = "energy_consumed", precision = 10, scale = 2)
+    private BigDecimal energyConsumed;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;

@@ -25,9 +25,10 @@ export const getAdminDashboardStats = async () => {
 
     // Tổng số trạm và trạm đang hoạt động
     const totalStations = stationsList.length;
-    const activeStations = stationsList.filter(s => 
-      s.status === 'ACTIVE' || s.status === 'ONLINE' || !s.status
-    ).length;
+    const activeStations = stationsList.filter(s => {
+      const status = (s.status || '').toLowerCase();
+      return status === 'active' || status === 'online' || !s.status;
+    }).length;
 
     // Tổng số người dùng
     const totalUsers = usersList.length;
@@ -37,18 +38,43 @@ export const getAdminDashboardStats = async () => {
 
     // Tính doanh thu và năng lượng hôm nay
     const todaySessions = sessionsList.filter(s => {
-      if (!s.startTime) return false;
-      const sessionDate = new Date(s.startTime);
+      if (!s.startTime && !s.createdAt) return false;
+      const sessionDate = new Date(s.startTime || s.createdAt);
       sessionDate.setHours(0, 0, 0, 0);
       return sessionDate.getTime() === today.getTime();
     });
 
-    const todayRevenue = todaySessions.reduce((sum, session) => {
-      return sum + (session.totalAmount || session.amount || 0);
+    // Tính doanh thu từ transactions (ưu tiên) hoặc sessions (fallback)
+    const todayTransactions = transactionsList.filter(t => {
+      if (!t.createdAt && !t.paymentDate) return false;
+      const transactionDate = new Date(t.createdAt || t.paymentDate);
+      transactionDate.setHours(0, 0, 0, 0);
+      return transactionDate.getTime() === today.getTime() && 
+             (t.status === 'COMPLETED' || t.status === 'SUCCESS' || t.paymentStatus === 'paid');
+    });
+
+    let todayRevenue = todayTransactions.reduce((sum, transaction) => {
+      return sum + (transaction.amount || transaction.totalAmount || 0);
     }, 0);
 
+    console.log('💰 Today Revenue Calculation:', {
+      todayTransactionsCount: todayTransactions.length,
+      todayRevenue: todayRevenue,
+      todayRevenueFormatted: new Intl.NumberFormat('vi-VN').format(todayRevenue) + ' ₫',
+      sampleTransaction: todayTransactions[0] || 'No transactions today'
+    });
+
+    // ⚠️ Fallback: Nếu không có transactions nhưng có sessions, tính từ sessions
+    if (todayRevenue === 0 && todaySessions.length > 0) {
+      console.log('⚠️ No transactions found, calculating from sessions...');
+      todayRevenue = todaySessions.reduce((sum, session) => {
+        return sum + (session.totalAmount || session.amount || 0);
+      }, 0);
+      console.log('💰 Revenue from sessions:', todayRevenue);
+    }
+
     const todayEnergy = todaySessions.reduce((sum, session) => {
-      return sum + (session.energyConsumed || 0);
+      return sum + (session.energyConsumed || session.energyCharged || 0);
     }, 0);
 
     // Tổng số phiên sạc
@@ -121,10 +147,19 @@ export const getAdminDashboardStats = async () => {
 
     // Trạng thái trạm sạc
     const stationStatusCount = {
-      active: stationsList.filter(s => s.status === 'ACTIVE' || s.status === 'ONLINE' || !s.status).length,
+      active: stationsList.filter(s => {
+        const status = (s.status || '').toLowerCase();
+        return status === 'active' || status === 'online' || !s.status;
+      }).length,
       charging: activeSessions,
-      maintenance: stationsList.filter(s => s.status === 'MAINTENANCE' || s.status === 'OFFLINE').length,
-      error: stationsList.filter(s => s.status === 'ERROR').length
+      maintenance: stationsList.filter(s => {
+        const status = (s.status || '').toLowerCase();
+        return status === 'maintenance' || status === 'offline';
+      }).length,
+      error: stationsList.filter(s => {
+        const status = (s.status || '').toLowerCase();
+        return status === 'error';
+      }).length
     };
 
     const statusData = [
@@ -133,6 +168,20 @@ export const getAdminDashboardStats = async () => {
       { name: 'Bảo trì', value: stationStatusCount.maintenance, color: '#f59e0b' },
       { name: 'Lỗi', value: stationStatusCount.error, color: '#ef4444' }
     ];
+
+    // Final summary log
+    console.log('✅ Dashboard Stats Summary:', {
+      totalStations,
+      activeStations,
+      totalUsers,
+      todayRevenue,
+      todayRevenueDisplay: new Intl.NumberFormat('vi-VN').format(todayRevenue) + ' ₫',
+      todayEnergy: todayEnergy.toFixed(2) + ' kWh',
+      totalSessions,
+      activeSessions,
+      hasRevenueData: revenueData.some(d => d.revenue > 0),
+      hasStatusData: statusData.some(s => s.value > 0)
+    });
 
     return {
       stats: {

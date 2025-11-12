@@ -1,13 +1,17 @@
 // src/components/StationCard.jsx
 import React, { useState, useMemo, useCallback } from 'react';
 import BookingModal from './BookingModal';
+import ChargingLoadingModal from './ChargingLoadingModal';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../config/api';
+import { isFavoriteStation, addFavoriteStation, removeFavoriteStation } from '../services/favoritesService';
 
 const StationCard = React.memo(({ station }) => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [startingCharge, setStartingCharge] = useState(false);
+  const [showChargingVideo, setShowChargingVideo] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(() => isFavoriteStation(station.id || station.stationId));
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -23,10 +27,30 @@ const StationCard = React.memo(({ station }) => {
     console.log('Booking successful:', reservation);
   }, []);
 
+  const handleToggleFavorite = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const stationId = station.id || station.stationId;
+    
+    if (isFavorite) {
+      removeFavoriteStation(stationId);
+      setIsFavorite(false);
+    } else {
+      addFavoriteStation(stationId);
+      setIsFavorite(true);
+    }
+  }, [isFavorite, station]);
+
   const handleQuickCharge = useCallback(async () => {
     if (!user) {
       alert('Vui lòng đăng nhập để sạc');
       navigate('/login');
+      return;
+    }
+
+    // Prevent double-click spam
+    if (startingCharge) {
+      console.warn('⚠️ Already starting a charging session, please wait...');
       return;
     }
 
@@ -42,6 +66,8 @@ const StationCard = React.memo(({ station }) => {
     }
 
     setStartingCharge(true);
+    setShowChargingVideo(true);
+    
     try {
       const response = await apiClient.post('/sessions/start', {
         userId: user.userId || user.id,
@@ -50,17 +76,29 @@ const StationCard = React.memo(({ station }) => {
       });
 
       if (response.data) {
-        alert(`✅ Đã bắt đầu phiên sạc!\n\nMã phiên: ${response.data.sessionCode || response.data.sessionId}`);
-        // Navigate to charging live page
-        navigate('/sessions/live');
+        console.log('✅ Session started successfully:', response.data.sessionId);
+        // Keep video showing for a moment before navigating
+        setTimeout(() => {
+          setShowChargingVideo(false);
+          navigate('/sessions/live');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error starting charge:', error);
-      alert(`❌ ${error.response?.data?.message || error.message || 'Không thể bắt đầu phiên sạc'}`);
+      setShowChargingVideo(false);
+      
+      // Better error handling
+      const errorMsg = error.response?.data?.message || error.message;
+      if (errorMsg?.includes('already has an active')) {
+        alert('⚠️ Bạn đã có phiên sạc đang hoạt động. Vui lòng hoàn tất phiên sạc hiện tại trước khi bắt đầu phiên mới.');
+        navigate('/sessions/live');
+      } else {
+        alert(`❌ ${errorMsg || 'Không thể bắt đầu phiên sạc'}`);
+      }
     } finally {
       setStartingCharge(false);
     }
-  }, [user, station, navigate]);
+  }, [user, station, navigate, startingCharge]);
 
   // Memoize parsed location data
   const locationData = useMemo(() => {
@@ -104,7 +142,25 @@ const StationCard = React.memo(({ station }) => {
           <i className="fas fa-charging-station"></i>
         </div>
         <div className="station-info">
-          <h3>{station.name || station.stationName}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3>{station.name || station.stationName}</h3>
+            <button 
+              className={`btn-favorite ${isFavorite ? 'active' : ''}`}
+              onClick={handleToggleFavorite}
+              title={isFavorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1.5rem',
+                color: isFavorite ? '#ef4444' : '#d1d5db',
+                transition: 'all 0.2s',
+                padding: '0.25rem'
+              }}
+            >
+              <i className={isFavorite ? 'fas fa-heart' : 'far fa-heart'}></i>
+            </button>
+          </div>
           <p className="distance">
             <i className="fas fa-map-marker-alt"></i>
             {stationInfo.distance && <span className="distance-value">{stationInfo.distance}</span>}
@@ -220,6 +276,11 @@ const StationCard = React.memo(({ station }) => {
         onClose={() => setIsBookingOpen(false)}
         station={station}
         onSuccess={handleBookingSuccess}
+      />
+
+      <ChargingLoadingModal
+        isOpen={showChargingVideo}
+        onClose={() => setShowChargingVideo(false)}
       />
     </>
   );

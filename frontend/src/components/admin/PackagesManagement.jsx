@@ -34,32 +34,40 @@ const PackagesManagement = () => {
       
       // Fetch packages from backend API
       const response = await getAllPackages();
-      const data = response.data || response || [];
+      console.log('📦 Raw package response:', response);
+      
+      // Handle different response formats
+      let rawData = response.data || response || [];
+      
+      // If data is nested in data.data
+      if (rawData.data && Array.isArray(rawData.data)) {
+        rawData = rawData.data;
+      }
       
       // Transform data to match frontend format
-      const transformedData = Array.isArray(data) ? data.map(pkg => ({
-        id: pkg.packageId,
-        name: pkg.name,
-        description: pkg.description,
-        type: pkg.packageType,
-        price: pkg.price,
-        durationDays: pkg.durationDays,
-        features: pkg.features || [],
-        discountPercentage: pkg.discountPercentage,
-        isActive: pkg.isActive,
-        createdAt: pkg.createdAt,
-        updatedAt: pkg.updatedAt
-      })) : [];
+      const transformedData = Array.isArray(rawData) ? rawData.map(pkg => {
+        console.log('📦 Transforming package:', pkg);
+        return {
+          id: pkg.packageId || pkg.id,
+          name: pkg.name || pkg.packageName,
+          description: pkg.description,
+          type: pkg.packageType || pkg.type,
+          price: pkg.price || 0,
+          durationDays: pkg.durationDays || pkg.duration || 30,
+          features: Array.isArray(pkg.features) ? pkg.features : (pkg.features ? [pkg.features] : []),
+          discountPercentage: pkg.discountPercentage || pkg.discount || 0,
+          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+          createdAt: pkg.createdAt,
+          updatedAt: pkg.updatedAt
+        };
+      }) : [];
       
+      console.log('✅ Transformed packages:', transformedData);
       setPackages(transformedData);
-      
-      // Backend API is now ready and working!
-      // const response = await getAllPackages();
-      // const data = response.data || response || [];
-      // setPackages(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching packages:', err);
-      setError('Không thể tải danh sách gói dịch vụ');
+      console.error('❌ Error fetching packages:', err);
+      console.error('❌ Error details:', err.response?.data);
+      setError(err.response?.data?.message || err.message || 'Không thể tải danh sách gói dịch vụ');
     } finally {
       setLoading(false);
     }

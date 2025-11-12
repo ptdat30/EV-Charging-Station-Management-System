@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from '../NotificationBell';
 import './AdminNavBar.css';
 
 const AdminNavBar = () => {
@@ -83,12 +84,6 @@ const AdminNavBar = () => {
             ]
         },
         {
-            path: '/admin/permissions',
-            icon: 'fas fa-user-shield',
-            label: 'Phân quyền',
-            description: 'Permissions'
-        },
-        {
             path: '/admin/transactions',
             icon: 'fas fa-file-invoice-dollar',
             label: 'Giao dịch',
@@ -142,6 +137,9 @@ const AdminNavBar = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* Notification Bell */}
+                    <NotificationBell />
 
                     {/* User Section */}
                     <div className="admin-navbar-user" ref={dropdownRef}>
