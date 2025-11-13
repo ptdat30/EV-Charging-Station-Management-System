@@ -24,6 +24,8 @@ import QRScanner from '../pages/DriverApp/QR/QRScanner.jsx';
 import ChargingLive from '../pages/DriverApp/Charging/ChargingLive.jsx';
 import NotificationsPage from '../pages/DriverApp/Notifications/NotificationsPage.jsx';
 import RoutePlanningPage from '../pages/DriverApp/RoutePlanning/RoutePlanningPage.jsx';
+import TransactionsHistory from '../pages/DriverApp/Profile/TransactionsHistory.jsx';
+import DriverAnalyticsPage from '../pages/DriverApp/Analytics/DriverAnalyticsPage.jsx';
 
 // Import trang Admin
 import AdminPage from '../pages/AdminPage';
@@ -102,6 +104,16 @@ function AppRouter() {
                 <Route path="notifications" element={
                     <DriverLayout>
                         <NotificationsPage />
+                    </DriverLayout>
+                } />
+                <Route path="driver/transaction-history" element={
+                    <DriverLayout>
+                        <TransactionsHistory />
+                    </DriverLayout>
+                } />
+                <Route path="driver/analytics" element={
+                    <DriverLayout>
+                        <DriverAnalyticsPage />
                     </DriverLayout>
                 } />
             </Route>

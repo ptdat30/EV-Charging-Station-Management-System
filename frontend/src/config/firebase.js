@@ -139,15 +139,22 @@ export const getFCMToken = async () => {
       return null;
     }
   } catch (error) {
-    console.error('❌ An error occurred while retrieving token:', error);
-    
-    // Provide helpful error messages
-    if (error.code === 'messaging/permission-blocked') {
-      console.error('💡 Notification permission is blocked. Please enable it in browser settings.');
+    // Gracefully handle FCM errors - app will still work without push notifications
+    if (error.name === 'AbortError' || error.message?.includes('AbortError')) {
+      console.warn('⚠️ FCM registration aborted (common in development/localhost)');
+      console.log('💡 App will continue to work without push notifications');
+    } else if (error.code === 'messaging/permission-blocked') {
+      console.warn('⚠️ Notification permission is blocked. Please enable it in browser settings.');
     } else if (error.code === 'messaging/registration-token-not-registered') {
-      console.error('💡 Token not registered. Please request permission again.');
+      console.warn('⚠️ Token not registered. Please request permission again.');
+    } else if (error.message?.includes('push service error')) {
+      console.warn('⚠️ Push service not available (common on HTTP/localhost)');
+      console.log('💡 For full push notification support, use HTTPS in production');
+    } else {
+      console.warn('⚠️ FCM token retrieval failed:', error.message || error);
     }
     
+    // Return null instead of throwing - app continues without push notifications
     return null;
   }
 };

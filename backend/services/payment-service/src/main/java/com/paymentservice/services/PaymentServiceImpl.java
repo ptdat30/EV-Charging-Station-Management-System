@@ -292,6 +292,19 @@ public class PaymentServiceImpl implements PaymentService {
         Payment confirmedPayment = paymentRepository.save(payment);
         log.info("Cash payment {} confirmed successfully by staff", paymentId);
         
+        // [FIX]: Publish event để loyalty service cộng điểm thưởng
+        try {
+            chargingServiceClient.markSessionAsPaid(confirmedPayment.getSessionId(), confirmedPayment.getPaymentId());
+            log.info("Session {} marked as paid after cash payment confirmation", confirmedPayment.getSessionId());
+        } catch (Exception e) {
+            log.error("Failed to mark session {} as paid: {}", confirmedPayment.getSessionId(), e.getMessage());
+            // Continue even if marking fails
+        }
+        
+        // Publish event to loyalty service để cộng điểm thưởng
+        publishPaymentSuccessEvent(confirmedPayment);
+        log.info("✅ Loyalty event published for cash payment {}", paymentId);
+        
         return convertToDto(confirmedPayment);
     }
 

@@ -187,10 +187,20 @@ const OnSitePayment = () => {
 
   const calculateChargeAmount = (session) => {
     if (!session.energyConsumed) return 0;
-    // Backend default: 3,000 VND/kWh (from ProcessPaymentRequestDto)
-    // Frontend uses 5,000 VND/kWh for display, but actual calculation should match backend
-    const pricePerKwh = 5000; // VND per kWh - TODO: Get from backend config
-    return parseFloat(session.energyConsumed) * pricePerKwh;
+    
+    // [FIX]: Use pricePerKwh from session if available (includes discounts)
+    // Backend calculates price with subscription discounts
+    const pricePerKwh = session.pricePerKwh || 3000; // Default 3,000 VND/kWh (backend default)
+    const amount = parseFloat(session.energyConsumed) * pricePerKwh;
+    
+    console.log('💰 Calculate charge amount:', {
+      energyConsumed: session.energyConsumed,
+      pricePerKwh: pricePerKwh,
+      calculatedAmount: amount,
+      sessionId: session.sessionId
+    });
+    
+    return amount;
   };
 
   const handleProcessPayment = async (session) => {

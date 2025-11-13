@@ -411,6 +411,7 @@ public class ChargingServiceImpl implements ChargingService {
         dto.setStartTime(session.getStartTime());
         dto.setEndTime(session.getEndTime());
         dto.setEnergyConsumed(session.getEnergyConsumed());
+        dto.setPricePerKwh(session.getPricePerKwh()); // [FIX]: Include price with discount
         dto.setSessionStatus(session.getSessionStatus());
         dto.setIsPaid(session.getIsPaid() != null ? session.getIsPaid() : false);
         dto.setPaymentId(session.getPaymentId());

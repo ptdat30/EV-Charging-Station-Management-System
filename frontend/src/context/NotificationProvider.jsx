@@ -160,13 +160,17 @@ export const NotificationProvider = ({ children }) => {
         
         // Register token with backend
         await registerToken(token);
+        console.log('✅ FCM initialized successfully');
       } else {
-        console.warn('⚠️ Failed to get FCM token');
+        console.log('ℹ️ FCM not available - app will work with polling notifications only');
         setIsPermissionGranted(false);
       }
     } catch (error) {
-      console.error('❌ Error initializing FCM:', error);
-      setError(error.message);
+      // Gracefully handle FCM initialization errors
+      console.warn('⚠️ FCM initialization skipped:', error.message || error);
+      console.log('ℹ️ App will continue with polling-based notifications');
+      // Don't set error state - app works fine without FCM
+      setIsPermissionGranted(false);
     }
   };
 

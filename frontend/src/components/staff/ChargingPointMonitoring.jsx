@@ -48,12 +48,31 @@ const ChargingPointMonitoring = () => {
       setLoading(true);
       
       // Fetch stations
-      const stationsData = await getAllStations().catch(() => []);
+      console.log('🏢 Fetching all stations...');
+      const stationsData = await getAllStations().catch((err) => {
+        console.error('❌ Error in getAllStations:', err);
+        return [];
+      });
+      console.log('✅ Stations data received:', stationsData);
+      
       let stationsList = [];
       if (Array.isArray(stationsData)) {
         stationsList = stationsData;
       } else if (stationsData && Array.isArray(stationsData.data)) {
         stationsList = stationsData.data;
+      }
+      
+      console.log('📊 Processed stations list:', stationsList.length, 'stations');
+      
+      // Debug: Log first station structure
+      if (stationsList.length > 0) {
+        console.log('🔍 Sample station structure:', {
+          stationId: stationsList[0].stationId || stationsList[0].id,
+          stationName: stationsList[0].stationName,
+          chargers: stationsList[0].chargers,
+          chargersLength: stationsList[0].chargers?.length || 0,
+          keys: Object.keys(stationsList[0])
+        });
       }
 
       // If station ID in URL, select it (only on initial load)
@@ -77,13 +96,48 @@ const ChargingPointMonitoring = () => {
         }
       }
 
-      setStations(stationsList);
+      // Fetch chargers for all stations
+      console.log('🔌 Fetching chargers for all stations...');
+      const stationsWithChargers = await Promise.all(
+        stationsList.map(async (station) => {
+          try {
+            const stationId = station.stationId || station.id;
+            const chargersData = await getStationChargers(stationId).catch(() => []);
+            
+            let chargersList = [];
+            if (Array.isArray(chargersData)) {
+              chargersList = chargersData;
+            } else if (chargersData && Array.isArray(chargersData.data)) {
+              chargersList = chargersData.data;
+            } else if (chargersData && chargersData.chargers) {
+              chargersList = chargersData.chargers;
+            }
+            
+            return {
+              ...station,
+              chargers: chargersList
+            };
+          } catch (error) {
+            console.warn(`⚠️ Could not fetch chargers for station ${station.stationId || station.id}`);
+            return {
+              ...station,
+              chargers: []
+            };
+          }
+        })
+      );
+      
+      console.log('✅ Loaded chargers for all stations');
+      console.log('📊 Sample station with chargers:', stationsWithChargers[0]);
+      
+      setStations(stationsWithChargers);
 
       // Fetch sessions
       try {
         const response = await apiClient.get('/sessions').catch(() => ({ data: [] }));
         const sessionsList = Array.isArray(response.data) ? response.data : [];
         setSessions(sessionsList);
+        console.log('✅ Loaded sessions:', sessionsList.length);
       } catch (error) {
         console.error('Error fetching sessions:', error);
         setSessions([]);
@@ -100,10 +154,25 @@ const ChargingPointMonitoring = () => {
   // Fetch chargers for selected station
   const fetchChargers = useCallback(async (stationId) => {
     try {
+      console.log('🔌 Fetching chargers for station:', stationId);
       const chargersData = await getStationChargers(stationId);
-      setChargers(Array.isArray(chargersData) ? chargersData : []);
+      console.log('✅ Chargers data received:', chargersData);
+      
+      // Handle different response formats
+      let chargersList = [];
+      if (Array.isArray(chargersData)) {
+        chargersList = chargersData;
+      } else if (chargersData && Array.isArray(chargersData.data)) {
+        chargersList = chargersData.data;
+      } else if (chargersData && chargersData.chargers) {
+        chargersList = chargersData.chargers;
+      }
+      
+      console.log('📊 Processed chargers list:', chargersList);
+      setChargers(chargersList);
     } catch (error) {
-      console.error('Error fetching chargers:', error);
+      console.error('❌ Error fetching chargers:', error);
+      console.error('Error details:', error.response?.data || error.message);
       setChargers([]);
     }
   }, []);
@@ -338,12 +407,36 @@ const ChargingPointMonitoring = () => {
               </h3>
               {stationStats && (
                 <div className="station-stats-bar">
-                  <span>Tổng: <strong>{stationStats.total}</strong></span>
-                  <span className="stat-available">Sẵn sàng: <strong>{stationStats.available}</strong></span>
-                  <span className="stat-in-use">Đang sạc: <strong>{stationStats.inUse}</strong></span>
-                  <span className="stat-offline">Offline: <strong>{stationStats.offline}</strong></span>
-                  <span className="stat-maintenance">Bảo trì: <strong>{stationStats.maintenance}</strong></span>
-                  <span className="stat-sessions">Phiên đang chạy: <strong>{stationStats.activeSessions}</strong></span>
+                  <span className="stat-total">
+                    <i className="fas fa-plug"></i>
+                    Tổng: <strong>{stationStats.total}</strong>
+                  </span>
+                  <span className="stat-available">
+                    <i className="fas fa-check-circle"></i>
+                    Sẵn sàng: <strong>{stationStats.available}</strong>
+                  </span>
+                  <span className="stat-in-use">
+                    <i className="fas fa-bolt"></i>
+                    Đang sạc: <strong>{stationStats.inUse}</strong>
+                  </span>
+                  {stationStats.activeSessions > 0 && (
+                    <span className="stat-sessions">
+                      <i className="fas fa-user"></i>
+                      Phiên đang chạy: <strong>{stationStats.activeSessions}</strong>
+                    </span>
+                  )}
+                  {stationStats.offline > 0 && (
+                    <span className="stat-offline">
+                      <i className="fas fa-power-off"></i>
+                      Offline: <strong>{stationStats.offline}</strong>
+                    </span>
+                  )}
+                  {stationStats.maintenance > 0 && (
+                    <span className="stat-maintenance">
+                      <i className="fas fa-tools"></i>
+                      Bảo trì: <strong>{stationStats.maintenance}</strong>
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -373,8 +466,16 @@ const ChargingPointMonitoring = () => {
           {filteredChargers.length === 0 ? (
             <div className="no-chargers">
               <i className="fas fa-plug"></i>
-              <p>Không có điểm sạc nào phù hợp</p>
-              {(filterStatus !== 'all' || searchQuery) && (
+              <p>Không có điểm sạc nào {chargers.length === 0 ? 'tại trạm này' : 'phù hợp'}</p>
+              {chargers.length === 0 && (
+                <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+                  <p>🔍 Debug Info:</p>
+                  <p>Station ID: {selectedStation?.stationId || selectedStation?.id}</p>
+                  <p>Total chargers loaded: {chargers.length}</p>
+                  <p>Đang tải từ API: /stations/{selectedStation?.stationId || selectedStation?.id}/chargers</p>
+                </div>
+              )}
+              {(filterStatus !== 'all' || searchQuery) && chargers.length > 0 && (
                 <button 
                   className="btn-secondary" 
                   onClick={() => {
@@ -392,49 +493,73 @@ const ChargingPointMonitoring = () => {
               {filteredChargers.map((charger) => {
                 const activeSession = getChargerSession(charger.chargerId || charger.id);
                 const isUpdating = updatingChargerId === (charger.chargerId || charger.id);
+                const isOccupied = activeSession || (charger.status?.toLowerCase() === 'in_use');
                 
                 return (
-                  <div key={charger.chargerId || charger.id} className="charger-card">
+                  <div key={charger.chargerId || charger.id} className={`charger-card ${isOccupied ? 'occupied-card' : ''}`}>
                     <div className="charger-card-header">
                       <div>
-                        <h4>{charger.chargerCode || `#${charger.chargerId || charger.id}`}</h4>
-                        <p className="charger-type">{charger.chargerType || 'N/A'}</p>
+                        <h4>
+                          {isOccupied && <i className="fas fa-bolt charging-pulse" style={{ color: '#3b82f6', marginRight: '8px' }}></i>}
+                          {charger.chargerCode || `#${charger.chargerId || charger.id}`}
+                        </h4>
+                        <p className="charger-type">
+                          <i className="fas fa-plug"></i> {charger.chargerType || charger.connectorType || 'N/A'}
+                        </p>
                       </div>
                       {getChargerStatusBadge(charger.status)}
                     </div>
 
                     <div className="charger-card-body">
                       <div className="charger-info-item">
-                        <i className="fas fa-bolt"></i>
-                        <span>Công suất: {charger.powerRating ? `${parseFloat(charger.powerRating)} kW` : 'N/A'}</span>
+                        <i className="fas fa-tachometer-alt"></i>
+                        <span>Công suất: <strong>{charger.powerRating || charger.powerOutput ? `${parseFloat(charger.powerRating || charger.powerOutput)} kW` : 'N/A'}</strong></span>
                       </div>
                       
-                      {activeSession && (
+                      {activeSession ? (
                         <div className="active-session-info">
                           <div className="session-header">
-                            <i className="fas fa-charging-station"></i>
-                            <strong>Đang sạc</strong>
+                            <i className="fas fa-user-circle"></i>
+                            <strong>🔌 Đang có người sạc</strong>
                             <button
                               className="btn-view-session"
                               onClick={() => navigate(`/staff/sessions?session=${activeSession.sessionId}`)}
                             >
-                              <i className="fas fa-eye"></i> Chi tiết
+                              <i className="fas fa-eye"></i> Xem chi tiết
                             </button>
                           </div>
                           <div className="session-details">
-                            <span>Phiên: {activeSession.sessionCode || `#${activeSession.sessionId}`}</span>
-                            <span>User ID: {activeSession.userId}</span>
+                            <div className="detail-row">
+                              <i className="fas fa-barcode"></i>
+                              <span>Mã phiên: <strong>{activeSession.sessionCode || `#${activeSession.sessionId}`}</strong></span>
+                            </div>
+                            <div className="detail-row">
+                              <i className="fas fa-user"></i>
+                              <span>Người dùng: <strong>ID {activeSession.userId}</strong></span>
+                            </div>
                             {activeSession.energyConsumed && (
-                              <span>
-                                Năng lượng: {parseFloat(activeSession.energyConsumed).toFixed(2)} kWh
-                              </span>
+                              <div className="detail-row energy-highlight">
+                                <i className="fas fa-battery-three-quarters"></i>
+                                <span>Năng lượng: <strong>{parseFloat(activeSession.energyConsumed).toFixed(2)} kWh</strong></span>
+                              </div>
                             )}
                             {activeSession.startTime && (
-                              <span>
-                                Bắt đầu: {new Date(activeSession.startTime).toLocaleTimeString('vi-VN')}
-                              </span>
+                              <div className="detail-row">
+                                <i className="fas fa-clock"></i>
+                                <span>Bắt đầu: <strong>{new Date(activeSession.startTime).toLocaleString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  day: '2-digit',
+                                  month: '2-digit'
+                                })}</strong></span>
+                              </div>
                             )}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="no-session-info">
+                          <i className="fas fa-check-circle" style={{ color: '#10b981' }}></i>
+                          <span style={{ color: '#10b981', fontWeight: '500' }}>Sẵn sàng sử dụng</span>
                         </div>
                       )}
 
