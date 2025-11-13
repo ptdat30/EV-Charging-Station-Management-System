@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getBalance, topUpWallet } from '../services/walletService';
 import { getMyPayments } from '../services/paymentService';
+import { generateInvoice } from '../utils/invoiceGenerator';
 import TopUpModal from '../components/TopUpModal';
 import '../styles/PaymentPage.css';
 
@@ -270,6 +271,30 @@ const PaymentPage = () => {
                                             </div>
                                         )}
                                     </div>
+                                    {payment.paymentStatus === 'completed' && payment.amount && (
+                                        <div className="payment-item-actions" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #eee' }}>
+                                            <button
+                                                className="btn-invoice"
+                                                onClick={() => generateInvoice({
+                                                    sessionId: payment.sessionId,
+                                                    sessionCode: `PAY-${payment.paymentId}`,
+                                                    stationId: null,
+                                                    chargerId: null,
+                                                    startTime: payment.createdAt,
+                                                    endTime: payment.paymentTime,
+                                                    energyConsumed: null,
+                                                    sessionStatus: 'completed',
+                                                    paymentAmount: payment.amount,
+                                                    paymentMethod: payment.paymentMethod,
+                                                    paymentId: payment.paymentId,
+                                                    isPayment: true
+                                                })}
+                                                title="Xuất hóa đơn điện tử"
+                                            >
+                                                📥 Xuất hóa đơn
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

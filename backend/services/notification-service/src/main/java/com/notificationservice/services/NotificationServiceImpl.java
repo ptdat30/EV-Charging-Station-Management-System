@@ -14,10 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.mail.internet.MimeMessage;
 
 import java.util.List;
 
@@ -32,6 +33,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserServiceClient userServiceClient; // Inject User Service Client
     private final FirebaseMessagingService firebaseMessagingService;
     private final FcmTokenService fcmTokenService;
+    private final EmailTemplateService emailTemplateService; // Inject Email Template Service
 
     @Override
     public NotificationResponseDto createNotification(CreateNotificationRequestDto requestDto) {
@@ -140,10 +142,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         // --- Get Recipient Email ('To') using Feign Client ---
         String toEmail = null;
+        UserEmailDto userDetails = null;
+        
         try {
             log.debug("Fetching email for userId {}", notification.getUserId());
             // Call user-service via Feign to get user details including email
-            UserEmailDto userDetails = userServiceClient.getUserById(notification.getUserId());
+            userDetails = userServiceClient.getUserById(notification.getUserId());
             if (userDetails != null && userDetails.getEmail() != null) {
                 toEmail = userDetails.getEmail();
                 log.debug("Found email {} for userId {}", toEmail, notification.getUserId());
@@ -163,14 +167,30 @@ public class NotificationServiceImpl implements NotificationService {
         log.info("Attempting to send email notification {} from {} to {}", notification.getNotificationId(), fromEmail, toEmail);
 
         try {
-            SimpleMailMessage mailMessage = new SimpleMailMessage();
-            mailMessage.setFrom(fromEmail);
-            mailMessage.setTo(toEmail);
-            mailMessage.setSubject(notification.getTitle());
-            mailMessage.setText(notification.getMessage());
-
-            mailSender.send(mailMessage);
-            log.info("Email sent successfully for notification {}", notification.getNotificationId());
+            // Get user name for personalization
+            String userName = toEmail.split("@")[0]; // Default: use email prefix
+            
+            // Try to get full name from user details if available
+            if (userDetails != null && userDetails.getEmail() != null) {
+                userName = toEmail.split("@")[0]; // Use email prefix as fallback
+                // TODO: If UserEmailDto has fullName field in future, use it:
+                // userName = userDetails.getFullName() != null ? userDetails.getFullName() : userName;
+            }
+            
+            // Generate professional HTML email using template service
+            String htmlContent = emailTemplateService.generateEmailTemplate(notification, toEmail, userName);
+            
+            // Create MimeMessage for HTML email
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("⚡ " + notification.getTitle() + " - EV Charge Station");
+            helper.setText(htmlContent, true); // true = HTML content
+            
+            mailSender.send(mimeMessage);
+            log.info("✅ Professional HTML email sent successfully for notification {}", notification.getNotificationId());
 
         } catch (Exception e) {
             log.error("Failed to send email for notification {}: {}", notification.getNotificationId(), e.getMessage(), e);

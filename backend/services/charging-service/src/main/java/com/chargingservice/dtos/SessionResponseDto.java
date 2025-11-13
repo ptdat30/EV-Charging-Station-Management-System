@@ -16,6 +16,7 @@ public class SessionResponseDto {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private BigDecimal energyConsumed;
+    private BigDecimal pricePerKwh; // Price at the time of session (includes discounts)
     private ChargingSession.SessionStatus sessionStatus;
     private Boolean isPaid;
     private Long paymentId;

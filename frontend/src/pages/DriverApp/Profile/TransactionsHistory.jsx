@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getMyTransactionsHistory } from '../../../services/userService';
 import { getMyPayments } from '../../../services/paymentService';
+import { generateInvoice } from '../../../utils/invoiceGenerator';
 import './TransactionsHistory.css';
 
 export default function TransactionsHistory() {
@@ -226,12 +227,14 @@ export default function TransactionsHistory() {
                                     className="btn btn-secondary"
                                     onClick={() => {
                                         const details = {
-                                            'Mã giao dịch': s.sessionCode,
-                                            'Trạm sạc': s.stationId,
-                                            'Cổng sạc': s.chargerId,
+                                            'Mã giao dịch': s.sessionCode || `PAY-${s.paymentId}`,
+                                            'Trạm sạc': s.stationId || '-',
+                                            'Cổng sạc': s.chargerId || '-',
                                             'Bắt đầu': formatDateTime(s.startTime),
                                             'Kết thúc': formatDateTime(s.endTime),
                                             'Năng lượng': s.energyConsumed ? `${s.energyConsumed} kWh` : '-',
+                                            'Số tiền': s.paymentAmount ? `${new Intl.NumberFormat('vi-VN').format(s.paymentAmount)} ₫` : '-',
+                                            'Phương thức': s.paymentMethod === 'wallet' ? 'Ví điện tử' : s.paymentMethod === 'cash' ? 'Tiền mặt' : s.paymentMethod || '-',
                                             'Trạng thái': getStatusLabel(s.sessionStatus)
                                         };
                                         alert(Object.entries(details).map(([k, v]) => `${k}: ${v}`).join('\n'));
@@ -239,10 +242,11 @@ export default function TransactionsHistory() {
                                 >
                                     📄 Chi tiết
                                 </button>
-                                {s.sessionStatus === 'completed' && (
+                                {(s.sessionStatus === 'completed' && s.paymentAmount) && (
                                     <button
                                         className="btn btn-primary"
-                                        onClick={() => alert('Tính năng xuất hóa đơn PDF sẽ được bổ sung sớm')}
+                                        onClick={() => generateInvoice(s)}
+                                        title="Xuất hóa đơn điện tử"
                                     >
                                         📥 Xuất hóa đơn
                                     </button>

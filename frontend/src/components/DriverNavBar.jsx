@@ -196,6 +196,22 @@ const DriverNavBar = () => {
                                         <span>Thông báo</span>
                                     </Link>
                                     <Link 
+                                        to="/driver/analytics" 
+                                        className={`dropdown-nav-item ${isActive('/driver/analytics') ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-chart-line"></i>
+                                        <span>Thống kê & Phân tích</span>
+                                    </Link>
+                                    <Link 
+                                        to="/driver/transaction-history" 
+                                        className={`dropdown-nav-item ${isActive('/driver/transaction-history') ? 'active' : ''}`}
+                                        onClick={() => setIsUserDropdownOpen(false)}
+                                    >
+                                        <i className="fas fa-receipt"></i>
+                                        <span>Lịch sử giao dịch</span>
+                                    </Link>
+                                    <Link 
                                         to="/driver/profile" 
                                         className={`dropdown-nav-item ${location.pathname.startsWith('/driver/profile') ? 'active' : ''}`}
                                         onClick={() => setIsUserDropdownOpen(false)}

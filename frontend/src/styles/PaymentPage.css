@@ -401,6 +401,31 @@
     font-size: var(--font-size-base, 1rem);
 }
 
+/* Invoice Button */
+.btn-invoice {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: var(--spacing-2, 0.5rem) var(--spacing-4, 1rem);
+    border-radius: var(--border-radius-md, 8px);
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-medium, 500);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2, 0.5rem);
+    transition: all 0.2s ease;
+}
+
+.btn-invoice:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+}
+
+.btn-invoice:active {
+    transform: translateY(0);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .payment-page {
