@@ -101,13 +101,17 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
         </button>
 
         <div className="login-modal-content">
-          {/* Header Section */}
+          {/* Header Section - GitHub Style */}
           <div className="login-modal-header">
             <div className="login-modal-logo">
-              <span>EV</span>
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="8" fill="#1e293b"/>
+                <path d="M24 12L16 20H24V12Z" fill="white"/>
+                <path d="M24 36L32 28H24V36Z" fill="white"/>
+              </svg>
             </div>
-            <h2 className="login-modal-title">Chào mừng bạn trở lại!</h2>
-            <p className="login-modal-subtitle">Đăng nhập để tiếp tục trải nghiệm</p>
+            <h1 className="login-modal-title">Đăng nhập vào EV Charging</h1>
+            <p className="login-modal-subtitle">Chúng tôi rất vui được gặp lại bạn!</p>
           </div>
 
           {/* Form */}
@@ -115,7 +119,9 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
             {/* Error Message */}
             {error && (
               <div className="login-error-message">
-                <i className="fas fa-exclamation-triangle"></i>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.22 1.754a3.25 3.25 0 00-4.44 0L1.754 3.78a3.25 3.25 0 000 4.44L3.78 9.936a3.25 3.25 0 004.44 0l2.006-2.005a3.25 3.25 0 000-4.44L8.22 1.754zM4.75 4a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 004.75 4zm0 5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 004.75 9zm5-5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 009.75 4zm0 5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5a.75.75 0 00-.75-.75z"/>
+                </svg>
                 <span>{error}</span>
               </div>
             )}
@@ -123,37 +129,38 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
             {/* Email/Phone Field */}
             <div className="login-input-group">
               <label htmlFor="login-email" className="login-label">
-                Email / Số điện thoại
+                Email hoặc số điện thoại
               </label>
-              <div className="login-input-wrapper">
-                <i className="fas fa-envelope login-input-icon"></i>
-                <input
-                  id="login-email"
-                  type="text"
-                  name="email"
-                  placeholder="Nhập email hoặc số điện thoại"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  autoComplete="email"
-                  className="login-input"
-                />
-              </div>
+              <input
+                id="login-email"
+                type="text"
+                name="email"
+                placeholder="name@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                autoComplete="email"
+                className="login-input"
+              />
             </div>
 
             {/* Password Field */}
             <div className="login-input-group">
-              <label htmlFor="login-password" className="login-label">
-                Mật khẩu
-              </label>
+              <div className="login-label-row">
+                <label htmlFor="login-password" className="login-label">
+                  Mật khẩu
+                </label>
+                <Link to="/forgot-password" onClick={onClose} className="forgot-password-link">
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <div className="login-input-wrapper">
-                <i className="fas fa-lock login-input-icon"></i>
                 <input
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  placeholder="Nhập mật khẩu"
+                  placeholder="Nhập mật khẩu của bạn"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -168,16 +175,9 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
                   tabIndex="-1"
                   aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
-                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  {showPassword ? 'Ẩn' : 'Hiện'}
                 </button>
               </div>
-            </div>
-
-            {/* Forgot Password Link */}
-            <div className="login-forgot-password">
-              <Link to="/forgot-password" onClick={onClose} className="forgot-password-link">
-                Quên mật khẩu?
-              </Link>
             </div>
 
             {/* Submit Button */}
@@ -188,10 +188,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
                   <span>Đang đăng nhập...</span>
                 </>
               ) : (
-                <>
-                  <i className="fas fa-sign-in-alt"></i>
-                  <span>Đăng nhập</span>
-                </>
+                <span>Đăng nhập</span>
               )}
             </button>
 
@@ -207,11 +204,11 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
                   }}
                   className="register-link-text"
                 >
-                  Đăng ký ngay
+                  Tạo tài khoản
                 </button>
               ) : (
                 <Link to="/register" onClick={onClose} className="register-link-text">
-                  Đăng ký ngay
+                  Tạo tài khoản
                 </Link>
               )}
             </div>
