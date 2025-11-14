@@ -122,13 +122,17 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
         </button>
 
         <div className="register-modal-content">
-          {/* Header Section */}
+          {/* Header Section - GitHub Style */}
           <div className="register-modal-header">
             <div className="register-modal-logo">
-              <span>EV</span>
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="8" fill="#1e293b"/>
+                <path d="M24 12L16 20H24V12Z" fill="white"/>
+                <path d="M24 36L32 28H24V36Z" fill="white"/>
+              </svg>
             </div>
-            <h2 className="register-modal-title">Tạo tài khoản mới</h2>
-            <p className="register-modal-subtitle">Tham gia mạng lưới trạm sạc xe điện</p>
+            <h1 className="register-modal-title">Tạo tài khoản mới</h1>
+            <p className="register-modal-subtitle">Chúng tôi rất vui được chào đón bạn!</p>
           </div>
 
           {/* Form */}
@@ -136,7 +140,9 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
             {/* Error Message */}
             {error && (
               <div className="register-error-message">
-                <i className="fas fa-exclamation-triangle"></i>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.22 1.754a3.25 3.25 0 00-4.44 0L1.754 3.78a3.25 3.25 0 000 4.44L3.78 9.936a3.25 3.25 0 004.44 0l2.006-2.005a3.25 3.25 0 000-4.44L8.22 1.754zM4.75 4a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 004.75 4zm0 5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 004.75 9zm5-5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5A.75.75 0 009.75 4zm0 5a.75.75 0 00-.75.75v.5a.75.75 0 001.5 0v-.5a.75.75 0 00-.75-.75z"/>
+                </svg>
                 <span>{error}</span>
               </div>
             )}
@@ -146,21 +152,18 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
               <label htmlFor="register-fullName" className="register-label">
                 Họ và tên đầy đủ
               </label>
-              <div className="register-input-wrapper">
-                <i className="fas fa-user register-input-icon"></i>
-                <input
-                  id="register-fullName"
-                  type="text"
-                  name="fullName"
-                  placeholder="Nhập họ và tên"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  autoComplete="name"
-                  className="register-input"
-                />
-              </div>
+              <input
+                id="register-fullName"
+                type="text"
+                name="fullName"
+                placeholder="Nguyễn Văn A"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                autoComplete="name"
+                className="register-input"
+              />
             </div>
 
             {/* Email Field */}
@@ -168,21 +171,18 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
               <label htmlFor="register-email" className="register-label">
                 Email
               </label>
-              <div className="register-input-wrapper">
-                <i className="fas fa-envelope register-input-icon"></i>
-                <input
-                  id="register-email"
-                  type="email"
-                  name="email"
-                  placeholder="Nhập email của bạn"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  autoComplete="email"
-                  className="register-input"
-                />
-              </div>
+              <input
+                id="register-email"
+                type="email"
+                name="email"
+                placeholder="name@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                autoComplete="email"
+                className="register-input"
+              />
             </div>
 
             {/* Phone Field */}
@@ -190,21 +190,18 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
               <label htmlFor="register-phone" className="register-label">
                 Số điện thoại
               </label>
-              <div className="register-input-wrapper">
-                <i className="fas fa-phone register-input-icon"></i>
-                <input
-                  id="register-phone"
-                  type="tel"
-                  name="phone"
-                  placeholder="Nhập số điện thoại"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  autoComplete="tel"
-                  className="register-input"
-                />
-              </div>
+              <input
+                id="register-phone"
+                type="tel"
+                name="phone"
+                placeholder="0123456789"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                disabled={loading}
+                autoComplete="tel"
+                className="register-input"
+              />
             </div>
 
             {/* Password Field */}
@@ -213,12 +210,11 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                 Mật khẩu
               </label>
               <div className="register-input-wrapper">
-                <i className="fas fa-lock register-input-icon"></i>
                 <input
                   id="register-password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  placeholder="Mật khẩu (ít nhất 6 ký tự)"
+                  placeholder="Ít nhất 6 ký tự"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -234,7 +230,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                   tabIndex="-1"
                   aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
-                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  {showPassword ? 'Ẩn' : 'Hiện'}
                 </button>
               </div>
             </div>
@@ -245,7 +241,6 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                 Xác nhận mật khẩu
               </label>
               <div className="register-input-wrapper">
-                <i className="fas fa-lock register-input-icon"></i>
                 <input
                   id="register-confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
@@ -265,7 +260,7 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                   tabIndex="-1"
                   aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
-                  <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                  {showConfirmPassword ? 'Ẩn' : 'Hiện'}
                 </button>
               </div>
             </div>
@@ -275,15 +270,13 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
               {loading ? (
                 <>
                   <span className="register-spinner"></span>
-                  <span>Đang đăng ký...</span>
+                  <span>Đang tạo tài khoản...</span>
                 </>
               ) : (
-                <>
-                  <i className="fas fa-user-plus"></i>
-                  <span>Đăng ký</span>
-                </>
+                <span>Tạo tài khoản</span>
               )}
             </button>
+
             {/* Login Link */}
             <div className="register-login-link">
               <span>Bạn đã có tài khoản?</span>
@@ -293,11 +286,11 @@ const RegisterModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                   onClick={handleSwitchToLogin}
                   className="login-link-text"
                 >
-                  Đăng nhập ngay
+                  Đăng nhập
                 </button>
               ) : (
                 <Link to="/login" onClick={onClose} className="login-link-text">
-                  Đăng nhập ngay
+                  Đăng nhập
                 </Link>
               )}
             </div>
