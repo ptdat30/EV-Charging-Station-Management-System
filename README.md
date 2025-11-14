@@ -463,7 +463,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - Spring Boot and Spring Cloud communities
-- React and Vite teams
+- React and Vite team
 - All open-source contributors
 
 ---
