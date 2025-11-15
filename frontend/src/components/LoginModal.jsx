@@ -151,9 +151,6 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }) => {
                 <label htmlFor="login-password" className="login-label">
                   Mật khẩu
                 </label>
-                <Link to="/forgot-password" onClick={onClose} className="forgot-password-link">
-                  Quên mật khẩu?
-                </Link>
               </div>
               <div className="login-input-wrapper">
                 <input
