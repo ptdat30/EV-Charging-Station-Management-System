@@ -452,10 +452,6 @@ Create `.env` files for environment-specific configurations:
 - Update documentation for new features
 - Write tests for new functionality
 
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 👥 Authors
 
 - **Development Team** - Initial work
@@ -463,7 +459,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - Spring Boot and Spring Cloud communities
-- React and Vite team
+- React and Vite teams
 - All open-source contributors
 
 ---
