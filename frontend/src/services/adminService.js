@@ -293,6 +293,8 @@ export const getAllTransactions = async (filters = {}) => {
       params: filters
     });
     console.log('✅ All transactions fetched:', response.data);
+    // Return the full response object to maintain compatibility with TransactionsManagement
+    // Components should access data via response.data
     return response;
   } catch (error) {
     console.error('❌ Failed to fetch transactions:', error);

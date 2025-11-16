@@ -137,8 +137,8 @@ const SystemNotificationsManagement = () => {
       )}
 
       {/* Single Notification Form */}
-      <div className="notification-form-container">
-        <form onSubmit={handleBroadcastSubmit} className="notification-form">
+        <div className="notification-form-container">
+          <form onSubmit={handleBroadcastSubmit} className="notification-form">
             <div className="form-group">
               <label>
                 Người Nhận <span className="required">*</span>
