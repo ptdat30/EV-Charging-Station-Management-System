@@ -213,13 +213,33 @@ export const getAdminDashboardStats = async () => {
  */
 export const getRecentActivities = async (limit = 10) => {
   try {
-    const [sessions, users] = await Promise.all([
+    // Load sessions, users, and stations in parallel
+    const [sessions, users, stations] = await Promise.all([
       apiClient.get('/sessions').catch(() => ({ data: [] })),
-      apiClient.get('/users/getall').catch(() => ({ data: [] }))
+      apiClient.get('/users/getall').catch(() => ({ data: [] })),
+      apiClient.get('/stations/getall').catch(() => ({ data: [] }))
     ]);
 
     const sessionsList = Array.isArray(sessions.data) ? sessions.data : [];
     const usersList = Array.isArray(users.data) ? users.data : [];
+    const stationsList = Array.isArray(stations.data) ? stations.data : [];
+
+    // Create maps for quick lookup
+    const usersMap = {};
+    usersList.forEach(user => {
+      const id = user.id || user.userId;
+      if (id) {
+        usersMap[id] = user.fullName || user.email || `Người dùng #${id}`;
+      }
+    });
+
+    const stationsMap = {};
+    stationsList.forEach(station => {
+      const id = station.stationId || station.id;
+      if (id) {
+        stationsMap[id] = station.stationName || station.stationCode || `Trạm #${id}`;
+      }
+    });
 
     // Sắp xếp sessions theo thời gian mới nhất
     const recentSessions = sessionsList
@@ -227,13 +247,14 @@ export const getRecentActivities = async (limit = 10) => {
       .slice(0, limit);
 
     const activities = recentSessions.map(session => {
-      const user = usersList.find(u => u.id === session.userId);
+      const userName = usersMap[session.userId] || `Người dùng #${session.userId}`;
+      const stationName = stationsMap[session.stationId] || `Trạm #${session.stationId}`;
       const timeAgo = getTimeAgo(new Date(session.startTime || session.createdAt));
 
       return {
         id: session.sessionId || session.id,
         type: 'session',
-        message: `Người dùng ${user?.fullName || user?.email || `#${session.userId}`} bắt đầu phiên sạc tại Trạm #${session.stationId}`,
+        message: `Người dùng ${userName} bắt đầu phiên sạc tại ${stationName}`,
         time: timeAgo,
         icon: 'fa-bolt',
         session

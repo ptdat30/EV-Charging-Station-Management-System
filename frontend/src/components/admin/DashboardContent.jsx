@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import '../../styles/AdminDashboard.css';
 import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { getAdminDashboardStats, getRecentActivities } from '../../services/adminService';
@@ -22,7 +22,6 @@ const DashboardContent = () => {
     activeSessions: 0
   });
   const [energyData, setEnergyData] = useState([]);
-  const [revenueData, setRevenueData] = useState([]);
   const [statusData, setStatusData] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [error, setError] = useState(null);
@@ -50,7 +49,6 @@ const DashboardContent = () => {
 
       setStats(dashboardData.stats);
       setEnergyData(dashboardData.charts.energyData);
-      setRevenueData(dashboardData.charts.revenueData);
       setStatusData(dashboardData.charts.statusData);
       setRecentActivities(activities);
     } catch (err) {
@@ -208,41 +206,6 @@ const DashboardContent = () => {
           ) : (
             <div className="no-data">
               <i className="fas fa-chart-line"></i>
-              <p>Chưa có dữ liệu</p>
-            </div>
-          )}
-        </div>
-
-        {/* Revenue Chart */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Doanh thu (12 tháng)</h3>
-            <select className="chart-filter" defaultValue="year">
-              <option value="year">12 tháng</option>
-              <option value="half">6 tháng</option>
-              <option value="quarter">3 tháng</option>
-            </select>
-          </div>
-          {revenueData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value) => `${value} triệu VNĐ`}
-                />
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="no-data">
-              <i className="fas fa-chart-bar"></i>
               <p>Chưa có dữ liệu</p>
             </div>
           )}

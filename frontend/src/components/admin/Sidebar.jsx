@@ -38,12 +38,13 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       icon: 'fas fa-users', 
       text: 'Người dùng', 
       path: '/admin/users',
-      badge: null,
-      submenu: [
-        { icon: 'fas fa-user', text: 'Khách hàng cá nhân', path: '/admin/users/individual' },
-        { icon: 'fas fa-building', text: 'Khách hàng doanh nghiệp', path: '/admin/users/business' },
-        { icon: 'fas fa-id-card', text: 'Nhân viên trạm', path: '/admin/users/staff' },
-      ]
+      badge: null
+    },
+    { 
+      icon: 'fas fa-user-shield', 
+      text: 'Nhân viên', 
+      path: '/admin/staff',
+      badge: null
     },
     { 
       icon: 'fas fa-box', 

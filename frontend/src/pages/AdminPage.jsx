@@ -6,6 +6,7 @@ import DashboardContent from '../components/admin/DashboardContent';
 import StationsManagement from '../components/admin/StationsManagement';
 import ReservationsManagement from '../components/admin/ReservationsManagement';
 import UsersManagement from '../components/admin/UsersManagement';
+import StaffManagement from '../components/admin/StaffManagement';
 import PackagesManagement from '../components/admin/PackagesManagement';
 import TransactionsManagement from '../components/admin/TransactionsManagement';
 import PermissionsManagement from '../components/admin/PermissionsManagement';
@@ -23,6 +24,7 @@ const AdminPage = () => {
         <Route index element={<DashboardContent />} />
         <Route path="stations" element={<StationsManagement />} />
         <Route path="users" element={<UsersManagement />} />
+        <Route path="staff" element={<StaffManagement />} />
         <Route path="packages" element={<PackagesManagement />} />
         <Route path="permissions" element={<PermissionsManagement />} />
         <Route path="transactions" element={<TransactionsManagement />} />

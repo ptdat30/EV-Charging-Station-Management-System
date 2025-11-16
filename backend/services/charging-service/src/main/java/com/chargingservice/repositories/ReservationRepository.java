@@ -39,5 +39,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("status") Reservation.ReservationStatus status,
             @Param("deadline") LocalDateTime deadline
     );
+
+    // Find reservation by sessionId
+    Optional<Reservation> findBySessionId(Long sessionId);
 }
 

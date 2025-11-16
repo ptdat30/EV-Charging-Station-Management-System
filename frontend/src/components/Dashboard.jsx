@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [driverName, setDriverName] = useState('');
   const [error, setError] = useState('');
   const [favoriteStations, setFavoriteStations] = useState([]);
+  const [stationsMap, setStationsMap] = useState({});
 
   // Redirect staff to staff dashboard
   useEffect(() => {
@@ -61,8 +62,13 @@ const Dashboard = () => {
         }
         
         // Load dashboard stats
-        const statsData = await getDashboardStats();
-        setStats(statsData);
+        try {
+          const statsData = await getDashboardStats();
+          setStats(statsData);
+        } catch (err) {
+          console.warn('Could not load dashboard stats:', err);
+          setStats(null);
+        }
         
         // Load wallet balance
         try {
@@ -73,35 +79,56 @@ const Dashboard = () => {
         }
         
         // Load recent sessions - chỉ lấy sessions đã hoàn thành (cho lịch sử)
-        const recentData = await getRecentSessions(5);
-        const allRecentSessions = Array.isArray(recentData) ? recentData : [];
-        
-        // Filter: Chỉ hiển thị sessions đã hoàn thành (completed)
-        // Không hiển thị: cancelled, charging (đang sạc thì không phải "lịch sử")
-        const completedSessions = allRecentSessions.filter(session => {
-          const status = (session.sessionStatus || '').toLowerCase();
-          return status === 'completed';
-        });
-        
-        setRecentSessions(completedSessions);
+        try {
+          const recentData = await getRecentSessions(5);
+          const allRecentSessions = Array.isArray(recentData) ? recentData : [];
+          
+          // Filter: Chỉ hiển thị sessions đã hoàn thành (completed)
+          // Không hiển thị: cancelled, charging (đang sạc thì không phải "lịch sử")
+          const completedSessions = allRecentSessions.filter(session => {
+            const status = (session.sessionStatus || '').toLowerCase();
+            return status === 'completed';
+          });
+          
+          setRecentSessions(completedSessions);
+        } catch (err) {
+          console.warn('Could not load recent sessions:', err);
+          setRecentSessions([]);
+        }
         
         // Load energy usage chart
-        const chartData = await getEnergyUsageChart('week');
-        setEnergyData(Array.isArray(chartData) ? chartData : []);
-        
-        // Load favorite stations
         try {
+          const chartData = await getEnergyUsageChart('week');
+          setEnergyData(Array.isArray(chartData) ? chartData : []);
+        } catch (err) {
+          console.warn('Could not load energy chart:', err);
+          setEnergyData([]);
+        }
+        
+        // Load stations map for displaying station names
+        try {
+          const allStations = await getAllStations();
+          const stationsList = Array.isArray(allStations) ? allStations : (allStations?.data || []);
+          const map = {};
+          stationsList.forEach(station => {
+            const id = station.stationId || station.id;
+            if (id) {
+              map[id] = station.stationName || station.stationCode || `Trạm #${id}`;
+            }
+          });
+          setStationsMap(map);
+          
+          // Load favorite stations
           const favoriteIds = getFavoriteStations();
           if (favoriteIds.length > 0) {
-            const allStations = await getAllStations();
-            const favorites = (Array.isArray(allStations) ? allStations : allStations.data || [])
+            const favorites = stationsList
               .filter(station => favoriteIds.includes(station.stationId || station.id))
               .slice(0, 3); // Limit to 3 favorites
             setFavoriteStations(favorites);
             console.log('✅ Loaded favorite stations:', favorites.length);
           }
         } catch (err) {
-          console.warn('Could not load favorite stations:', err);
+          console.warn('Could not load stations:', err);
         }
       } catch (err) {
         console.error('Error loading dashboard data:', err);
@@ -136,15 +163,17 @@ const Dashboard = () => {
       const energy = session.energyConsumed || 0;
       const endTime = session.endTime ? new Date(session.endTime) : null;
       const timeAgo = endTime ? getTimeAgo(endTime) : 'N/A';
+      const stationName = stationsMap[session.stationId] || `Trạm #${session.stationId}`;
       
       return {
         ...session,
         formattedEnergy: energy.toFixed(1),
         timeAgo,
-        statusLabel: session.sessionStatus === 'completed' ? 'Hoàn thành' : session.sessionStatus
+        statusLabel: session.sessionStatus === 'completed' ? 'Hoàn thành' : session.sessionStatus,
+        stationName
       };
     });
-  }, [recentSessions]);
+  }, [recentSessions, stationsMap]);
 
   if (loading) {
     return (
@@ -165,7 +194,7 @@ const Dashboard = () => {
 
       {/* Driver Stats Cards */}
       <div className="kpi-grid">
-        <Link to="/driver/profile/history" className="kpi-card glass driver-card">
+        <Link to="/driver/transaction-history" className="kpi-card glass driver-card">
           <div className="kpi-icon">
             <i className="fas fa-history"></i>
           </div>
@@ -243,7 +272,7 @@ const Dashboard = () => {
               <i className="fas fa-calendar-check"></i>
               <span>Đặt lịch sạc</span>
             </Link>
-            <Link to="/driver/profile/history" className="action-btn-driver tertiary">
+            <Link to="/driver/transaction-history" className="action-btn-driver tertiary">
               <i className="fas fa-history"></i>
               <span>Lịch sử</span>
             </Link>
@@ -261,7 +290,7 @@ const Dashboard = () => {
         <div className="recent-sessions glass">
           <div className="chart-header">
             <h3>Phiên sạc gần đây</h3>
-            <Link to="/driver/profile/history" className="view-all">Xem tất cả →</Link>
+            <Link to="/driver/transaction-history" className="view-all">Xem tất cả →</Link>
           </div>
           <div className="sessions-list">
             {formattedRecentSessions.length > 0 ? (
@@ -269,7 +298,7 @@ const Dashboard = () => {
                 <div key={session.sessionId} className="session-item">
                   <div className="session-icon"><i className="fas fa-charging-station"></i></div>
                   <div className="session-info">
-                    <div className="session-name">Trạm ID {session.stationId}</div>
+                    <div className="session-name">{session.stationName}</div>
                     <div className="session-details">
                       {session.formattedEnergy} kWh • {session.statusLabel}
                     </div>

@@ -69,8 +69,13 @@ const AdminNavBar = () => {
             submenu: [
                 { path: '/admin/users/individual', label: 'Khách hàng cá nhân' },
                 { path: '/admin/users/business', label: 'Khách hàng doanh nghiệp' },
-                { path: '/admin/users/staff', label: 'Nhân viên trạm' },
             ]
+        },
+        {
+            path: '/admin/staff',
+            icon: 'fas fa-user-shield',
+            label: 'Nhân viên',
+            description: 'Staff Management'
         },
         {
             path: '/admin/packages',

@@ -19,24 +19,55 @@ export default function ChargingLive() {
 
     // Load active session and restore pending payment from localStorage
     useEffect(() => {
-        // Kiểm tra xem có pending payment session không
-        const pendingSession = localStorage.getItem('pendingPaymentSession');
-        if (pendingSession) {
-            try {
-                const sessionData = JSON.parse(pendingSession);
-                console.log('🔄 Restored pending payment session from localStorage:', sessionData);
-                setCompletedSession(sessionData);
-                setSession(sessionData); // Set session để hiển thị info
-                setShowPaymentModal(true); // Tự động hiện modal thanh toán
-                setLoading(false);
-            } catch (err) {
-                console.error('Error parsing pending session:', err);
+        // Ưu tiên load active session trước
+        loadActiveSession().then(activeSession => {
+            // Nếu có active session mới đang charging, clear localStorage và không check pending
+            if (activeSession && activeSession.sessionStatus === 'charging') {
+                console.log('✅ Found active charging session, clearing old pending payment session');
                 localStorage.removeItem('pendingPaymentSession');
-                loadActiveSession();
+                return; // Không check pending nữa
             }
-        } else {
-            loadActiveSession();
-        }
+            
+            // Nếu không có active session, mới check pending payment
+            const pendingSession = localStorage.getItem('pendingPaymentSession');
+            if (pendingSession) {
+                try {
+                    const sessionData = JSON.parse(pendingSession);
+                    // Verify session vẫn chưa thanh toán và hợp lệ
+                    if (sessionData.sessionId && sessionData.sessionStatus === 'completed' && !sessionData.isPaid) {
+                        console.log('🔄 Restored pending payment session from localStorage:', sessionData);
+                        setCompletedSession(sessionData);
+                        setSession(sessionData); // Set session để hiển thị info
+                        setShowPaymentModal(true); // Tự động hiện modal thanh toán
+                    } else {
+                        // Session đã thanh toán hoặc không hợp lệ, clear nó
+                        console.log('⚠️ Pending session invalid or already paid, clearing:', sessionData);
+                        localStorage.removeItem('pendingPaymentSession');
+                    }
+                } catch (err) {
+                    console.error('Error parsing pending session:', err);
+                    localStorage.removeItem('pendingPaymentSession');
+                }
+            }
+        }).catch(err => {
+            console.error('Error loading active session:', err);
+            // Nếu load active session thất bại, mới check pending
+            const pendingSession = localStorage.getItem('pendingPaymentSession');
+            if (pendingSession) {
+                try {
+                    const sessionData = JSON.parse(pendingSession);
+                    if (sessionData.sessionId && sessionData.sessionStatus === 'completed' && !sessionData.isPaid) {
+                        setCompletedSession(sessionData);
+                        setSession(sessionData);
+                        setShowPaymentModal(true);
+                    } else {
+                        localStorage.removeItem('pendingPaymentSession');
+                    }
+                } catch (parseErr) {
+                    localStorage.removeItem('pendingPaymentSession');
+                }
+            }
+        });
     }, []);
 
     // Polling status với tốc độ có thể điều chỉnh
@@ -115,12 +146,24 @@ export default function ChargingLive() {
             
             if (activeSession) {
                 setSession(activeSession);
+                // Nếu có active session đang charging, clear pending payment session cũ
+                if (activeSession.sessionStatus === 'charging') {
+                    localStorage.removeItem('pendingPaymentSession');
+                }
+                return activeSession; // Return để có thể check trong useEffect
             } else {
                 setError('Không có phiên sạc đang hoạt động');
+                return null;
             }
         } catch (err) {
             console.error('Error loading active session:', err);
+            // Nếu lỗi 204 (no content), không có active session
+            if (err.response?.status === 204) {
+                setError('Không có phiên sạc đang hoạt động');
+                return null;
+            }
             setError(err.response?.data?.message || err.message || 'Không thể tải phiên sạc');
+            return null;
         } finally {
             setLoading(false);
         }

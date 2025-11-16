@@ -1,0 +1,93 @@
+/* Admin Staff Management Styles */
+.staff-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Reuse styles from AdminUsersManagement */
+.staff-management .stats-summary,
+.staff-management .filters-section,
+.staff-management .search-box,
+.staff-management .filter-select,
+.staff-management .staff-table-container,
+.staff-management .staff-table,
+.staff-management .page-header,
+.staff-management .header-actions,
+.staff-management .error-container,
+.staff-management .loading-container,
+.staff-management .modal-overlay,
+.staff-management .modal-content,
+.staff-management .modal-header,
+.staff-management .modal-body,
+.staff-management .modal-footer,
+.staff-management .modal-close,
+.staff-management .btn-primary,
+.staff-management .btn-secondary,
+.staff-management .action-buttons,
+.staff-management .btn-action,
+.staff-management .status-badge {
+  /* Inherit from AdminUsersManagement styles */
+}
+
+/* Staff specific styles */
+.staff-id {
+  font-family: 'Courier New', monospace;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.staff-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.staff-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.staff-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.staff-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.staff-table .no-data-cell {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.staff-table .no-data-cell i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+.btn-permissions {
+  background: #8b5cf6 !important;
+  color: white !important;
+}
+
+.btn-permissions:hover {
+  background: #7c3aed !important;
+}
+
