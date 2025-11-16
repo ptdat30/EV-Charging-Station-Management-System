@@ -3,10 +3,23 @@ import apiClient from '../config/api';
 
 /**
  * Lấy active session của user hiện tại
+ * @returns {Promise<Object|null>} Session object nếu có, null nếu không có active session
  */
 export const getActiveSession = async () => {
-    const response = await apiClient.get('/sessions/active');
-    return response.data;
+    try {
+        const response = await apiClient.get('/sessions/active');
+        // Nếu status 204 (no content), response.data có thể undefined
+        if (response.status === 204 || !response.data) {
+            return null;
+        }
+        return response.data;
+    } catch (err) {
+        // Nếu lỗi 204 (no content) từ axios interceptor
+        if (err.response?.status === 204) {
+            return null;
+        }
+        throw err;
+    }
 };
 
 /**

@@ -50,8 +50,17 @@ const UsersManagement = () => {
         new Map(usersArray.map(user => [user.userId || user.id, user])).values()
       );
       
-      console.log(`✅ Loaded ${usersArray.length} users, ${uniqueUsers.length} unique`);
-      setUsers(uniqueUsers);
+      // Chỉ lấy DRIVER và BUSINESS users, loại bỏ ADMIN và STAFF
+      const driverBusinessUsers = uniqueUsers.filter(user => {
+        const userType = (user.userType || '').toLowerCase();
+        const role = (user.role || '').toUpperCase();
+        // Chỉ giữ driver và business, loại bỏ admin và staff
+        return (userType === 'driver' || userType === 'business' || userType === 'businessuser') 
+          && role !== 'ADMIN' && role !== 'STAFF';
+      });
+      
+      console.log(`✅ Loaded ${usersArray.length} total users, ${driverBusinessUsers.length} driver/business users`);
+      setUsers(driverBusinessUsers);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError('Không thể tải danh sách người dùng');
@@ -75,7 +84,15 @@ const UsersManagement = () => {
 
     // Type filter
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(user => user.userType === typeFilter);
+      filtered = filtered.filter(user => {
+        const userType = (user.userType || '').toLowerCase();
+        if (typeFilter === 'driver') {
+          return userType === 'driver';
+        } else if (typeFilter === 'business') {
+          return userType === 'business' || userType === 'businessuser';
+        }
+        return true;
+      });
     }
 
     // Status filter
@@ -204,12 +221,13 @@ const UsersManagement = () => {
   };
 
   const getTypeBadge = (userType) => {
+    const userTypeLower = (userType || '').toLowerCase();
     const typeConfig = {
       driver: { label: 'Tài xế', color: '#3b82f6', bg: '#dbeafe' },
-      staff: { label: 'Nhân viên', color: '#8b5cf6', bg: '#ede9fe' },
-      admin: { label: 'Quản trị viên', color: '#ef4444', bg: '#fee2e2' },
+      business: { label: 'Doanh nghiệp', color: '#f59e0b', bg: '#fef3c7' },
+      businessuser: { label: 'Doanh nghiệp', color: '#f59e0b', bg: '#fef3c7' },
     };
-    const config = typeConfig[userType] || typeConfig.driver;
+    const config = typeConfig[userTypeLower] || typeConfig.driver;
     return (
       <span className="type-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}
@@ -271,15 +289,15 @@ const UsersManagement = () => {
         </div>
         <div className="stat-item">
           <div className="stat-value" style={{ color: '#3b82f6' }}>
-            {users.filter(u => u.userType === 'driver').length}
+            {users.filter(u => u.userType === 'driver' || u.userType === 'DRIVER').length}
           </div>
           <div className="stat-label">Tài xế</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#8b5cf6' }}>
-            {users.filter(u => u.userType === 'staff').length}
+          <div className="stat-value" style={{ color: '#f59e0b' }}>
+            {users.filter(u => u.userType === 'business' || u.userType === 'BUSINESS' || u.userType === 'businessuser').length}
           </div>
-          <div className="stat-label">Nhân viên</div>
+          <div className="stat-label">Doanh nghiệp</div>
         </div>
         <div className="stat-item">
           <div className="stat-value" style={{ color: '#10b981' }}>
@@ -307,8 +325,7 @@ const UsersManagement = () => {
         >
           <option value="all">Tất cả loại</option>
           <option value="driver">Tài xế</option>
-          <option value="staff">Nhân viên</option>
-          <option value="admin">Quản trị viên</option>
+          <option value="business">Doanh nghiệp</option>
         </select>
         <select
           className="filter-select"
@@ -430,7 +447,6 @@ const UsersManagement = () => {
                           className="btn-action btn-delete"
                           onClick={() => handleDeleteUser(user.userId || user.id)}
                           title="Xóa"
-                          disabled={user.userType === 'admin'}
                         >
                           <i className="fas fa-trash"></i>
                         </button>
@@ -747,12 +763,13 @@ const UserDetailModal = ({ user, onClose }) => {
   };
 
   const getTypeBadge = (userType) => {
+    const userTypeLower = (userType || '').toLowerCase();
     const typeConfig = {
       driver: { label: 'Tài xế', color: '#3b82f6', bg: '#dbeafe' },
-      staff: { label: 'Nhân viên', color: '#8b5cf6', bg: '#ede9fe' },
-      admin: { label: 'Quản trị viên', color: '#ef4444', bg: '#fee2e2' },
+      business: { label: 'Doanh nghiệp', color: '#f59e0b', bg: '#fef3c7' },
+      businessuser: { label: 'Doanh nghiệp', color: '#f59e0b', bg: '#fef3c7' },
     };
-    const config = typeConfig[userType] || typeConfig.driver;
+    const config = typeConfig[userTypeLower] || typeConfig.driver;
     return (
       <span className="type-badge" style={{ color: config.color, background: config.bg }}>
         {config.label}

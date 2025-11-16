@@ -10,8 +10,10 @@ import com.chargingservice.dtos.internal.PaymentResponseDto;
 import com.chargingservice.dtos.internal.ProcessPaymentRequestDto;
 import com.chargingservice.dtos.internal.UpdateChargerStatusDto;
 import com.chargingservice.entities.ChargingSession;
+import com.chargingservice.entities.Reservation;
 import com.chargingservice.exceptions.ResourceNotFoundException;
 import com.chargingservice.repositories.ChargingSessionRepository;
+import com.chargingservice.repositories.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ public class ChargingServiceImpl implements ChargingService {
     private static final Logger log = LoggerFactory.getLogger(ChargingServiceImpl.class);
 
     private final ChargingSessionRepository sessionRepository;
+    private final ReservationRepository reservationRepository;
     private final StationServiceClient stationServiceClient;
     private final PaymentServiceClient paymentServiceClient;
     private final NotificationServiceClient notificationServiceClient; // Inject Notification client
@@ -132,14 +135,24 @@ public class ChargingServiceImpl implements ChargingService {
         log.info("Session {} stopped. Energy consumed: {} kWh, Final SOC: {:.2f}%", 
                 savedSession.getSessionId(), savedSession.getEnergyConsumed(), finalSOC);
 
-        // Bước 1: Gọi sang station-service để cập nhật trụ sạc thành "available"
+        // Bước 1: Cập nhật reservation status từ "active" sang "completed" nếu có
+        reservationRepository.findBySessionId(savedSession.getSessionId()).ifPresent(reservation -> {
+            if (reservation.getStatus() == Reservation.ReservationStatus.active) {
+                reservation.setStatus(Reservation.ReservationStatus.completed);
+                reservationRepository.save(reservation);
+                log.info("Updated reservation {} status from active to completed for session {}", 
+                        reservation.getReservationId(), savedSession.getSessionId());
+            }
+        });
+
+        // Bước 2: Gọi sang station-service để cập nhật trụ sạc thành "available"
         updateChargerStatus(savedSession.getChargerId(), UpdateChargerStatusDto.ChargerStatus.available);
 
-        // Bước 2: KHÔNG tự động thanh toán - Driver sẽ chọn payment method sau
+        // Bước 3: KHÔNG tự động thanh toán - Driver sẽ chọn payment method sau
         // Payment sẽ được xử lý khi driver chọn payment method từ frontend
         // Tạm thời không tạo payment record, sẽ tạo khi driver chọn method
 
-        // Bước 3: Gọi sang notification-service khi kết thúc
+        // Bước 4: Gọi sang notification-service khi kết thúc
         // Thông báo sạc hoàn tất - yêu cầu thanh toán
         String chargingCompleteMessage;
         if (isFullyCharged) {
@@ -178,6 +191,18 @@ public class ChargingServiceImpl implements ChargingService {
             session.setSessionStatus(ChargingSession.SessionStatus.cancelled);
             ChargingSession savedSession = sessionRepository.save(session);
             log.info("Session {} cancelled", savedSession.getSessionId());
+
+            // Cập nhật reservation status từ "active" sang "cancelled" nếu có
+            reservationRepository.findBySessionId(savedSession.getSessionId()).ifPresent(reservation -> {
+                if (reservation.getStatus() == Reservation.ReservationStatus.active) {
+                    reservation.setStatus(Reservation.ReservationStatus.cancelled);
+                    reservation.setCancellationReason("Session cancelled");
+                    reservation.setCancelledAt(LocalDateTime.now());
+                    reservationRepository.save(reservation);
+                    log.info("Updated reservation {} status from active to cancelled for session {}", 
+                            reservation.getReservationId(), savedSession.getSessionId());
+                }
+            });
 
             // Gọi sang station-service để cập nhật trụ sạc thành "available"
             updateChargerStatus(savedSession.getChargerId(), UpdateChargerStatusDto.ChargerStatus.available);

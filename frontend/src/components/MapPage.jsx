@@ -248,10 +248,6 @@ const MapPage = () => {
           <option value="available">Đang trống</option>
           <option value="in_use">Đang sử dụng</option>
         </select>
-        <label className="toggle">
-          <input type="checkbox" />
-          <span>Đang hoạt động</span>
-        </label>
         <button className="btn-search">
           <i className="fas fa-search"></i> Tìm kiếm
         </button>

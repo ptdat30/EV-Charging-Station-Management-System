@@ -20,11 +20,21 @@ export default function BookingPage() {
         setError('');
         try {
             const data = await getMyReservations();
-            setReservations(Array.isArray(data) ? data : []);
-            console.log('✅ Loaded reservations:', data.length);
+            // Validate and filter out invalid reservations
+            const validReservations = Array.isArray(data) 
+                ? data.filter(r => r && r.reservationId) 
+                : [];
+            setReservations(validReservations);
+            console.log('✅ Loaded reservations:', validReservations.length);
         } catch (e) {
             console.error('❌ Load reservations error:', e);
-            setError(e.response?.data?.message || e.message || 'Không thể tải danh sách đặt chỗ');
+            const errorMessage = e.response?.data?.message || 
+                                e.response?.data?.error || 
+                                e.message || 
+                                'Không thể tải danh sách đặt chỗ. Vui lòng thử lại sau.';
+            setError(errorMessage);
+            // Clear reservations on error to avoid showing stale data
+            setReservations([]);
         } finally {
             setLoading(false);
             loadingRef.current = false;
@@ -49,8 +59,10 @@ export default function BookingPage() {
     }, []);
 
     const filteredReservations = useMemo(() => {
-        if (filter === 'all') return reservations;
-        return reservations.filter(r => r.status === filter);
+        if (filter === 'all') {
+            return reservations.filter(r => r && r.reservationId); // Ensure valid reservations
+        }
+        return reservations.filter(r => r && r.reservationId && r.status === filter);
     }, [reservations, filter]);
 
     const statusCounts = useMemo(() => {
@@ -60,10 +72,12 @@ export default function BookingPage() {
             active: 0,
             completed: 0,
             cancelled: 0,
-            no_show: 0
+            no_show: 0,
+            pending: 0,
+            expired: 0
         };
         reservations.forEach(r => {
-            if (r.status && counts.hasOwnProperty(r.status)) {
+            if (r && r.status && typeof r.status === 'string' && counts.hasOwnProperty(r.status)) {
                 counts[r.status]++;
             }
         });
@@ -136,7 +150,7 @@ export default function BookingPage() {
                             onClick={() => setFilter(status)}
                         >
                             {getStatusLabel(status)}
-                            {statusCounts[status] > 0 && (
+                            {statusCounts[status] !== undefined && statusCounts[status] > 0 && (
                                 <span className="filter-count">{statusCounts[status]}</span>
                             )}
                         </button>
@@ -167,14 +181,20 @@ export default function BookingPage() {
                     </div>
                 ) : (
                     <div className="reservations-list">
-                        {filteredReservations.map(reservation => (
-                            <ReservationCard
-                                key={reservation.reservationId}
-                                reservation={reservation}
-                                onUpdate={handleUpdate}
-                                onError={handleError}
-                            />
-                        ))}
+                        {filteredReservations.map(reservation => {
+                            // Additional safety check
+                            if (!reservation || !reservation.reservationId) {
+                                return null;
+                            }
+                            return (
+                                <ReservationCard
+                                    key={reservation.reservationId}
+                                    reservation={reservation}
+                                    onUpdate={handleUpdate}
+                                    onError={handleError}
+                                />
+                            );
+                        })}
                     </div>
                 )}
             </div>

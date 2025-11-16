@@ -94,11 +94,134 @@
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-/* Packages Grid */
-.packages-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+/* Packages Table */
+.packages-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.packages-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.packages-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.packages-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.packages-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.packages-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.description-text {
+  color: #64748b;
+  font-size: 0.9375rem;
+  max-width: 300px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-text {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.no-data-cell {
+  text-align: center;
+  padding: 3rem !important;
+  color: #94a3b8;
+}
+
+.no-data-cell i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-data-cell p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+}
+
+.toggle-switch input[type="checkbox"] {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background: #d1d5db;
+  border-radius: 12px;
+  outline: none;
+  transition: background 0.3s;
+  cursor: pointer;
+  margin: 0;
+}
+
+.toggle-switch input[type="checkbox"]:checked {
+  background: #10b981;
+}
+
+.toggle-switch input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+}
+
+.toggle-switch input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+}
+
+.toggle-slider {
+  display: none; /* Không dùng nữa, dùng ::after thay thế */
+}
+
+.toggle-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.toggle-switch input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .package-card {

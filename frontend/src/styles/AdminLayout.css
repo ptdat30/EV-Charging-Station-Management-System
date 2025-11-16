@@ -8,6 +8,13 @@
   min-height: 100vh;
   background: #f8fafc;
   font-family: var(--font-family-primary);
+  transition: background-color 0.3s ease;
+}
+
+/* Dark mode for admin-layout */
+body.dark-mode .admin-layout {
+  background: #0f172a;
+  color: #f1f5f9;
 }
 
 .logo-title {
@@ -40,6 +47,22 @@
   overflow-y: auto;
   margin-top: 70px; /* Space for navbar */
   animation: fadeIn 0.4s ease-in-out;
+  background-color: #f8fafc;
+  transition: background-color 0.3s ease;
+}
+
+/* Dark mode for admin-page-content */
+body.dark-mode .admin-page-content {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+body.dark-mode .admin-page-content::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+body.dark-mode .admin-page-content::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 @keyframes fadeIn {

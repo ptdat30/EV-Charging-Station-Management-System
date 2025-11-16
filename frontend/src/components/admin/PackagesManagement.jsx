@@ -1,7 +1,6 @@
 // src/components/admin/PackagesManagement.jsx
-import React, { useState, useEffect } from 'react';
-import { getAllPackages, deletePackage, togglePackageStatus } from '../../services/packageService';
-import apiClient from '../../config/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getAllPackages, createPackage, updatePackage, deletePackage, togglePackageStatus } from '../../services/packageService';
 import '../../styles/AdminPackagesManagement.css';
 
 const PackagesManagement = () => {
@@ -10,7 +9,9 @@ const PackagesManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,77 +19,38 @@ const PackagesManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
 
+  // Form data
+  const [formData, setFormData] = useState({
+    packageName: '',
+    description: '',
+    packageType: 'PREPAID', // PREPAID, POSTPAID, VIP
+    price: '',
+    durationDays: 30,
+    features: '',
+    discountPercentage: 0,
+    isActive: true,
+  });
 
   useEffect(() => {
     fetchPackages();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [packages, searchQuery, typeFilter, statusFilter, sortBy]);
-
-  const fetchPackages = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch packages from backend API
-      const response = await getAllPackages();
-      console.log('📦 Raw package response:', response);
-      
-      // Handle different response formats
-      let rawData = response.data || response || [];
-      
-      // If data is nested in data.data
-      if (rawData.data && Array.isArray(rawData.data)) {
-        rawData = rawData.data;
-      }
-      
-      // Transform data to match frontend format
-      const transformedData = Array.isArray(rawData) ? rawData.map(pkg => {
-        console.log('📦 Transforming package:', pkg);
-        return {
-          id: pkg.packageId || pkg.id,
-          name: pkg.name || pkg.packageName,
-          description: pkg.description,
-          type: pkg.packageType || pkg.type,
-          price: pkg.price || 0,
-          durationDays: pkg.durationDays || pkg.duration || 30,
-          features: Array.isArray(pkg.features) ? pkg.features : (pkg.features ? [pkg.features] : []),
-          discountPercentage: pkg.discountPercentage || pkg.discount || 0,
-          isActive: pkg.isActive !== undefined ? pkg.isActive : true,
-          createdAt: pkg.createdAt,
-          updatedAt: pkg.updatedAt
-        };
-      }) : [];
-      
-      console.log('✅ Transformed packages:', transformedData);
-      setPackages(transformedData);
-    } catch (err) {
-      console.error('❌ Error fetching packages:', err);
-      console.error('❌ Error details:', err.response?.data);
-      setError(err.response?.data?.message || err.message || 'Không thể tải danh sách gói dịch vụ');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...packages];
 
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(pkg =>
-        pkg.name?.toLowerCase().includes(query) ||
+        pkg.packageName?.toLowerCase().includes(query) ||
         pkg.description?.toLowerCase().includes(query) ||
-        pkg.type?.toLowerCase().includes(query)
+        pkg.packageType?.toLowerCase().includes(query)
       );
     }
 
     // Type filter
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(pkg => pkg.type === typeFilter);
+      filtered = filtered.filter(pkg => pkg.packageType === typeFilter);
     }
 
     // Status filter
@@ -102,26 +64,155 @@ const PackagesManagement = () => {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name':
-          return (a.name || '').localeCompare(b.name || '');
+          return (a.packageName || '').localeCompare(b.packageName || '');
         case 'price':
           return (a.price || 0) - (b.price || 0);
         case 'type':
-          return (a.type || '').localeCompare(b.type || '');
+          return (a.packageType || '').localeCompare(b.packageType || '');
         case 'created':
-          return new Date(b.createdAt) - new Date(a.createdAt);
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         default:
           return 0;
       }
     });
 
     setFilteredPackages(filtered);
+  }, [packages, searchQuery, typeFilter, statusFilter, sortBy]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
+
+  const fetchPackages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await getAllPackages();
+      const data = response.data || response || [];
+      
+      const packagesArray = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
+      
+      const transformedData = packagesArray.map(pkg => ({
+        id: pkg.packageId || pkg.id,
+        packageName: pkg.packageName || pkg.name,
+        description: pkg.description || '',
+        packageType: pkg.packageType || pkg.type,
+        price: pkg.price || 0,
+        durationDays: pkg.durationDays || pkg.duration || 30,
+        features: Array.isArray(pkg.features) ? pkg.features : (pkg.features ? [pkg.features] : []),
+        discountPercentage: pkg.discountPercentage || pkg.discount || 0,
+        isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+        createdAt: pkg.createdAt,
+        updatedAt: pkg.updatedAt
+      }));
+      
+      setPackages(transformedData);
+    } catch (err) {
+      console.error('Error fetching packages:', err);
+      setError(err.response?.data?.message || 'Không thể tải danh sách gói dịch vụ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePackage = () => {
+    setFormData({
+      packageName: '',
+      description: '',
+      packageType: 'PREPAID',
+      price: '',
+      durationDays: 30,
+      features: '',
+      discountPercentage: 0,
+      isActive: true,
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleEditPackage = (pkg) => {
+    setSelectedPackage(pkg);
+    setFormData({
+      packageName: pkg.packageName || '',
+      description: pkg.description || '',
+      packageType: pkg.packageType || 'PREPAID',
+      price: pkg.price || 0,
+      durationDays: pkg.durationDays || 30,
+      features: Array.isArray(pkg.features) ? pkg.features.join('\n') : (pkg.features || ''),
+      discountPercentage: pkg.discountPercentage || 0,
+      isActive: pkg.isActive !== undefined ? pkg.isActive : true,
+    });
+    setShowEditModal(true);
   };
 
   const handleViewPackage = (pkg) => {
     setSelectedPackage(pkg);
-    setShowModal(true);
+    setShowDetailModal(true);
   };
 
+  const handleSavePackage = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      const packageData = {
+        packageName: formData.packageName,
+        description: formData.description,
+        packageType: formData.packageType,
+        price: parseFloat(formData.price) || 0,
+        durationDays: parseInt(formData.durationDays) || 30,
+        features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : [],
+        discountPercentage: parseFloat(formData.discountPercentage) || 0,
+        isActive: formData.isActive,
+      };
+
+      if (showEditModal && selectedPackage) {
+        await updatePackage(selectedPackage.id, packageData);
+        alert('Cập nhật gói dịch vụ thành công!');
+      } else {
+        await createPackage(packageData);
+        alert('Tạo gói dịch vụ thành công!');
+      }
+
+      await fetchPackages();
+      setShowCreateModal(false);
+      setShowEditModal(false);
+      setSelectedPackage(null);
+      setFormData({
+        packageName: '',
+        description: '',
+        packageType: 'PREPAID',
+        price: '',
+        durationDays: 30,
+        features: '',
+        discountPercentage: 0,
+        isActive: true,
+      });
+    } catch (err) {
+      console.error('Error saving package:', err);
+      alert(err.response?.data?.message || 'Không thể lưu gói dịch vụ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePackage = async (packageId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deletePackage(packageId);
+      await fetchPackages();
+      alert('Xóa gói dịch vụ thành công!');
+    } catch (err) {
+      console.error('Error deleting package:', err);
+      alert(err.response?.data?.message || 'Không thể xóa gói dịch vụ');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleToggleStatus = async (packageId, currentStatus) => {
     try {
@@ -138,6 +229,9 @@ const PackagesManagement = () => {
 
   const getTypeBadge = (type) => {
     const typeConfig = {
+      PREPAID: { label: 'Trả trước', color: '#3b82f6', bg: '#dbeafe' },
+      POSTPAID: { label: 'Trả sau', color: '#10b981', bg: '#d1fae5' },
+      VIP: { label: 'VIP', color: '#f59e0b', bg: '#fef3c7' },
       SILVER: { label: 'Gói Bạc', color: '#64748b', bg: '#f1f5f9' },
       GOLD: { label: 'Gói Vàng', color: '#f59e0b', bg: '#fef3c7' },
       PLATINUM: { label: 'Gói Bạch Kim', color: '#e5e4e2', bg: '#f8fafc' },
@@ -151,18 +245,14 @@ const PackagesManagement = () => {
   };
 
   const formatPrice = (price) => {
-    if (price === 0 || price === null) return 'Liên hệ';
+    if (price === 0 || price === null) return 'Miễn phí';
     return new Intl.NumberFormat('vi-VN').format(price) + ' ₫';
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
+      return new Date(dateString).toLocaleDateString('vi-VN');
     } catch {
       return dateString;
     }
@@ -184,31 +274,19 @@ const PackagesManagement = () => {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h2>Quản lý Gói Dịch vụ</h2>
-          <p>Theo dõi và quản lý các gói dịch vụ trong hệ thống</p>
+          <h2>Quản lý Gói Cước</h2>
+          <p>Tạo và chỉnh sửa các gói thuê bao (trả trước, trả sau, VIP)</p>
         </div>
         <div className="header-actions">
           <button className="btn-secondary" onClick={fetchPackages}>
             <i className="fas fa-refresh"></i>
             Làm mới
           </button>
+          <button className="btn-primary" onClick={handleCreatePackage}>
+            <i className="fas fa-plus"></i>
+            Tạo gói mới
+          </button>
         </div>
-      </div>
-
-      {/* Info Banner */}
-      <div className="info-banner" style={{ 
-        background: '#e0f2fe', 
-        border: '1px solid #0ea5e9', 
-        borderRadius: '0.5rem', 
-        padding: '1rem', 
-        marginBottom: '1.5rem',
-        color: '#0c4a6e'
-      }}>
-        <i className="fas fa-info-circle"></i>
-        <span style={{ marginLeft: '0.5rem' }}>
-          Các gói dịch vụ đã được cố định: Bạc, Vàng, Bạch Kim. Admin không thể chỉnh sửa hoặc xóa các gói này.
-          Vui lòng sử dụng chức năng quản lý user để kiểm soát user nào sử dụng gói dịch vụ nào.
-        </span>
       </div>
 
       {/* Stats Summary */}
@@ -218,22 +296,28 @@ const PackagesManagement = () => {
           <div className="stat-label">Tổng số gói</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#c0c0c0' }}>
-            {packages.filter(p => p.type === 'SILVER').length}
+          <div className="stat-value" style={{ color: '#3b82f6' }}>
+            {packages.filter(p => p.packageType === 'PREPAID').length}
           </div>
-          <div className="stat-label">Gói Bạc</div>
+          <div className="stat-label">Trả trước</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#ffd700' }}>
-            {packages.filter(p => p.type === 'GOLD').length}
+          <div className="stat-value" style={{ color: '#10b981' }}>
+            {packages.filter(p => p.packageType === 'POSTPAID').length}
           </div>
-          <div className="stat-label">Gói Vàng</div>
+          <div className="stat-label">Trả sau</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value" style={{ color: '#e5e4e2' }}>
-            {packages.filter(p => p.type === 'PLATINUM').length}
+          <div className="stat-value" style={{ color: '#f59e0b' }}>
+            {packages.filter(p => p.packageType === 'VIP').length}
           </div>
-          <div className="stat-label">Gói Bạch Kim</div>
+          <div className="stat-label">VIP</div>
+        </div>
+        <div className="stat-item">
+          <div className="stat-value" style={{ color: '#10b981' }}>
+            {packages.filter(p => p.isActive).length}
+          </div>
+          <div className="stat-label">Đang hoạt động</div>
         </div>
       </div>
 
@@ -254,9 +338,9 @@ const PackagesManagement = () => {
           onChange={(e) => setTypeFilter(e.target.value)}
         >
           <option value="all">Tất cả loại</option>
-          <option value="SILVER">Gói Bạc</option>
-          <option value="GOLD">Gói Vàng</option>
-          <option value="PLATINUM">Gói Bạch Kim</option>
+          <option value="PREPAID">Trả trước</option>
+          <option value="POSTPAID">Trả sau</option>
+          <option value="VIP">VIP</option>
         </select>
         <select
           className="filter-select"
@@ -290,202 +374,359 @@ const PackagesManagement = () => {
         </div>
       )}
 
-      {/* Packages Grid */}
+      {/* Packages Table */}
       {!error && (
-        <div className="packages-grid">
-          {filteredPackages.length === 0 ? (
-            <div className="no-data-container">
-              <i className="fas fa-inbox"></i>
-              <p>Không tìm thấy gói dịch vụ nào</p>
-            </div>
-          ) : (
-            filteredPackages.map((pkg) => (
-              <div key={pkg.id} className={`package-card ${!pkg.isActive ? 'inactive' : ''}`}>
-                <div className="package-card-header">
-                  <div className="package-card-title">
-                    <h3>{pkg.name}</h3>
-                    {getTypeBadge(pkg.type)}
-                  </div>
-                  <div className="package-status-toggle">
-                    <label className="toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={pkg.isActive}
-                        onChange={() => handleToggleStatus(pkg.id, pkg.isActive)}
-                        disabled={loading}
-                      />
-                      <span className="toggle-slider"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="package-card-body">
-                  <p className="package-description">{pkg.description}</p>
-                  
-                  <div className="package-price">
-                    <span className="price-amount">{formatPrice(pkg.price)}</span>
-                    {pkg.price > 0 && (
-                      <span className="price-period">/{pkg.durationDays} ngày</span>
-                    )}
-                  </div>
-
-                  <div className="package-features">
-                    <h4>Tính năng:</h4>
-                    <ul>
-                      {Array.isArray(pkg.features) ? (
-                        pkg.features.slice(0, 3).map((feature, idx) => (
-                          <li key={idx}>
-                            <i className="fas fa-check"></i>
-                            {feature}
-                          </li>
-                        ))
-                      ) : (
-                        <li>
-                          <i className="fas fa-check"></i>
-                          {pkg.features || 'Không có tính năng'}
-                        </li>
-                      )}
-                      {Array.isArray(pkg.features) && pkg.features.length > 3 && (
-                        <li className="more-features">
-                          +{pkg.features.length - 3} tính năng khác
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-
-                  <div className="package-info">
-                    <div className="info-item">
-                      <i className="fas fa-calendar"></i>
+        <div className="packages-table-container">
+          <table className="packages-table">
+            <thead>
+              <tr>
+                <th>Tên gói</th>
+                <th>Loại</th>
+                <th>Mô tả</th>
+                <th>Giá</th>
+                <th>Thời hạn</th>
+                <th>Giảm giá</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPackages.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="no-data-cell">
+                    <i className="fas fa-inbox"></i>
+                    <p>Không tìm thấy gói dịch vụ nào</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredPackages.map((pkg) => (
+                  <tr key={pkg.id}>
+                    <td>
+                      <strong>{pkg.packageName || 'Chưa có tên'}</strong>
+                    </td>
+                    <td>{getTypeBadge(pkg.packageType)}</td>
+                    <td>
+                      <span className="description-text" title={pkg.description}>
+                        {pkg.description ? (pkg.description.length > 50 ? pkg.description.substring(0, 50) + '...' : pkg.description) : '-'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="price-text">{formatPrice(pkg.price)}</span>
+                    </td>
+                    <td>
                       <span>{pkg.durationDays} ngày</span>
-                    </div>
-                    <div className="info-item">
-                      <i className="fas fa-tag"></i>
-                      <span>Loại: {pkg.type}</span>
-                    </div>
-                  </div>
+                    </td>
+                    <td>
+                      <span>{pkg.discountPercentage}%</span>
+                    </td>
+                    <td>
+                      <label className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={pkg.isActive}
+                          onChange={() => handleToggleStatus(pkg.id, pkg.isActive)}
+                          disabled={loading}
+                        />
+                        <span className="toggle-label">{pkg.isActive ? 'Hoạt động' : 'Vô hiệu'}</span>
+                      </label>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button
+                          className="btn-action btn-view"
+                          onClick={() => handleViewPackage(pkg)}
+                          title="Xem chi tiết"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </button>
+                        <button
+                          className="btn-action btn-edit"
+                          onClick={() => handleEditPackage(pkg)}
+                          title="Chỉnh sửa"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button
+                          className="btn-action btn-delete"
+                          onClick={() => handleDeletePackage(pkg.id)}
+                          title="Xóa"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create/Edit Package Modal */}
+      {(showCreateModal || showEditModal) && (
+        <div className="modal-overlay" onClick={() => { setShowCreateModal(false); setShowEditModal(false); setSelectedPackage(null); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>
+                <i className={`fas ${showEditModal ? 'fa-edit' : 'fa-plus'}`} style={{ marginRight: '10px', color: showEditModal ? '#3b82f6' : '#10b981' }}></i>
+                {showEditModal ? 'Chỉnh sửa Gói Cước' : 'Tạo Gói Cước Mới'}
+              </h3>
+              <button className="modal-close" onClick={() => { setShowCreateModal(false); setShowEditModal(false); setSelectedPackage(null); }}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <form onSubmit={handleSavePackage} className="modal-body">
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Tên gói <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.packageName}
+                  onChange={(e) => setFormData({ ...formData, packageName: e.target.value })}
+                  required
+                  placeholder="Ví dụ: Gói Trả Trước Cơ Bản"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Loại gói <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select
+                  value={formData.packageType}
+                  onChange={(e) => setFormData({ ...formData, packageType: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                >
+                  <option value="PREPAID">Trả trước</option>
+                  <option value="POSTPAID">Trả sau</option>
+                  <option value="VIP">VIP</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Mô tả
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  placeholder="Mô tả về gói dịch vụ..."
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Giá (VNĐ) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    required
+                    min="0"
+                    placeholder="299000"
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                  />
                 </div>
 
-                <div className="package-card-actions">
-                  <button
-                    className="btn-action btn-view"
-                    onClick={() => handleViewPackage(pkg)}
-                    title="Xem chi tiết"
-                  >
-                    <i className="fas fa-eye"></i>
-                    Chi tiết
-                  </button>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Thời hạn (ngày) <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.durationDays}
+                    onChange={(e) => setFormData({ ...formData, durationDays: e.target.value })}
+                    required
+                    min="1"
+                    placeholder="30"
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                  />
                 </div>
               </div>
-            ))
-          )}
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                  Tính năng (mỗi dòng một tính năng)
+                </label>
+                <textarea
+                  value={formData.features}
+                  onChange={(e) => setFormData({ ...formData, features: e.target.value })}
+                  rows={4}
+                  placeholder="Tính năng 1&#10;Tính năng 2&#10;Tính năng 3"
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Giảm giá (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.discountPercentage}
+                    onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
+                    min="0"
+                    max="100"
+                    placeholder="0"
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                    Trạng thái
+                  </label>
+                  <label className="toggle-switch" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    />
+                    <span className="toggle-label">{formData.isActive ? 'Hoạt động' : 'Vô hiệu'}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => { setShowCreateModal(false); setShowEditModal(false); setSelectedPackage(null); }}
+                  disabled={loading}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Đang lưu...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save"></i> {showEditModal ? 'Cập nhật' : 'Tạo gói'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {/* Package Detail Modal */}
-      {showModal && selectedPackage && (
-        <PackageDetailModal
-          package={selectedPackage}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedPackage(null);
-          }}
-        />
-      )}
-
-    </div>
-  );
-};
-
-// Package Detail Modal Component
-const PackageDetailModal = ({ package: pkg, onClose }) => {
-  const getTypeBadge = (type) => {
-    const typeConfig = {
-      SILVER: { label: 'Gói Bạc', color: '#64748b', bg: '#f1f5f9' },
-      GOLD: { label: 'Gói Vàng', color: '#f59e0b', bg: '#fef3c7' },
-      PLATINUM: { label: 'Gói Bạch Kim', color: '#e5e4e2', bg: '#f8fafc' },
-    };
-    const config = typeConfig[type] || { label: type, color: '#64748b', bg: '#f1f5f9' };
-    return (
-      <span className="type-badge" style={{ color: config.color, background: config.bg }}>
-        {config.label}
-      </span>
-    );
-  };
-
-  const formatPrice = (price) => {
-    if (price === 0 || price === null) return 'Liên hệ';
-    return new Intl.NumberFormat('vi-VN').format(price) + ' ₫';
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Chi tiết gói dịch vụ</h3>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-        <div className="modal-body">
-          <div className="package-detail-info">
-            <div className="info-row">
-              <span className="info-label">Tên gói:</span>
-              <span className="info-value">{pkg.name}</span>
+      {showDetailModal && selectedPackage && (
+        <div className="modal-overlay" onClick={() => { setShowDetailModal(false); setSelectedPackage(null); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-box" style={{ marginRight: '10px', color: '#8b5cf6' }}></i>
+                Chi tiết Gói Cước
+              </h3>
+              <button className="modal-close" onClick={() => { setShowDetailModal(false); setSelectedPackage(null); }}>
+                <i className="fas fa-times"></i>
+              </button>
             </div>
-            <div className="info-row">
-              <span className="info-label">Loại:</span>
-              {getTypeBadge(pkg.type)}
-            </div>
-            <div className="info-row">
-              <span className="info-label">Mô tả:</span>
-              <span className="info-value">{pkg.description}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Giá:</span>
-              <span className="info-value price-value">{formatPrice(pkg.price)}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Thời hạn:</span>
-              <span className="info-value">{pkg.durationDays} ngày</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Loại gói:</span>
-              <span className="info-value">{pkg.type}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Trạng thái:</span>
-              <span className={`info-value ${pkg.isActive ? 'status-active' : 'status-inactive'}`}>
-                {pkg.isActive ? 'Đang kích hoạt' : 'Vô hiệu hóa'}
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Tính năng:</span>
-              <div className="info-value">
-                <ul className="features-list">
-                  {Array.isArray(pkg.features) ? (
-                    pkg.features.map((feature, idx) => (
-                      <li key={idx}>
-                        <i className="fas fa-check"></i>
-                        {feature}
-                      </li>
-                    ))
-                  ) : (
-                    <li>{pkg.features || 'Không có tính năng'}</li>
-                  )}
-                </ul>
+            <div className="modal-body">
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Tên gói:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedPackage.packageName}</p>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Loại:</strong>
+                  <div style={{ marginTop: '5px' }}>{getTypeBadge(selectedPackage.packageType)}</div>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Mô tả:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedPackage.description || 'Chưa có mô tả'}</p>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Giá:</strong>
+                  <p style={{ marginTop: '5px', fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>
+                    {formatPrice(selectedPackage.price)}
+                  </p>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Thời hạn:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedPackage.durationDays} ngày</p>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Giảm giá:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedPackage.discountPercentage}%</p>
+                </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Trạng thái:</strong>
+                  <p style={{ marginTop: '5px' }}>
+                    <span style={{ 
+                      padding: '4px 12px', 
+                      borderRadius: '6px', 
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: selectedPackage.isActive ? '#10b981' : '#6b7280',
+                      background: selectedPackage.isActive ? '#d1fae5' : '#f3f4f6'
+                    }}>
+                      {selectedPackage.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                    </span>
+                  </p>
+                </div>
+                {selectedPackage.features && selectedPackage.features.length > 0 && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <strong>Tính năng:</strong>
+                    <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#6b7280' }}>
+                      {Array.isArray(selectedPackage.features) ? (
+                        selectedPackage.features.map((feature, idx) => (
+                          <li key={idx} style={{ marginBottom: '5px' }}>
+                            <i className="fas fa-check" style={{ color: '#10b981', marginRight: '8px' }}></i>
+                            {feature}
+                          </li>
+                        ))
+                      ) : (
+                        <li>{selectedPackage.features}</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Ngày tạo:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{formatDate(selectedPackage.createdAt)}</p>
+                </div>
+                {selectedPackage.updatedAt && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <strong>Cập nhật lần cuối:</strong>
+                    <p style={{ marginTop: '5px', color: '#6b7280' }}>{formatDate(selectedPackage.updatedAt)}</p>
+                  </div>
+                )}
               </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowDetailModal(false); setSelectedPackage(null); }}>
+                Đóng
+              </button>
+              <button className="btn-primary" onClick={() => {
+                setShowDetailModal(false);
+                handleEditPackage(selectedPackage);
+              }}>
+                <i className="fas fa-edit"></i> Chỉnh sửa
+              </button>
             </div>
           </div>
         </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
-            Đóng
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
-
 
 export default PackagesManagement;

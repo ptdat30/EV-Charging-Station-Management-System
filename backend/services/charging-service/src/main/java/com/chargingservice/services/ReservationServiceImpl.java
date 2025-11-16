@@ -114,6 +114,9 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatus(Reservation.ReservationStatus.confirmed); // Confirm ngay, không cần deposit
         reservation.setConfirmationCode(generateConfirmationCode());
         
+        // Set check-in deadline: 15 minutes after reservedStartTime
+        reservation.setCheckInDeadline(requestDto.getReservedStartTime().plusMinutes(15));
+        
         // Set priority based on user's subscription package
         try {
             Map<String, Object> userResponse = userServiceClient.getUserById(requestDto.getUserId());

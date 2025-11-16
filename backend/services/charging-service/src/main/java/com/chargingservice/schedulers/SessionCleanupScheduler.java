@@ -5,7 +5,9 @@ import com.chargingservice.clients.StationServiceClient;
 import com.chargingservice.dtos.internal.CreateNotificationRequestDto;
 import com.chargingservice.dtos.internal.UpdateChargerStatusDto;
 import com.chargingservice.entities.ChargingSession;
+import com.chargingservice.entities.Reservation;
 import com.chargingservice.repositories.ChargingSessionRepository;
+import com.chargingservice.repositories.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,7 @@ public class SessionCleanupScheduler {
     private static final Logger log = LoggerFactory.getLogger(SessionCleanupScheduler.class);
     
     private final ChargingSessionRepository sessionRepository;
+    private final ReservationRepository reservationRepository;
     private final StationServiceClient stationServiceClient;
     private final NotificationServiceClient notificationServiceClient;
 
@@ -85,6 +88,16 @@ public class SessionCleanupScheduler {
         session.setEnergyConsumed(BigDecimal.valueOf(energy).setScale(2, RoundingMode.HALF_UP));
         
         sessionRepository.save(session);
+        
+        // Cập nhật reservation status từ "active" sang "completed" nếu có
+        reservationRepository.findBySessionId(session.getSessionId()).ifPresent(reservation -> {
+            if (reservation.getStatus() == Reservation.ReservationStatus.active) {
+                reservation.setStatus(Reservation.ReservationStatus.completed);
+                reservationRepository.save(reservation);
+                log.info("Updated reservation {} status from active to completed for stale session {}", 
+                        reservation.getReservationId(), session.getSessionId());
+            }
+        });
         
         // Update charger status to available
         try {

@@ -1,0 +1,189 @@
+{
+  "template": {
+    "name": "EV Charging Station Data Ingestion Flow",
+    "description": "Apache NiFi flow for ingesting and processing data from EV charging stations",
+    "encodingVersion": "2.0",
+    "processGroups": [
+      {
+        "identifier": "root-group",
+        "name": "EV Charging Data Ingestion",
+        "processors": [
+          {
+            "id": "listen-http",
+            "name": "ListenHTTP - Receive Station Events",
+            "type": "org.apache.nifi.processors.standard.ListenHTTP",
+            "config": {
+              "Listening Port": "8080",
+              "Base Path": "/api/events",
+              "Max Concurrent Requests": "100",
+              "SSL Context Service": ""
+            },
+            "position": {"x": 100, "y": 100}
+          },
+          {
+            "id": "validate-record",
+            "name": "ValidateRecord - Schema Validation",
+            "type": "org.apache.nifi.processors.standard.ValidateRecord",
+            "config": {
+              "Record Reader": "JsonTreeReader",
+              "Record Writer": "JsonRecordSetWriter",
+              "Schema Access Strategy": "Use 'Schema Name' Property",
+              "Schema Registry": "AvroSchemaRegistry"
+            },
+            "position": {"x": 300, "y": 100}
+          },
+          {
+            "id": "route-on-attribute",
+            "name": "RouteOnAttribute - Event Type Routing",
+            "type": "org.apache.nifi.processors.standard.RouteOnAttribute",
+            "config": {
+              "Routing Strategy": "Route to Property name",
+              "eventType": "${json:eventType}"
+            },
+            "position": {"x": 500, "y": 100}
+          },
+          {
+            "id": "update-record-session",
+            "name": "UpdateRecord - Enrich Session Data",
+            "type": "org.apache.nifi.processors.standard.UpdateRecord",
+            "config": {
+              "Record Reader": "JsonTreeReader",
+              "Record Writer": "JsonRecordSetWriter",
+              "Replacement Value Strategy": "Literal Value",
+              "/stationId": "${json:stationCode}",
+              "/region": "${lookup:stationRegion:${json:stationId}}",
+              "/city": "${lookup:stationCity:${json:stationId}}",
+              "/timezone": "UTC"
+            },
+            "position": {"x": 700, "y": 50}
+          },
+          {
+            "id": "update-record-payment",
+            "name": "UpdateRecord - Enrich Payment Data",
+            "type": "org.apache.nifi.processors.standard.UpdateRecord",
+            "config": {
+              "Record Reader": "JsonTreeReader",
+              "Record Writer": "JsonRecordSetWriter",
+              "/currency": "VND",
+              "/timezone": "UTC"
+            },
+            "position": {"x": 700, "y": 150}
+          },
+          {
+            "id": "invoke-http-online-session",
+            "name": "InvokeHTTP - Send to Session Service",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "config": {
+              "HTTP Method": "POST",
+              "Remote URL": "http://session-service:8082/api/sessions/events",
+              "Content-Type": "application/json"
+            },
+            "position": {"x": 900, "y": 50}
+          },
+          {
+            "id": "invoke-http-online-payment",
+            "name": "InvokeHTTP - Send to Payment Service",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "config": {
+              "HTTP Method": "POST",
+              "Remote URL": "http://payment-service:8083/api/payments/events",
+              "Content-Type": "application/json"
+            },
+            "position": {"x": 900, "y": 150}
+          },
+          {
+            "id": "put-kafka-session",
+            "name": "PutKafka - Session Events to Kafka",
+            "type": "org.apache.nifi.processors.kafka.pubsub.PutKafkaRecord_2_6",
+            "config": {
+              "Kafka Brokers": "kafka:9092",
+              "Topic Name": "sessions_events",
+              "Record Reader": "JsonTreeReader",
+              "Record Writer": "JsonRecordSetWriter"
+            },
+            "position": {"x": 1100, "y": 50}
+          },
+          {
+            "id": "put-kafka-payment",
+            "name": "PutKafka - Payment Events to Kafka",
+            "type": "org.apache.nifi.processors.kafka.pubsub.PutKafkaRecord_2_6",
+            "config": {
+              "Kafka Brokers": "kafka:9092",
+              "Topic Name": "payments_events",
+              "Record Reader": "JsonTreeReader",
+              "Record Writer": "JsonRecordSetWriter"
+            },
+            "position": {"x": 1100, "y": 150}
+          },
+          {
+            "id": "put-bigquery-session",
+            "name": "PutBigQueryTable - Sessions to BigQuery",
+            "type": "org.apache.nifi.processors.gcp.bigquery.PutBigQueryTable",
+            "config": {
+              "Project ID": "${env:BIGQUERY_PROJECT_ID}",
+              "Dataset": "ev_charging",
+              "Table Name": "fact_sessions_raw",
+              "Credentials File Path": "${env:GOOGLE_APPLICATION_CREDENTIALS}"
+            },
+            "position": {"x": 1300, "y": 50}
+          },
+          {
+            "id": "put-bigquery-payment",
+            "name": "PutBigQueryTable - Payments to BigQuery",
+            "type": "org.apache.nifi.processors.gcp.bigquery.PutBigQueryTable",
+            "config": {
+              "Project ID": "${env:BIGQUERY_PROJECT_ID}",
+              "Dataset": "ev_charging",
+              "Table Name": "fact_payments_raw",
+              "Credentials File Path": "${env:GOOGLE_APPLICATION_CREDENTIALS}"
+            },
+            "position": {"x": 1300, "y": 150}
+          }
+        ],
+        "connections": [
+          {
+            "source": {"id": "listen-http", "port": "success"},
+            "destination": {"id": "validate-record", "port": "in"}
+          },
+          {
+            "source": {"id": "validate-record", "port": "valid"},
+            "destination": {"id": "route-on-attribute", "port": "in"}
+          },
+          {
+            "source": {"id": "route-on-attribute", "port": "session"},
+            "destination": {"id": "update-record-session", "port": "in"}
+          },
+          {
+            "source": {"id": "route-on-attribute", "port": "payment"},
+            "destination": {"id": "update-record-payment", "port": "in"}
+          },
+          {
+            "source": {"id": "update-record-session", "port": "success"},
+            "destination": {"id": "invoke-http-online-session", "port": "in"}
+          },
+          {
+            "source": {"id": "update-record-session", "port": "success"},
+            "destination": {"id": "put-kafka-session", "port": "in"}
+          },
+          {
+            "source": {"id": "update-record-payment", "port": "success"},
+            "destination": {"id": "invoke-http-online-payment", "port": "in"}
+          },
+          {
+            "source": {"id": "update-record-payment", "port": "success"},
+            "destination": {"id": "put-kafka-payment", "port": "in"}
+          },
+          {
+            "source": {"id": "put-kafka-session", "port": "success"},
+            "destination": {"id": "put-bigquery-session", "port": "in"}
+          },
+          {
+            "source": {"id": "put-kafka-payment", "port": "success"},
+            "destination": {"id": "put-bigquery-payment", "port": "in"}
+          }
+        ]
+      }
+    ]
+  }
+}
+

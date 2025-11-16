@@ -1,6 +1,6 @@
 // src/components/admin/StationsManagement.jsx
 import React, { useState, useEffect } from 'react';
-import { getAllStations, getStationChargers, updateStation, updateChargerStatus } from '../../services/stationService';
+import { getAllStations, updateStation, getStationChargers } from '../../services/stationService';
 import apiClient from '../../config/api';
 import '../../styles/AdminStationsManagement.css';
 
@@ -9,11 +9,12 @@ const StationsManagement = () => {
   const [filteredStations, setFilteredStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [stationChargers, setStationChargers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [showChargerModal, setShowChargerModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,18 +84,6 @@ const StationsManagement = () => {
     setFilteredStations(filtered);
   };
 
-  const handleViewStation = async (station) => {
-    setSelectedStation(station);
-    try {
-      const chargers = await getStationChargers(station.stationId);
-      setStationChargers(Array.isArray(chargers) ? chargers : []);
-      setShowModal(true);
-    } catch (err) {
-      console.error('Error fetching chargers:', err);
-      setStationChargers([]);
-      setShowModal(true);
-    }
-  };
 
   const handleUpdateStationStatus = async (stationId, newStatus) => {
     try {
@@ -105,11 +94,6 @@ const StationsManagement = () => {
 
       // Refresh stations list
       await fetchStations();
-      
-      // Update selected station if it's the one being updated
-      if (selectedStation?.stationId === stationId) {
-        setSelectedStation({ ...selectedStation, status: newStatus });
-      }
     } catch (err) {
       console.error('Error updating station status:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Không thể cập nhật trạng thái trạm';
@@ -117,52 +101,58 @@ const StationsManagement = () => {
     }
   };
 
-  const handleUpdateChargerStatus = async (chargerId, newStatus) => {
+  const handleViewStation = async (station) => {
+    setSelectedStation(station);
     try {
-      await updateChargerStatus(chargerId, newStatus);
-      // Refresh chargers list
-      if (selectedStation) {
-        const chargers = await getStationChargers(selectedStation.stationId);
+      const chargers = await getStationChargers(station.stationId);
         setStationChargers(Array.isArray(chargers) ? chargers : []);
-      }
     } catch (err) {
-      console.error('Error updating charger status:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Không thể cập nhật trạng thái điểm sạc';
-      alert(errorMessage);
+      console.error('Error fetching chargers:', err);
+      setStationChargers([]);
     }
+    setShowDetailModal(true);
   };
 
-  const handleRemoteControl = async (type, id, action) => {
+  const handleEditStation = (station) => {
+    setSelectedStation(station);
+    setEditFormData({
+      stationName: station.stationName || '',
+      stationCode: station.stationCode || '',
+      location: typeof station.location === 'string' 
+        ? station.location 
+        : JSON.stringify(station.location || {}),
+      status: station.status || 'online',
+      description: station.description || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedStation) return;
+
     try {
-      if (type === 'station') {
-        let newStatus;
-        switch (action) {
-          case 'start':
-            newStatus = 'online';
-            break;
-          case 'stop':
-            newStatus = 'offline';
-            break;
-          default:
-            return;
-        }
-        await handleUpdateStationStatus(id, newStatus);
-      } else if (type === 'charger') {
-        let newStatus;
-        switch (action) {
-          case 'start':
-            newStatus = 'available';
-            break;
-          case 'stop':
-            newStatus = 'offline';
-            break;
-          default:
-            return;
-        }
-        await handleUpdateChargerStatus(id, newStatus);
+      let locationData = editFormData.location;
+      try {
+        locationData = JSON.parse(editFormData.location);
+      } catch {
+        // Keep as string if invalid JSON
       }
+
+      await updateStation(selectedStation.stationId, {
+        stationName: editFormData.stationName,
+        stationCode: editFormData.stationCode,
+        location: locationData,
+        status: editFormData.status,
+        description: editFormData.description
+      });
+
+      await fetchStations();
+      setShowEditModal(false);
+      setSelectedStation(null);
+      setEditFormData({});
     } catch (err) {
-      console.error('Error in remote control:', err);
+      console.error('Error updating station:', err);
+      alert(err.response?.data?.message || 'Không thể cập nhật trạm');
     }
   };
 
@@ -174,10 +164,6 @@ const StationsManagement = () => {
     try {
       await apiClient.delete(`/stations/${stationId}`);
       await fetchStations();
-      if (selectedStation?.stationId === stationId) {
-        setShowModal(false);
-        setSelectedStation(null);
-      }
     } catch (err) {
       console.error('Error deleting station:', err);
       alert('Không thể xóa trạm');
@@ -408,10 +394,7 @@ const StationsManagement = () => {
                         </button>
                         <button
                           className="btn-action btn-edit"
-                          onClick={() => {
-                            setSelectedStation(station);
-                            setShowCreateModal(true);
-                          }}
+                          onClick={() => handleEditStation(station)}
                           title="Chỉnh sửa"
                         >
                           <i className="fas fa-edit"></i>
@@ -434,279 +417,164 @@ const StationsManagement = () => {
       )}
 
       {/* Station Detail Modal */}
-      {showModal && selectedStation && (
-        <StationDetailModal
-          station={selectedStation}
-          chargers={stationChargers}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedStation(null);
-            setStationChargers([]);
-          }}
-          onUpdateStationStatus={handleUpdateStationStatus}
-          onUpdateChargerStatus={handleUpdateChargerStatus}
-          onRefreshChargers={() => {
-            getStationChargers(selectedStation.stationId).then(data => {
-              setStationChargers(Array.isArray(data) ? data : []);
-            });
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-// ==========================================
-// Station Detail Modal Component - REBUILT
-// ==========================================
-const StationDetailModal = ({ 
-  station, 
-  chargers, 
-  onClose, 
-  onUpdateStationStatus,
-  onUpdateChargerStatus,
-  onRefreshChargers
-}) => {
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      online: { label: 'Hoạt động', color: '#10b981', bg: '#d1fae5' },
-      offline: { label: 'Offline', color: '#6b7280', bg: '#f3f4f6' },
-      maintenance: { label: 'Bảo trì', color: '#f59e0b', bg: '#fef3c7' },
-      closed: { label: 'Đóng cửa', color: '#ef4444', bg: '#fee2e2' }
-    };
-    const config = statusConfig[status] || statusConfig.offline;
-    return (
-      <span className="status-badge" style={{ color: config.color, background: config.bg }}>
-        {config.label}
-      </span>
-    );
-  };
-
-  const getChargerStatusBadge = (status) => {
-    const statusConfig = {
-      available: { label: 'Sẵn sàng', color: '#10b981', bg: '#d1fae5' },
-      in_use: { label: 'Đang sạc', color: '#3b82f6', bg: '#dbeafe' },
-      offline: { label: 'Offline', color: '#6b7280', bg: '#f3f4f6' },
-      maintenance: { label: 'Bảo trì', color: '#f59e0b', bg: '#fef3c7' },
-      reserved: { label: 'Đã đặt', color: '#8b5cf6', bg: '#ede9fe' }
-    };
-    const config = statusConfig[status] || statusConfig.offline;
-    return (
-      <span className="status-badge" style={{ color: config.color, background: config.bg }}>
-        {config.label}
-      </span>
-    );
-  };
-
-  const handleRemoteControl = async (type, id, action) => {
-    setIsUpdating(true);
-    try {
-      if (type === 'station') {
-        let newStatus;
-        if (action === 'start') newStatus = 'online';
-        else if (action === 'stop') newStatus = 'offline';
-        else if (action === 'maintenance') newStatus = 'maintenance';
-        
-        if (newStatus) {
-          await onUpdateStationStatus(id, newStatus);
-        }
-      } else if (type === 'charger') {
-        let newStatus;
-        if (action === 'start') newStatus = 'available';
-        else if (action === 'stop') newStatus = 'offline';
-        else if (action === 'maintenance') newStatus = 'maintenance';
-        
-        if (newStatus) {
-          await onUpdateChargerStatus(id, newStatus);
-        }
-      }
-    } catch (error) {
-      console.error('Remote control error:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  if (!station) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
-      <div 
-        className="modal-content station-detail-modal" 
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: '800px', maxHeight: '90vh', overflow: 'auto' }}
-      >
+      {showDetailModal && selectedStation && (
+        <div className="modal-overlay" onClick={() => { setShowDetailModal(false); setSelectedStation(null); setStationChargers([]); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
         <div className="modal-header">
-          <div>
             <h3>
               <i className="fas fa-charging-station" style={{ marginRight: '10px', color: '#10b981' }}></i>
               Chi tiết Trạm Sạc
             </h3>
-            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
-              Thông tin và điều khiển trạm sạc
-            </p>
-          </div>
-          <button 
-            className="modal-close" 
-            onClick={onClose}
-            style={{ 
-              background: 'transparent',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#6b7280',
-              padding: '8px',
-              borderRadius: '6px'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#f3f4f6'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-          >
+              <button className="modal-close" onClick={() => { setShowDetailModal(false); setSelectedStation(null); setStationChargers([]); }}>
             <i className="fas fa-times"></i>
           </button>
         </div>
-
         <div className="modal-body">
-          {/* Station Info */}
-          <div className="station-info-section">
-            <div className="info-row">
-              <span className="info-label">Mã trạm:</span>
-              <span className="info-value">{station.stationCode}</span>
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Mã trạm:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedStation.stationCode}</p>
             </div>
-            <div className="info-row">
-              <span className="info-label">Tên trạm:</span>
-              <span className="info-value">{station.stationName}</span>
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Tên trạm:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>{selectedStation.stationName}</p>
             </div>
-            <div className="info-row">
-              <span className="info-label">Địa điểm:</span>
-              <span className="info-value">
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Địa điểm:</strong>
+                  <p style={{ marginTop: '5px', color: '#6b7280' }}>
                 {(() => {
                   try {
-                    if (!station.location) return 'Chưa có địa điểm';
-                    const loc = typeof station.location === 'string' 
-                      ? JSON.parse(station.location) 
-                      : station.location;
+                        if (!selectedStation.location) return 'Chưa có địa điểm';
+                        const loc = typeof selectedStation.location === 'string' 
+                          ? JSON.parse(selectedStation.location) 
+                          : selectedStation.location;
                     if (loc.address) {
                       return `${loc.address}${loc.district ? ', ' + loc.district : ''}${loc.city ? ', ' + loc.city : ''}`;
                     }
                     return loc.location || JSON.stringify(loc);
                   } catch {
-                    return station.location || 'Chưa có địa điểm';
+                        return selectedStation.location || 'Chưa có địa điểm';
                   }
                 })()}
-              </span>
+                  </p>
             </div>
-            <div className="info-row">
-              <span className="info-label">Trạng thái:</span>
-              {getStatusBadge(station.status)}
+                <div style={{ marginBottom: '15px' }}>
+                  <strong>Trạng thái:</strong>
+                  <div style={{ marginTop: '5px' }}>{getStatusBadge(selectedStation.status)}</div>
             </div>
-            {station.rating && (
-              <div className="info-row">
-                <span className="info-label">Đánh giá:</span>
-                <span className="info-value">
+                {selectedStation.rating && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <strong>Đánh giá:</strong>
+                    <p style={{ marginTop: '5px', color: '#6b7280' }}>
                   <i className="fas fa-star" style={{ color: '#fbbf24' }}></i>
-                  {station.rating.toFixed(1)}
-                </span>
+                      {selectedStation.rating.toFixed(1)}
+                    </p>
               </div>
             )}
           </div>
 
-          {/* Remote Control */}
-          <div className="remote-control-section">
-            <h4>Điều khiển từ xa</h4>
-            <div className="control-buttons">
-              <button
-                className="btn-control btn-start"
-                onClick={() => handleRemoteControl('station', station.stationId, 'start')}
-                disabled={station.status === 'online'}
-              >
-                <i className="fas fa-play"></i>
-                Bật trạm
-              </button>
-              <button
-                className="btn-control btn-stop"
-                onClick={() => handleRemoteControl('station', station.stationId, 'stop')}
-                disabled={station.status === 'offline'}
-              >
-                <i className="fas fa-stop"></i>
-                Tắt trạm
-              </button>
-              <button
-                className="btn-control btn-maintenance"
-                onClick={() => onUpdateStationStatus(station.stationId, 'maintenance')}
-                disabled={station.status === 'maintenance'}
-              >
-                <i className="fas fa-wrench"></i>
-                Chế độ bảo trì
-              </button>
-            </div>
-          </div>
-
-          {/* Chargers List */}
-          <div className="chargers-section">
-            <div className="section-header">
-              <h4>Điểm sạc ({chargers.length})</h4>
-              <button className="btn-secondary btn-sm" onClick={onRefreshChargers}>
-                <i className="fas fa-refresh"></i>
-                Làm mới
-              </button>
-            </div>
-            <div className="chargers-grid">
-              {chargers.length === 0 ? (
-                <div className="no-chargers">
-                  <i className="fas fa-charging-station"></i>
-                  <p>Chưa có điểm sạc nào</p>
-                </div>
-              ) : (
-                chargers.map((charger) => (
-                  <div key={charger.chargerId} className="charger-card">
-                    <div className="charger-header">
-                      <div>
-                        <h5>{charger.chargerCode}</h5>
-                        <p className="charger-type">{charger.chargerType}</p>
+              <div>
+                <strong>Điểm sạc ({stationChargers.length}):</strong>
+                {stationChargers.length === 0 ? (
+                  <p style={{ marginTop: '10px', color: '#6b7280' }}>Chưa có điểm sạc nào</p>
+                ) : (
+                  <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                    {stationChargers.map((charger) => (
+                      <div key={charger.chargerId} style={{ padding: '10px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{charger.chargerCode}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '5px' }}>{charger.chargerType}</div>
+                        <div>{getChargerStatusBadge(charger.status)}</div>
                       </div>
-                      {getChargerStatusBadge(charger.status)}
-                    </div>
-                    <div className="charger-details">
-                      <div className="detail-item">
-                        <i className="fas fa-bolt"></i>
-                        <span>{charger.powerRating} kW</span>
-                      </div>
-                    </div>
-                    <div className="charger-actions">
-                      <button
-                        className="btn-control btn-sm"
-                        onClick={() => handleRemoteControl('charger', charger.chargerId, 'start')}
-                        disabled={charger.status === 'available' || charger.status === 'in_use'}
-                        title="Bật điểm sạc"
-                      >
-                        <i className="fas fa-play"></i>
-                      </button>
-                      <button
-                        className="btn-control btn-sm btn-stop"
-                        onClick={() => handleRemoteControl('charger', charger.chargerId, 'stop')}
-                        disabled={charger.status === 'offline'}
-                        title="Tắt điểm sạc"
-                      >
-                        <i className="fas fa-stop"></i>
-                      </button>
-                      <button
-                        className="btn-control btn-sm btn-maintenance"
-                        onClick={() => onUpdateChargerStatus(charger.chargerId, 'maintenance')}
-                        disabled={charger.status === 'maintenance'}
-                        title="Bảo trì"
-                      >
-                        <i className="fas fa-wrench"></i>
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))
-              )}
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowDetailModal(false); setSelectedStation(null); setStationChargers([]); }}>
+                Đóng
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Edit Station Modal */}
+      {showEditModal && selectedStation && (
+        <div className="modal-overlay" onClick={() => { setShowEditModal(false); setSelectedStation(null); setEditFormData({}); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit" style={{ marginRight: '10px', color: '#3b82f6' }}></i>
+                Chỉnh sửa Trạm Sạc
+              </h3>
+              <button className="modal-close" onClick={() => { setShowEditModal(false); setSelectedStation(null); setEditFormData({}); }}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Mã trạm:</label>
+                <input
+                  type="text"
+                  value={editFormData.stationCode}
+                  onChange={(e) => setEditFormData({ ...editFormData, stationCode: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                />
+              </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tên trạm:</label>
+                <input
+                  type="text"
+                  value={editFormData.stationName}
+                  onChange={(e) => setEditFormData({ ...editFormData, stationName: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                />
+                </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Địa điểm (JSON):</label>
+                <textarea
+                  value={editFormData.location}
+                  onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                  rows={3}
+                  placeholder='{"address": "...", "district": "...", "city": "..."}'
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'monospace', fontSize: '12px' }}
+                />
+                      </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Trạng thái:</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                >
+                  <option value="online">Hoạt động</option>
+                  <option value="offline">Offline</option>
+                  <option value="maintenance">Bảo trì</option>
+                  <option value="closed">Đóng cửa</option>
+                </select>
+                    </div>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Mô tả:</label>
+                <textarea
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  rows={3}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                />
+                      </div>
+                    </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => { setShowEditModal(false); setSelectedStation(null); setEditFormData({}); }}>
+                Hủy
+                      </button>
+              <button className="btn-primary" onClick={handleSaveEdit}>
+                <i className="fas fa-save"></i> Lưu
+                      </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

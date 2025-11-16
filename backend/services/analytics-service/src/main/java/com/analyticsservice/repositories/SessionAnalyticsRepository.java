@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SessionAnalyticsRepository extends JpaRepository<SessionAnalytics, Long> {
@@ -17,6 +18,8 @@ public interface SessionAnalyticsRepository extends JpaRepository<SessionAnalyti
     List<SessionAnalytics> findByUserId(Long userId);
     
     List<SessionAnalytics> findByStationId(Long stationId);
+    
+    Optional<SessionAnalytics> findBySessionId(Long sessionId);
     
     List<SessionAnalytics> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
     
