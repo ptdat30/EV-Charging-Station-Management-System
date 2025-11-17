@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { getAllStations } from '../../services/stationService';
 import apiClient from '../../config/api';
 import PaymentMethodModal from '../PaymentMethodModal';
+import ConfirmationModal from '../ConfirmationModal';
+import AlertModal from '../AlertModal';
 import '../../styles/StaffSessionManagement.css';
 
 const SessionManagement = () => {
@@ -16,6 +18,13 @@ const SessionManagement = () => {
     const [actionLoading, setActionLoading] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [completedSession, setCompletedSession] = useState(null);
+    
+    // Modals
+    const [showStopConfirm, setShowStopConfirm] = useState(false);
+    const [stopSessionId, setStopSessionId] = useState(null);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [cancelSessionId, setCancelSessionId] = useState(null);
+    const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
     // Filters
     const [stationFilter, setStationFilter] = useState('all');
@@ -129,7 +138,12 @@ const SessionManagement = () => {
     const handleStartSession = async (e) => {
         e.preventDefault();
         if (!startForm.userId || !startForm.stationId || !startForm.chargerId) {
-            alert('Vui lòng điền đầy đủ thông tin');
+            setAlertModal({
+                isOpen: true,
+                title: 'Thiếu thông tin',
+                message: 'Vui lòng điền đầy đủ thông tin',
+                type: 'warning'
+            });
             return;
         }
 
@@ -141,22 +155,38 @@ const SessionManagement = () => {
                 chargerId: parseInt(startForm.chargerId),
             });
 
-            alert('✅ Đã khởi động phiên sạc thành công!');
+            setAlertModal({
+                isOpen: true,
+                title: 'Thành công',
+                message: '✅ Đã khởi động phiên sạc thành công!',
+                type: 'success'
+            });
             setShowStartModal(false);
             setStartForm({ userId: '', stationId: '', chargerId: '' });
             fetchData();
         } catch (error) {
             console.error('Error starting session:', error);
-            alert(`❌ ${error.response?.data?.message || error.message || 'Không thể khởi động phiên sạc'}`);
+            setAlertModal({
+                isOpen: true,
+                title: 'Lỗi',
+                message: `❌ ${error.response?.data?.message || error.message || 'Không thể khởi động phiên sạc'}`,
+                type: 'error'
+            });
         } finally {
             setActionLoading(null);
         }
     };
 
-    const handleStopSession = async (sessionId) => {
-        if (!confirm('Bạn có chắc chắn muốn dừng phiên sạc này? Driver sẽ được yêu cầu chọn phương thức thanh toán.')) {
-            return;
-        }
+    const handleStopSession = (sessionId) => {
+        setStopSessionId(sessionId);
+        setShowStopConfirm(true);
+    };
+
+    const handleConfirmStop = async () => {
+        if (!stopSessionId) return;
+        const sessionId = stopSessionId;
+        setShowStopConfirm(false);
+        setStopSessionId(null);
 
         try {
             setActionLoading(sessionId);
@@ -174,7 +204,12 @@ const SessionManagement = () => {
             fetchData();
         } catch (error) {
             console.error('Error stopping session:', error);
-            alert(`❌ ${error.response?.data?.message || error.message || 'Không thể dừng phiên sạc'}`);
+            setAlertModal({
+                isOpen: true,
+                title: 'Lỗi',
+                message: `❌ ${error.response?.data?.message || error.message || 'Không thể dừng phiên sạc'}`,
+                type: 'error'
+            });
         } finally {
             setActionLoading(null);
         }
@@ -186,9 +221,14 @@ const SessionManagement = () => {
             ? '\n⚠️ Lưu ý: Thanh toán bằng tiền mặt cần nhân viên xác nhận đã thu tiền.'
             : '';
 
-        alert(`✅ ${paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!'}\n\n` +
-            `Phương thức: ${methodName}\n` +
-            `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`);
+        setAlertModal({
+            isOpen: true,
+            title: paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!',
+            message: `✅ ${paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!'}\n\n` +
+                     `Phương thức: ${methodName}\n` +
+                     `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`,
+            type: 'success'
+        });
 
         setShowPaymentModal(false);
         setCompletedSession(null);
@@ -201,19 +241,35 @@ const SessionManagement = () => {
         fetchData();
     };
 
-    const handleCancelSession = async (sessionId) => {
-        if (!confirm('Bạn có chắc chắn muốn hủy phiên sạc này?')) {
-            return;
-        }
+    const handleCancelSession = (sessionId) => {
+        setCancelSessionId(sessionId);
+        setShowCancelConfirm(true);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (!cancelSessionId) return;
+        const sessionId = cancelSessionId;
+        setShowCancelConfirm(false);
+        setCancelSessionId(null);
 
         try {
             setActionLoading(sessionId);
             await apiClient.post(`/sessions/${sessionId}/cancel`);
-            alert('✅ Đã hủy phiên sạc thành công!');
+            setAlertModal({
+                isOpen: true,
+                title: 'Thành công',
+                message: '✅ Đã hủy phiên sạc thành công!',
+                type: 'success'
+            });
             fetchData();
         } catch (error) {
             console.error('Error cancelling session:', error);
-            alert(`❌ ${error.response?.data?.message || error.message || 'Không thể hủy phiên sạc'}`);
+            setAlertModal({
+                isOpen: true,
+                title: 'Lỗi',
+                message: `❌ ${error.response?.data?.message || error.message || 'Không thể hủy phiên sạc'}`,
+                type: 'error'
+            });
         } finally {
             setActionLoading(null);
         }
@@ -226,7 +282,12 @@ const SessionManagement = () => {
             setShowDetailsModal(true);
         } catch (error) {
             console.error('Error fetching session details:', error);
-            alert('Không thể tải thông tin chi tiết phiên sạc');
+            setAlertModal({
+                isOpen: true,
+                title: 'Lỗi',
+                message: 'Không thể tải thông tin chi tiết phiên sạc',
+                type: 'error'
+            });
         }
     };
 
@@ -727,6 +788,45 @@ const SessionManagement = () => {
                 onClose={handlePaymentModalClose}
                 session={completedSession}
                 onPaymentSuccess={handlePaymentSuccess}
+            />
+
+            {/* Stop Session Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showStopConfirm}
+                onClose={() => {
+                    setShowStopConfirm(false);
+                    setStopSessionId(null);
+                }}
+                onConfirm={handleConfirmStop}
+                title="Xác nhận dừng phiên sạc"
+                message="Bạn có chắc chắn muốn dừng phiên sạc này? Driver sẽ được yêu cầu chọn phương thức thanh toán."
+                confirmText="Xác nhận"
+                cancelText="Hủy"
+                type="warning"
+            />
+
+            {/* Cancel Session Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showCancelConfirm}
+                onClose={() => {
+                    setShowCancelConfirm(false);
+                    setCancelSessionId(null);
+                }}
+                onConfirm={handleConfirmCancel}
+                title="Xác nhận hủy phiên sạc"
+                message="Bạn có chắc chắn muốn hủy phiên sạc này?"
+                confirmText="Xác nhận"
+                cancelText="Hủy"
+                type="warning"
+            />
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+                title={alertModal.title}
+                message={alertModal.message}
+                type={alertModal.type}
             />
         </div>
     );

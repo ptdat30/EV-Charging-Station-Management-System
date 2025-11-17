@@ -2,6 +2,8 @@
 import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkInReservation, startSessionFromReservation, cancelReservation } from '../services/stationService';
+import ConfirmationModal from './ConfirmationModal';
+import AlertModal from './AlertModal';
 import '../styles/ReservationCard.css';
 
 const ReservationCard = ({ reservation, onUpdate, onError }) => {
@@ -11,6 +13,12 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
   const [showCancelModal, setShowCancelModal] = React.useState(false);
   const [cancelReason, setCancelReason] = React.useState('');
   const updatePendingRef = React.useRef(false);
+  
+  // Modals
+  const [showCheckInConfirm, setShowCheckInConfirm] = React.useState(false);
+  const [showStartSessionConfirm, setShowStartSessionConfirm] = React.useState(false);
+  const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [qrCodeModal, setQrCodeModal] = React.useState({ isOpen: false, qrCode: '' });
 
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return '-';
@@ -86,42 +94,70 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     return now >= earliestCheckIn && now <= deadline;
   }, [reservation.checkInDeadline, reservation.isCheckedIn, reservation.status, reservation.reservedStartTime]);
 
-  const handleCheckIn = useCallback(async () => {
+  const handleCheckIn = useCallback(() => {
     if (!canCheckIn) {
-      alert('Không thể check-in. Vui lòng kiểm tra thời gian check-in cho phép.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Không thể check-in',
+        message: 'Không thể check-in. Vui lòng kiểm tra thời gian check-in cho phép.',
+        type: 'warning'
+      });
       return;
     }
+    setShowCheckInConfirm(true);
+  }, [canCheckIn]);
 
-    if (!confirm('Xác nhận check-in? Bạn sẽ nhận lại tiền cọc khi check-in thành công.')) {
-      return;
-    }
-
+  const handleConfirmCheckIn = useCallback(async () => {
+    setShowCheckInConfirm(false);
     setActionLoading('checkin');
     try {
       const result = await checkInReservation(reservation.reservationId);
-      alert(`✅ Check-in thành công!\nTiền cọc đã được hoàn lại vào ví.`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Check-in thành công',
+        message: `✅ Check-in thành công!\nTiền cọc đã được hoàn lại vào ví.`,
+        type: 'success'
+      });
       onUpdate && onUpdate();
     } catch (err) {
       const errorMsg = err.response?.data?.message || err.message || 'Check-in thất bại';
-      alert(`❌ ${errorMsg}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: `❌ ${errorMsg}`,
+        type: 'error'
+      });
       onError && onError(errorMsg);
     } finally {
       setActionLoading('');
     }
-  }, [canCheckIn, reservation.reservationId, onUpdate, onError]);
+  }, [reservation.reservationId, onUpdate, onError]);
 
-  const handleStartSession = useCallback(async () => {
-    if (!confirm('Bắt đầu phiên sạc ngay bây giờ?')) return;
-    
+  const handleStartSession = useCallback(() => {
+    setShowStartSessionConfirm(true);
+  }, []);
+
+  const handleConfirmStartSession = useCallback(async () => {
+    setShowStartSessionConfirm(false);
     setActionLoading('start');
     try {
       const session = await startSessionFromReservation(reservation.reservationId);
-      alert('✅ Đã bắt đầu phiên sạc');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: '✅ Đã bắt đầu phiên sạc',
+        type: 'success'
+      });
       onUpdate && onUpdate();
       // Navigate to charging live page
-      navigate('/sessions/live');
+      setTimeout(() => navigate('/sessions/live'), 1000);
     } catch (err) {
-      alert(`❌ ${err.response?.data?.message || err.message || 'Không thể bắt đầu phiên sạc'}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: `❌ ${err.response?.data?.message || err.message || 'Không thể bắt đầu phiên sạc'}`,
+        type: 'error'
+      });
       onError && onError(err.message);
     } finally {
       setActionLoading('');
@@ -140,7 +176,12 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     e?.stopPropagation();
     
     if (!cancelReason.trim()) {
-      alert('Vui lòng nhập lý do hủy đặt chỗ.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thiếu thông tin',
+        message: 'Vui lòng nhập lý do hủy đặt chỗ.',
+        type: 'warning'
+      });
       return;
     }
 
@@ -154,7 +195,12 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     try {
       console.log('Cancelling reservation:', reservation.reservationId, 'Reason:', cancelReason.trim());
       await cancelReservation(reservation.reservationId, cancelReason.trim());
-      alert('✅ Đã hủy đặt chỗ thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: '✅ Đã hủy đặt chỗ thành công!',
+        type: 'success'
+      });
       setShowCancelModal(false);
       setCancelReason('');
       actionLoadingRef.current = '';
@@ -171,7 +217,12 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
     } catch (err) {
       console.error('Cancel reservation error:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Không thể hủy đặt chỗ';
-      alert(`❌ ${errorMsg}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: `❌ ${errorMsg}`,
+        type: 'error'
+      });
       onError && onError(errorMsg);
       actionLoadingRef.current = '';
       setActionLoading('');
@@ -341,7 +392,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
         {reservation.qrCode && (
           <button
             className="btn-qr"
-            onClick={() => alert(`QR Code: ${reservation.qrCode}`)}
+            onClick={() => setQrCodeModal({ isOpen: true, qrCode: reservation.qrCode })}
             title="Xem QR Code"
           >
             <i className="fas fa-qrcode"></i>
@@ -451,6 +502,48 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
           </div>
         </div>
       )}
+
+      {/* Check-in Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCheckInConfirm}
+        onClose={() => setShowCheckInConfirm(false)}
+        onConfirm={handleConfirmCheckIn}
+        title="Xác nhận check-in"
+        message="Xác nhận check-in? Bạn sẽ nhận lại tiền cọc khi check-in thành công."
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="info"
+      />
+
+      {/* Start Session Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showStartSessionConfirm}
+        onClose={() => setShowStartSessionConfirm(false)}
+        onConfirm={handleConfirmStartSession}
+        title="Bắt đầu phiên sạc"
+        message="Bắt đầu phiên sạc ngay bây giờ?"
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="info"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
+      {/* QR Code Modal */}
+      <AlertModal
+        isOpen={qrCodeModal.isOpen}
+        onClose={() => setQrCodeModal({ isOpen: false, qrCode: '' })}
+        title="QR Code"
+        message={`Mã QR Code của bạn:\n\n${qrCodeModal.qrCode}`}
+        type="info"
+      />
     </div>
   );
 };

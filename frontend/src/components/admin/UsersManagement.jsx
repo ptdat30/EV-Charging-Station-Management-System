@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers } from '../../services/userService';
 import apiClient from '../../config/api';
+import ConfirmationModal from '../ConfirmationModal';
+import AlertModal from '../AlertModal';
 import '../../styles/AdminUsersManagement.css';
 
 const UsersManagement = () => {
@@ -14,6 +16,15 @@ const UsersManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  
+  // Modals
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState(null);
+  const [showRemovePackageConfirm, setShowRemovePackageConfirm] = useState(false);
+  const [showDeletePackageConfirm, setShowDeletePackageConfirm] = useState(false);
+  const [removePackageUserId, setRemovePackageUserId] = useState(null);
+  const [deletePackageUserId, setDeletePackageUserId] = useState(null);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -148,19 +159,35 @@ const UsersManagement = () => {
       await fetchUsers();
       setShowEditModal(false);
       setSelectedUser(null);
-      alert('Cập nhật người dùng thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: 'Cập nhật người dùng thành công!',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Error updating user:', err);
-      alert(err.response?.data?.message || 'Không thể cập nhật người dùng');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể cập nhật người dùng',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.')) {
-      return;
-    }
+  const handleDeleteUser = (userId) => {
+    setDeleteUserId(userId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteUserId) return;
+    const userId = deleteUserId;
+    setShowDeleteConfirm(false);
+    setDeleteUserId(null);
 
     try {
       setLoading(true);
@@ -170,10 +197,20 @@ const UsersManagement = () => {
         setShowModal(false);
         setSelectedUser(null);
       }
-      alert('Xóa người dùng thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: 'Xóa người dùng thành công!',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert(err.response?.data?.message || 'Không thể xóa người dùng');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể xóa người dùng',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -196,10 +233,20 @@ const UsersManagement = () => {
       await fetchUsers();
       setShowSubscriptionModal(false);
       setSelectedUser(null);
-      alert('Cập nhật gói dịch vụ thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: 'Cập nhật gói dịch vụ thành công!',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Error updating subscription:', err);
-      alert(err.response?.data?.message || 'Không thể cập nhật gói dịch vụ');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể cập nhật gói dịch vụ',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -511,6 +558,30 @@ const UsersManagement = () => {
           loading={loading}
         />
       )}
+
+      {/* Delete User Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteUserId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa người dùng"
+        message="Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác."
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="warning"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
@@ -533,17 +604,14 @@ const SubscriptionManagementModal = ({ user, onClose, onUpdate, loading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!packageType && !window.confirm('Bạn có chắc chắn muốn gỡ bỏ gói dịch vụ?')) {
-      return;
-    }
+    // Note: This will be handled by parent component's confirmation modal
     const expiresAtDate = expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null;
     onUpdate(packageType || null, expiresAtDate);
   };
 
   const handleRemove = () => {
-    if (window.confirm('⚠️ Bạn có chắc chắn muốn xóa gói dịch vụ của người dùng này? Hành động này không thể hoàn tác.')) {
-      onUpdate(null, null);
-    }
+    // Note: This will be handled by parent component's confirmation modal
+    onUpdate(null, null);
   };
 
   if (!user) return null;
@@ -1178,7 +1246,7 @@ const CreateUserModal = ({ onClose, onSuccess, loading: parentLoading }) => {
       });
 
       console.log('✅ User created successfully:', response.data);
-      alert(`Đã tạo ${formData.userType === 'staff' ? 'nhân viên' : 'người dùng'} thành công!`);
+      // Note: Success message will be handled by parent component
       onSuccess();
     } catch (err) {
       console.error('❌ Failed to create user:', err);
