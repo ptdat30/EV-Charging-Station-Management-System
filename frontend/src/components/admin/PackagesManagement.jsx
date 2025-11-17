@@ -1,6 +1,8 @@
 // src/components/admin/PackagesManagement.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAllPackages, createPackage, updatePackage, deletePackage, togglePackageStatus } from '../../services/packageService';
+import ConfirmationModal from '../ConfirmationModal';
+import AlertModal from '../AlertModal';
 import '../../styles/AdminPackagesManagement.css';
 
 const PackagesManagement = () => {
@@ -12,6 +14,11 @@ const PackagesManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Modals
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePackageId, setDeletePackageId] = useState(null);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,10 +175,20 @@ const PackagesManagement = () => {
 
       if (showEditModal && selectedPackage) {
         await updatePackage(selectedPackage.id, packageData);
-        alert('Cập nhật gói dịch vụ thành công!');
+        setAlertModal({
+          isOpen: true,
+          title: 'Thành công',
+          message: 'Cập nhật gói dịch vụ thành công!',
+          type: 'success'
+        });
       } else {
         await createPackage(packageData);
-        alert('Tạo gói dịch vụ thành công!');
+        setAlertModal({
+          isOpen: true,
+          title: 'Thành công',
+          message: 'Tạo gói dịch vụ thành công!',
+          type: 'success'
+        });
       }
 
       await fetchPackages();
@@ -190,25 +207,46 @@ const PackagesManagement = () => {
       });
     } catch (err) {
       console.error('Error saving package:', err);
-      alert(err.response?.data?.message || 'Không thể lưu gói dịch vụ');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể lưu gói dịch vụ',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeletePackage = async (packageId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này?')) {
-      return;
-    }
+  const handleDeletePackage = (packageId) => {
+    setDeletePackageId(packageId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletePackageId) return;
+    const packageId = deletePackageId;
+    setShowDeleteConfirm(false);
+    setDeletePackageId(null);
 
     try {
       setLoading(true);
       await deletePackage(packageId);
       await fetchPackages();
-      alert('Xóa gói dịch vụ thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: 'Xóa gói dịch vụ thành công!',
+        type: 'success'
+      });
     } catch (err) {
       console.error('Error deleting package:', err);
-      alert(err.response?.data?.message || 'Không thể xóa gói dịch vụ');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể xóa gói dịch vụ',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -221,7 +259,12 @@ const PackagesManagement = () => {
       await fetchPackages();
     } catch (err) {
       console.error('Error toggling package status:', err);
-      alert(err.response?.data?.message || 'Không thể thay đổi trạng thái gói dịch vụ');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể thay đổi trạng thái gói dịch vụ',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -725,6 +768,30 @@ const PackagesManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Package Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeletePackageId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa gói dịch vụ"
+        message="Bạn có chắc chắn muốn xóa gói dịch vụ này?"
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="warning"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

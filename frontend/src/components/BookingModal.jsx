@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { createReservation } from '../services/stationService';
 import { useAuth } from '../context/AuthContext';
+import AlertModal from './AlertModal';
 import '../styles/BookingModal.css';
 
 const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess }) => {
@@ -9,6 +10,7 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [quickBook, setQuickBook] = useState(false);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   
   // Helper function to format Date as local datetime string (YYYY-MM-DDTHH:mm:ss)
   const formatLocalDateTime = (date) => {
@@ -120,13 +122,20 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
       
       if (result) {
         const depositAmount = result.depositAmount ? new Intl.NumberFormat('vi-VN').format(result.depositAmount) : '0';
-        alert(`✅ Đặt chỗ thành công!\n\n` +
-              `Mã xác nhận: ${result.confirmationCode || result.reservationId}\n` +
-              `Thời gian: ${new Date(startTime).toLocaleString('vi-VN')}\n` +
-              `Tiền cọc: ${depositAmount} ₫\n\n` +
-              `⚠️ Lưu ý: Bạn cần check-in trong vòng 15 phút sau thời gian đặt để nhận lại tiền cọc.`);
+        setAlertModal({
+          isOpen: true,
+          title: 'Đặt chỗ thành công',
+          message: `✅ Đặt chỗ thành công!\n\n` +
+                   `Mã xác nhận: ${result.confirmationCode || result.reservationId}\n` +
+                   `Thời gian: ${new Date(startTime).toLocaleString('vi-VN')}\n` +
+                   `Tiền cọc: ${depositAmount} ₫\n\n` +
+                   `⚠️ Lưu ý: Bạn cần check-in trong vòng 15 phút sau thời gian đặt để nhận lại tiền cọc.`,
+          type: 'success'
+        });
         onSuccess && onSuccess(result);
-        onClose();
+        setTimeout(() => {
+          onClose();
+        }, 2000);
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Đặt chỗ thất bại. Vui lòng thử lại.');
@@ -193,13 +202,20 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
       
       if (result) {
         const depositAmount = result.depositAmount ? new Intl.NumberFormat('vi-VN').format(result.depositAmount) : '0';
-        alert(`✅ Đặt chỗ thành công!\n\n` +
-              `Mã xác nhận: ${result.confirmationCode || result.reservationId}\n` +
-              `Thời gian: ${new Date(startTime).toLocaleString('vi-VN')}\n` +
-              `Tiền cọc: ${depositAmount} ₫\n\n` +
-              `⚠️ Lưu ý: Bạn cần check-in trong vòng 15 phút sau thời gian đặt để nhận lại tiền cọc.`);
+        setAlertModal({
+          isOpen: true,
+          title: 'Đặt chỗ thành công',
+          message: `✅ Đặt chỗ thành công!\n\n` +
+                   `Mã xác nhận: ${result.confirmationCode || result.reservationId}\n` +
+                   `Thời gian: ${new Date(startTime).toLocaleString('vi-VN')}\n` +
+                   `Tiền cọc: ${depositAmount} ₫\n\n` +
+                   `⚠️ Lưu ý: Bạn cần check-in trong vòng 15 phút sau thời gian đặt để nhận lại tiền cọc.`,
+          type: 'success'
+        });
         onSuccess && onSuccess(result);
-        onClose();
+        setTimeout(() => {
+          onClose();
+        }, 2000);
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Đặt chỗ thất bại. Vui lòng thử lại.');
@@ -349,6 +365,15 @@ const BookingModal = ({ isOpen, onClose, station, chargerId = null, onSuccess })
           </div>
         </form>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

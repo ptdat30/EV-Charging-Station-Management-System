@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getBalance } from '../services/walletService';
 import apiClient from '../config/api';
+import ConfirmationModal from './ConfirmationModal';
 import '../styles/PaymentMethodModal.css';
 
 const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
@@ -12,12 +13,15 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [processing, setProcessing] = useState(false);
+    const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
     // Xử lý đóng modal với confirm
     const handleClose = () => {
-        if (!confirm('⚠️ Bạn chưa hoàn tất thanh toán. Phiên sạc sẽ được giữ lại để thanh toán sau.\n\nXác nhận đóng?')) {
-            return;
-        }
+        setShowCloseConfirm(true);
+    };
+
+    const handleConfirmClose = () => {
+        setShowCloseConfirm(false);
         onClose();
     };
 
@@ -222,6 +226,18 @@ const PaymentMethodModal = ({ isOpen, onClose, session, onPaymentSuccess }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Close Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showCloseConfirm}
+                onClose={() => setShowCloseConfirm(false)}
+                onConfirm={handleConfirmClose}
+                title="Xác nhận đóng"
+                message="⚠️ Bạn chưa hoàn tất thanh toán. Phiên sạc sẽ được giữ lại để thanh toán sau.\n\nXác nhận đóng?"
+                confirmText="Xác nhận"
+                cancelText="Hủy"
+                type="warning"
+            />
         </div>
     );
 };

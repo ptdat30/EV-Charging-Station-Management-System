@@ -260,11 +260,54 @@ const RevenueReport = () => {
               throw new Error('No transactions found');
             }
 
-            const completed = transactions.filter(t => t.status === 'COMPLETED' || t.status === 'SUCCESS').length;
-            const pending = transactions.filter(t => t.status === 'PENDING' || t.status === 'PROCESSING').length;
-            const failed = transactions.filter(t => t.status === 'FAILED' || t.status === 'CANCELLED' || t.status === 'ERROR').length;
+            // Debug: Log first transaction to check structure
+            if (transactions.length > 0) {
+              console.log('🔍 Sample transaction data:', {
+                paymentId: transactions[0].paymentId || transactions[0].id,
+                status: transactions[0].status,
+                paymentStatus: transactions[0].paymentStatus,
+                statusType: typeof transactions[0].status,
+                paymentStatusType: typeof transactions[0].paymentStatus,
+                fullTransaction: transactions[0]
+              });
+            }
+
+            // Normalize status - handle both 'status' and 'paymentStatus' fields
+            // Backend returns paymentStatus as enum (lowercase: completed, pending, failed, etc.)
+            const normalizeStatus = (transaction) => {
+              const status = transaction.status || transaction.paymentStatus;
+              if (!status) return 'pending';
+              // Handle string (already normalized or enum name)
+              if (typeof status === 'string') {
+                return status.toLowerCase();
+              }
+              // Handle enum object
+              if (status.name) {
+                return status.name.toLowerCase();
+              }
+              return String(status).toLowerCase();
+            };
+
+            const completed = transactions.filter(t => {
+              const status = normalizeStatus(t);
+              return status === 'completed' || status === 'success';
+            }).length;
+            
+            const pending = transactions.filter(t => {
+              const status = normalizeStatus(t);
+              return status === 'pending' || status === 'processing';
+            }).length;
+            
+            const failed = transactions.filter(t => {
+              const status = normalizeStatus(t);
+              return status === 'failed' || status === 'cancelled' || status === 'error';
+            }).length;
+            
             const totalAmount = transactions
-              .filter(t => t.status === 'COMPLETED' || t.status === 'SUCCESS')
+              .filter(t => {
+                const status = normalizeStatus(t);
+                return status === 'completed' || status === 'success';
+              })
               .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
             setTransactionStats({

@@ -2,6 +2,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import BookingModal from './BookingModal';
 import ChargingLoadingModal from './ChargingLoadingModal';
+import ConfirmationModal from './ConfirmationModal';
+import AlertModal from './AlertModal';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../config/api';
@@ -12,6 +14,8 @@ const StationCard = React.memo(({ station }) => {
   const [startingCharge, setStartingCharge] = useState(false);
   const [showChargingVideo, setShowChargingVideo] = useState(false);
   const [isFavorite, setIsFavorite] = useState(() => isFavoriteStation(station.id || station.stationId));
+  const [showChargeConfirm, setShowChargeConfirm] = useState(false);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -41,10 +45,15 @@ const StationCard = React.memo(({ station }) => {
     }
   }, [isFavorite, station]);
 
-  const handleQuickCharge = useCallback(async () => {
+  const handleQuickCharge = useCallback(() => {
     if (!user) {
-      alert('Vui lòng đăng nhập để sạc');
-      navigate('/login');
+      setAlertModal({
+        isOpen: true,
+        title: 'Yêu cầu đăng nhập',
+        message: 'Vui lòng đăng nhập để sạc',
+        type: 'warning'
+      });
+      setTimeout(() => navigate('/login'), 1500);
       return;
     }
 
@@ -57,13 +66,22 @@ const StationCard = React.memo(({ station }) => {
     // Kiểm tra trạm có available charger không
     const availableCharger = station.chargers?.find(c => c.status === 'available');
     if (!availableCharger) {
-      alert('❌ Không có cổng sạc trống tại trạm này. Vui lòng đặt chỗ hoặc chọn trạm khác.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Không có cổng sạc trống',
+        message: '❌ Không có cổng sạc trống tại trạm này. Vui lòng đặt chỗ hoặc chọn trạm khác.',
+        type: 'warning'
+      });
       return;
     }
 
-    if (!confirm(`Xác nhận bắt đầu sạc ngay tại trạm ${station.name || station.stationName}?\nCổng sạc: ${availableCharger.chargerCode || availableCharger.chargerId}`)) {
-      return;
-    }
+    setShowChargeConfirm(true);
+  }, [user, startingCharge, station, navigate]);
+
+  const handleConfirmCharge = useCallback(async () => {
+    setShowChargeConfirm(false);
+    const availableCharger = station.chargers?.find(c => c.status === 'available');
+    if (!availableCharger) return;
 
     setStartingCharge(true);
     setShowChargingVideo(true);
@@ -90,10 +108,20 @@ const StationCard = React.memo(({ station }) => {
       // Better error handling
       const errorMsg = error.response?.data?.message || error.message;
       if (errorMsg?.includes('already has an active')) {
-        alert('⚠️ Bạn đã có phiên sạc đang hoạt động. Vui lòng hoàn tất phiên sạc hiện tại trước khi bắt đầu phiên mới.');
-        navigate('/sessions/live');
+        setAlertModal({
+          isOpen: true,
+          title: 'Cảnh báo',
+          message: '⚠️ Bạn đã có phiên sạc đang hoạt động. Vui lòng hoàn tất phiên sạc hiện tại trước khi bắt đầu phiên mới.',
+          type: 'warning'
+        });
+        setTimeout(() => navigate('/sessions/live'), 2000);
       } else {
-        alert(`❌ ${errorMsg || 'Không thể bắt đầu phiên sạc'}`);
+        setAlertModal({
+          isOpen: true,
+          title: 'Lỗi',
+          message: `❌ ${errorMsg || 'Không thể bắt đầu phiên sạc'}`,
+          type: 'error'
+        });
       }
     } finally {
       setStartingCharge(false);
@@ -281,6 +309,27 @@ const StationCard = React.memo(({ station }) => {
       <ChargingLoadingModal
         isOpen={showChargingVideo}
         onClose={() => setShowChargingVideo(false)}
+      />
+
+      {/* Charge Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showChargeConfirm}
+        onClose={() => setShowChargeConfirm(false)}
+        onConfirm={handleConfirmCharge}
+        title="Xác nhận bắt đầu sạc"
+        message={`Xác nhận bắt đầu sạc ngay tại trạm ${station.name || station.stationName}?\nCổng sạc: ${station.chargers?.find(c => c.status === 'available')?.chargerCode || station.chargers?.find(c => c.status === 'available')?.chargerId}`}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="info"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
       />
     </>
   );

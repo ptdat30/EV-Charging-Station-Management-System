@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveSession, getSessionStatus, stopSession, getSessionById } from '../../../services/chargingService';
 import PaymentMethodModal from '../../../components/PaymentMethodModal';
+import ConfirmationModal from '../../../components/ConfirmationModal';
+import AlertModal from '../../../components/AlertModal';
 import '../../../styles/ChargingLive.css';
 
 export default function ChargingLive() {
@@ -14,8 +16,20 @@ export default function ChargingLive() {
     const [stopping, setStopping] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [completedSession, setCompletedSession] = useState(null);
-    const [speedMultiplier, setSpeedMultiplier] = useState(1); // x1, x2, x4, x8 (MAX = 8, no instant charge)
+    const [speedMultiplier, setSpeedMultiplier] = useState(1); // 1 = normal, 100 = instant to 100%
     const pollingIntervalRef = useRef(null);
+    
+    // Confirmation modals
+    const [showStopConfirm, setShowStopConfirm] = useState(false);
+    const [showSpeedConfirm, setShowSpeedConfirm] = useState(false);
+    
+    // Alert modals
+    const [alertModal, setAlertModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    });
 
     // Load active session and restore pending payment from localStorage
     useEffect(() => {
@@ -121,11 +135,11 @@ export default function ChargingLive() {
             // Điều chỉnh tần suất polling theo speedMultiplier
             let interval;
             if (speedMultiplier >= 100) {
-                // x100: Update nhanh để show 100% instantly
+                // Instant mode: Update nhanh để show 100% instantly
                 interval = 500; // 0.5 second
             } else {
-                // Normal speeds: x1, x2, x4, x8
-                interval = Math.max(500, 5000 / speedMultiplier);
+                // Normal speed: Update mỗi 5 giây
+                interval = 5000;
             }
             
             pollingIntervalRef.current = setInterval(fetchStatus, interval);
@@ -169,13 +183,13 @@ export default function ChargingLive() {
         }
     };
 
-    const handleStopSession = async () => {
+    const handleStopSession = () => {
         if (!session?.sessionId) return;
-        
-        if (!confirm('Xác nhận kết thúc phiên sạc? Bạn sẽ được yêu cầu chọn phương thức thanh toán.')) {
-            return;
-        }
+        setShowStopConfirm(true);
+    };
 
+    const handleConfirmStop = async () => {
+        if (!session?.sessionId) return;
         setStopping(true);
         try {
             // Lấy status hiện tại trước khi stop để gửi energyCharged thực tế
@@ -209,7 +223,12 @@ export default function ChargingLive() {
             setShowPaymentModal(true);
             
         } catch (err) {
-            alert(`❌ ${err.response?.data?.message || err.message || 'Không thể kết thúc phiên sạc'}`);
+            setAlertModal({
+                isOpen: true,
+                title: 'Lỗi',
+                message: `❌ ${err.response?.data?.message || err.message || 'Không thể kết thúc phiên sạc'}`,
+                type: 'error'
+            });
         } finally {
             setStopping(false);
         }
@@ -221,9 +240,14 @@ export default function ChargingLive() {
             ? '\n⚠️ Lưu ý: Thanh toán bằng tiền mặt cần nhân viên xác nhận đã thu tiền.'
             : '';
         
-        alert(`✅ ${paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!'}\n\n` +
-              `Phương thức: ${methodName}\n` +
-              `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`);
+        setAlertModal({
+            isOpen: true,
+            title: paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!',
+            message: `✅ ${paymentResult.paymentStatus === 'pending' ? 'Yêu cầu thanh toán đã được ghi nhận!' : 'Thanh toán thành công!'}\n\n` +
+                     `Phương thức: ${methodName}\n` +
+                     `Số tiền: ${new Intl.NumberFormat('vi-VN').format(paymentResult.amount || 0)} ₫${statusMsg}`,
+            type: 'success'
+        });
         
         // Clear localStorage khi thanh toán thành công
         localStorage.removeItem('pendingPaymentSession');
@@ -370,36 +394,14 @@ export default function ChargingLive() {
                             <span className="speed-info">
                                 {speedMultiplier === 100 
                                     ? '⚡ Sạc đầy tức thì (Demo)' 
-                                    : `Update mỗi ${(5000 / Math.min(speedMultiplier, 8) / 1000).toFixed(1)}s`}
+                                    : 'Tốc độ bình thường'}
                             </span>
                         </div>
                         <div className="speed-buttons-grid">
-                            <div className="speed-buttons-normal">
-                                <span className="speed-group-label">Tốc độ thông thường:</span>
-                                {[1, 2, 4, 8].map(speed => (
-                                    <button
-                                        key={speed}
-                                        className={`speed-btn ${speedMultiplier === speed ? 'active' : ''}`}
-                                        onClick={() => setSpeedMultiplier(speed)}
-                                        title={`Tua nhanh gấp ${speed} lần`}
-                                    >
-                                        <i className="fas fa-forward"></i>
-                                        x{speed}
-                                    </button>
-                                ))}
-                            </div>
                             <div className="speed-buttons-instant">
-                                <span className="speed-group-label">Demo nhanh:</span>
                                 <button
                                     className={`speed-btn instant-btn ${speedMultiplier === 100 ? 'active' : ''}`}
-                                    onClick={() => {
-                                        if (!confirm('⚡ CHẾ ĐỘ DEMO: Sạc đầy ngay lập tức\n\n' +
-                                                    'Chế độ này chỉ dùng để demo/test, sẽ tua session lên 100% ngay.\n' +
-                                                    'Bạn có chắc chắn muốn tiếp tục?')) {
-                                            return;
-                                        }
-                                        setSpeedMultiplier(100);
-                                    }}
+                                    onClick={() => setShowSpeedConfirm(true)}
                                     title="Sạc đầy ngay lập tức (chỉ dùng để demo)"
                                 >
                                     <i className="fas fa-bolt"></i>
@@ -603,6 +605,39 @@ export default function ChargingLive() {
                 onClose={handlePaymentModalClose}
                 session={completedSession}
                 onPaymentSuccess={handlePaymentSuccess}
+            />
+
+            {/* Stop Session Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showStopConfirm}
+                onClose={() => setShowStopConfirm(false)}
+                onConfirm={handleConfirmStop}
+                title="Xác nhận kết thúc phiên sạc"
+                message="Bạn sẽ được yêu cầu chọn phương thức thanh toán sau khi kết thúc phiên sạc."
+                confirmText="Xác nhận"
+                cancelText="Hủy"
+                type="warning"
+            />
+
+            {/* Speed Multiplier Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showSpeedConfirm}
+                onClose={() => setShowSpeedConfirm(false)}
+                onConfirm={() => setSpeedMultiplier(100)}
+                title="⚡ CHẾ ĐỘ DEMO: Sạc đầy ngay lập tức"
+                message="Chế độ này chỉ dùng để demo/test, sẽ tua session lên 100% ngay.\n\nBạn có chắc chắn muốn tiếp tục?"
+                confirmText="Xác nhận"
+                cancelText="Hủy"
+                type="warning"
+            />
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+                title={alertModal.title}
+                message={alertModal.message}
+                type={alertModal.type}
             />
         </div>
     );

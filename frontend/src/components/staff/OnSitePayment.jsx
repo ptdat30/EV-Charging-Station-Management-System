@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { getAllStations } from '../../services/stationService';
 import apiClient from '../../config/api';
+import ConfirmationModal from '../ConfirmationModal';
+import AlertModal from '../AlertModal';
 import '../../styles/StaffOnSitePayment.css';
 
 const OnSitePayment = () => {
@@ -14,6 +16,11 @@ const OnSitePayment = () => {
   const [actionLoading, setActionLoading] = useState(null);
   const [pendingCashPayments, setPendingCashPayments] = useState([]);
   const [loadingPendingPayments, setLoadingPendingPayments] = useState(false);
+  
+  // Modals
+  const [showConfirmPayment, setShowConfirmPayment] = useState(false);
+  const [confirmPaymentId, setConfirmPaymentId] = useState(null);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   // Filters
   const [stationFilter, setStationFilter] = useState('all');
@@ -50,23 +57,39 @@ const OnSitePayment = () => {
     }
   };
 
-  const handleConfirmCashPayment = async (paymentId) => {
-    if (!confirm(`Xác nhận đã thu tiền cho thanh toán #${paymentId}?`)) {
-      return;
-    }
+  const handleConfirmCashPayment = (paymentId) => {
+    setConfirmPaymentId(paymentId);
+    setShowConfirmPayment(true);
+  };
+
+  const handleConfirmPaymentAction = async () => {
+    if (!confirmPaymentId) return;
+    const paymentId = confirmPaymentId;
+    setShowConfirmPayment(false);
+    setConfirmPaymentId(null);
 
     try {
       setActionLoading(`confirm-${paymentId}`);
       const response = await apiClient.post(`/payments/${paymentId}/confirm`);
       
       if (response.data) {
-        alert('✅ Đã xác nhận thanh toán thành công!');
+        setAlertModal({
+          isOpen: true,
+          title: 'Thành công',
+          message: '✅ Đã xác nhận thanh toán thành công!',
+          type: 'success'
+        });
         // Refresh data
         fetchPendingCashPayments();
         fetchData();
       }
     } catch (err) {
-      alert(`❌ ${err.response?.data?.message || err.message || 'Không thể xác nhận thanh toán'}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: `❌ ${err.response?.data?.message || err.message || 'Không thể xác nhận thanh toán'}`,
+        type: 'error'
+      });
     } finally {
       setActionLoading(null);
     }
@@ -219,7 +242,12 @@ const OnSitePayment = () => {
 
     const amount = parseFloat(paymentForm.amount);
     if (!amount || amount <= 0) {
-      alert('Số tiền không hợp lệ');
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: 'Số tiền không hợp lệ',
+        type: 'error'
+      });
       return;
     }
 
@@ -250,13 +278,23 @@ const OnSitePayment = () => {
         await apiClient.post('/payments/onsite', paymentData);
       }
 
-      alert('✅ Thanh toán thành công!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: '✅ Thanh toán thành công!',
+        type: 'success'
+      });
       setShowPaymentModal(false);
       setSelectedSession(null);
       fetchData();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert(`❌ ${error.response?.data?.message || error.message || 'Không thể xử lý thanh toán'}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: `❌ ${error.response?.data?.message || error.message || 'Không thể xử lý thanh toán'}`,
+        type: 'error'
+      });
     } finally {
       setActionLoading(null);
     }
@@ -693,6 +731,30 @@ const OnSitePayment = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm Payment Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmPayment}
+        onClose={() => {
+          setShowConfirmPayment(false);
+          setConfirmPaymentId(null);
+        }}
+        onConfirm={handleConfirmPaymentAction}
+        title="Xác nhận đã thu tiền"
+        message={`Xác nhận đã thu tiền cho thanh toán #${confirmPaymentId}?`}
+        confirmText="Xác nhận"
+        cancelText="Hủy"
+        type="info"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
