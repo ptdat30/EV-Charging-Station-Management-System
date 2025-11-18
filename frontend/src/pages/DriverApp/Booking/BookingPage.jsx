@@ -59,26 +59,103 @@ export default function BookingPage() {
     }, []);
 
     const filteredReservations = useMemo(() => {
-        if (filter === 'all') {
-            return reservations.filter(r => r && r.reservationId); // Ensure valid reservations
+        // First, filter out cancelled reservations and invalid ones
+        let filtered = reservations.filter(r => {
+            if (!r || !r.reservationId) return false;
+            if (r.status === 'cancelled') return false; // Hide cancelled reservations
+            
+            // IMPORTANT: Filter out reservations that are actually completed but not paid
+            // These should not appear as "active" - they should be "completed" status
+            // If status is "active" but session is completed and not paid, it's a data inconsistency
+            // We'll treat it as completed to avoid payment modal issues
+            if (r.status === 'active' && r.sessionId) {
+                // Active reservation with session - this is valid
+                return true;
+            }
+            
+            return true;
+        });
+
+        // Apply status filter if not 'all'
+        if (filter !== 'all') {
+            filtered = filtered.filter(r => {
+                // Strict status matching
+                if (r.status !== filter) return false;
+                
+                // Additional validation for "active" filter
+                if (filter === 'active') {
+                    // Active reservations MUST have a sessionId (session is running)
+                    // If status is "active" but no sessionId, it might be a data issue
+                    // Only show if it has sessionId to avoid confusion and payment modal issues
+                    if (!r.sessionId) {
+                        console.warn('⚠️ Reservation with "active" status but no sessionId found:', r.reservationId);
+                        return false; // Hide invalid active reservations
+                    }
+                    return true;
+                }
+                
+                return true;
+            });
         }
-        return reservations.filter(r => r && r.reservationId && r.status === filter);
+
+        // Sort by priority: confirmed > active > pending > completed > expired > no_show
+        // Within same status, sort by reservedStartTime (newest first)
+        const statusPriority = {
+            'confirmed': 1,  // Đã xác nhận lên đầu để người dùng dễ thấy
+            'active': 2,
+            'pending': 3,
+            'completed': 4,
+            'expired': 5,
+            'no_show': 6
+        };
+
+        filtered.sort((a, b) => {
+            // First, sort by status priority
+            const priorityA = statusPriority[a.status] || 99;
+            const priorityB = statusPriority[b.status] || 99;
+            
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+            
+            // If same status, sort by reservedStartTime (newest first)
+            const timeA = a.reservedStartTime ? new Date(a.reservedStartTime).getTime() : 0;
+            const timeB = b.reservedStartTime ? new Date(b.reservedStartTime).getTime() : 0;
+            return timeB - timeA; // Descending order (newest first)
+        });
+
+        return filtered;
     }, [reservations, filter]);
 
     const statusCounts = useMemo(() => {
+        // Filter out cancelled reservations from counts
+        const validReservations = reservations.filter(r => 
+            r && r.reservationId && r.status !== 'cancelled'
+        );
+        
         const counts = {
-            all: reservations.length,
+            all: validReservations.length,
             confirmed: 0,
             active: 0,
             completed: 0,
-            cancelled: 0,
+            cancelled: 0, // Keep for filter button but will always be 0
             no_show: 0,
             pending: 0,
             expired: 0
         };
-        reservations.forEach(r => {
-            if (r && r.status && typeof r.status === 'string' && counts.hasOwnProperty(r.status)) {
-                counts[r.status]++;
+        
+        validReservations.forEach(r => {
+            if (r && r.status && typeof r.status === 'string') {
+                // For "active" status, only count if it has sessionId (actually active session)
+                if (r.status === 'active') {
+                    if (r.sessionId != null) {
+                        counts.active++;
+                    }
+                    // If status is "active" but no sessionId, don't count it as active
+                    // This prevents data inconsistency issues
+                } else if (counts.hasOwnProperty(r.status)) {
+                    counts[r.status]++;
+                }
             }
         });
         return counts;
@@ -143,11 +220,16 @@ export default function BookingPage() {
                 )}
 
                 <div className="booking-filters">
-                    {['all', 'confirmed', 'active', 'completed', 'cancelled', 'no_show'].map(status => (
+                    {['all', 'confirmed', 'active', 'completed', 'no_show'].map(status => (
                         <button
                             key={status}
                             className={`filter-btn ${filter === status ? 'active' : ''}`}
-                            onClick={() => setFilter(status)}
+                            onClick={() => {
+                                // Prevent rapid clicks that might cause issues
+                                if (loading) return;
+                                setFilter(status);
+                            }}
+                            disabled={loading}
                         >
                             {getStatusLabel(status)}
                             {statusCounts[status] !== undefined && statusCounts[status] > 0 && (

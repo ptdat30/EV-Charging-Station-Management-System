@@ -1,0 +1,390 @@
+/* NavigationGuide.css */
+.navigation-guide {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+}
+
+.navigation-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navigation-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navigation-header h3 i {
+  color: #4CAF50;
+}
+
+.btn-close-navigation {
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-close-navigation:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.btn-close-navigation:active {
+  transform: scale(0.95);
+}
+
+/* Loading and Error States */
+.navigation-loading,
+.navigation-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.navigation-loading i {
+  font-size: 2rem;
+  color: #4CAF50;
+  margin-bottom: 10px;
+}
+
+.navigation-error i {
+  font-size: 2rem;
+  color: #f44336;
+  margin-bottom: 10px;
+}
+
+/* Time Predictions */
+.time-predictions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.prediction-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prediction-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.prediction-card:nth-child(1) {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.prediction-card:nth-child(2) {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+.prediction-card:nth-child(3) {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+
+.prediction-card:nth-child(4) {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.prediction-icon {
+  font-size: 2rem;
+  opacity: 0.9;
+}
+
+.prediction-content {
+  flex: 1;
+}
+
+.prediction-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin-bottom: 5px;
+}
+
+.prediction-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.prediction-subtitle {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Map Container */
+.navigation-map-container {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navigation-map-container .leaflet-container {
+  border-radius: 12px;
+}
+
+/* Station Info Card */
+.station-info-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.station-info-card h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.station-info-card h4 i {
+  color: #4CAF50;
+}
+
+.station-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Directions Card */
+.directions-card {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.directions-card h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.directions-card h4 i {
+  color: #4CAF50;
+}
+
+.directions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.direction-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #4CAF50;
+  transition: background 0.2s;
+}
+
+.direction-step:hover {
+  background: #e9ecef;
+}
+
+.step-number {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: #4CAF50;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-instruction {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-instruction i {
+  color: #4CAF50;
+  width: 20px;
+}
+
+.step-distance {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Navigation Actions */
+.navigation-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-navigate {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: rgba(255, 255, 255, 0.9);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-navigate:hover {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.btn-navigate i {
+  font-size: 1.1rem;
+}
+
+/* Station Popup */
+.station-popup {
+  min-width: 200px;
+}
+
+.station-popup strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.station-popup small {
+  display: block;
+  margin-bottom: 4px;
+  color: #666;
+}
+
+.station-popup i {
+  margin-right: 5px;
+  color: #4CAF50;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navigation-guide {
+    padding: 15px;
+  }
+
+  .time-predictions {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-card {
+    padding: 15px;
+  }
+
+  .prediction-value {
+    font-size: 1.25rem;
+  }
+
+  .navigation-map-container {
+    height: 300px !important;
+  }
+
+  .station-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .direction-step {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navigation-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .prediction-icon {
+    font-size: 1.5rem;
+  }
+
+  .prediction-value {
+    font-size: 1.1rem;
+  }
+
+  .btn-navigate {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+

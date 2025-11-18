@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { checkInReservation, startSessionFromReservation, cancelReservation } from '../services/stationService';
 import ConfirmationModal from './ConfirmationModal';
 import AlertModal from './AlertModal';
+import NavigationGuide from './NavigationGuide';
+import QRCodeModal from './QRCodeModal';
 import '../styles/ReservationCard.css';
 
 const ReservationCard = ({ reservation, onUpdate, onError }) => {
@@ -19,6 +21,7 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
   const [showStartSessionConfirm, setShowStartSessionConfirm] = React.useState(false);
   const [alertModal, setAlertModal] = React.useState({ isOpen: false, title: '', message: '', type: 'info' });
   const [qrCodeModal, setQrCodeModal] = React.useState({ isOpen: false, qrCode: '' });
+  const [showNavigation, setShowNavigation] = React.useState(false);
 
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return '-';
@@ -398,7 +401,29 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
             <i className="fas fa-qrcode"></i>
           </button>
         )}
+
+        {/* Navigation Button - Show for confirmed reservations */}
+        {(reservation.status === 'confirmed' || reservation.status === 'active') && (
+          <button
+            className="btn-navigation"
+            onClick={() => setShowNavigation(!showNavigation)}
+            title="Dẫn đường đến trạm sạc"
+          >
+            <i className="fas fa-route"></i>
+            {showNavigation ? 'Ẩn dẫn đường' : 'Dẫn đường'}
+          </button>
+        )}
       </div>
+
+      {/* Navigation Guide */}
+      {showNavigation && (reservation.status === 'confirmed' || reservation.status === 'active') && (
+        <div className="reservation-navigation">
+          <NavigationGuide 
+            reservation={reservation} 
+            onClose={() => setShowNavigation(false)}
+          />
+        </div>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
@@ -537,12 +562,11 @@ const ReservationCard = ({ reservation, onUpdate, onError }) => {
       />
 
       {/* QR Code Modal */}
-      <AlertModal
+      <QRCodeModal
         isOpen={qrCodeModal.isOpen}
         onClose={() => setQrCodeModal({ isOpen: false, qrCode: '' })}
-        title="QR Code"
-        message={`Mã QR Code của bạn:\n\n${qrCodeModal.qrCode}`}
-        type="info"
+        qrCode={qrCodeModal.qrCode}
+        title="QR Code đặt chỗ"
       />
     </div>
   );
