@@ -243,24 +243,39 @@
 }
 
 .btn-cancel {
-  background: var(--color-gray-200);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-gray-400);
-  opacity: 1;
-  visibility: visible;
+  background: var(--color-gray-200) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-gray-400) !important;
+  flex: 1 !important;
+  min-width: 120px !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  border-radius: var(--border-radius-md) !important;
+  font-size: var(--font-size-base) !important;
+  font-weight: var(--font-weight-medium) !important;
+  cursor: pointer !important;
+  transition: var(--transition-base) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--spacing-2) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  width: auto !important;
+  height: auto !important;
+  box-sizing: border-box !important;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: var(--color-gray-300);
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+  background: var(--color-gray-300) !important;
+  border-color: var(--color-danger) !important;
+  color: var(--color-danger) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2) !important;
 }
 
 .btn-cancel:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
 }
 
 .btn-qr {
@@ -288,6 +303,26 @@
   background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+.btn-navigation {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-navigation:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+.reservation-navigation {
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  border-top: var(--border-width-thin) solid var(--border-color-light);
 }
 
 /* Cancel Modal Styles - REDESIGNED - NO JITTER */
