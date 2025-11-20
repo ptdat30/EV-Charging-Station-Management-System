@@ -101,6 +101,18 @@ const AdminNavBar = () => {
             description: 'Reports'
         },
         {
+            path: '/admin/incidents',
+            icon: 'fas fa-exclamation-triangle',
+            label: 'Quản lý sự cố',
+            description: 'Incident Management'
+        },
+        {
+            path: '/admin/maintenance',
+            icon: 'fas fa-tools',
+            label: 'Bảo trì',
+            description: 'Maintenance'
+        },
+        {
             path: '/admin/notifications',
             icon: 'fas fa-bell',
             label: 'Thông báo hệ thống',

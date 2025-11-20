@@ -13,9 +13,8 @@ import PermissionsManagement from '../components/admin/PermissionsManagement';
 import RevenueReport from '../components/admin/RevenueReport';
 import SettingsPage from '../components/admin/SettingsPage';
 import SystemNotificationsManagement from '../components/admin/SystemNotificationsManagement';
-
-// TODO: Sẽ tạo các component sau:
-// - MaintenancePage (Bảo trì)
+import IncidentManagement from '../components/admin/IncidentManagement';
+import MaintenanceManagement from '../components/admin/MaintenanceManagement';
 
 const AdminPage = () => {
   return (
@@ -30,8 +29,9 @@ const AdminPage = () => {
         <Route path="transactions" element={<TransactionsManagement />} />
         <Route path="reservations" element={<ReservationsManagement />} />
         <Route path="reports" element={<RevenueReport />} />
+        <Route path="incidents" element={<IncidentManagement />} />
+        <Route path="maintenance" element={<MaintenanceManagement />} />
         <Route path="notifications" element={<SystemNotificationsManagement />} />
-        <Route path="maintenance" element={<div>Tính năng đang phát triển...</div>} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
