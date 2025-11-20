@@ -24,6 +24,12 @@ const UsersManagement = () => {
   const [showDeletePackageConfirm, setShowDeletePackageConfirm] = useState(false);
   const [removePackageUserId, setRemovePackageUserId] = useState(null);
   const [deletePackageUserId, setDeletePackageUserId] = useState(null);
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [lockUserId, setLockUserId] = useState(null);
+  const [lockAction, setLockAction] = useState(null); // 'lock' or 'unlock'
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordUserId, setResetPasswordUserId] = useState(null);
   const [alertModal, setAlertModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
 
   // Filters
@@ -38,6 +44,7 @@ const UsersManagement = () => {
     email: '',
     phone: '',
     userType: 'driver',
+    status: 'active',
   });
 
   useEffect(() => {
@@ -142,6 +149,7 @@ const UsersManagement = () => {
       email: user.email || '',
       phone: user.phone || '',
       userType: user.userType || 'driver',
+      status: user.status || 'active',
     });
     setShowEditModal(true);
   };
@@ -155,6 +163,8 @@ const UsersManagement = () => {
       await apiClient.put(`/users/${selectedUser.userId || selectedUser.id}`, {
         fullName: editForm.fullName,
         phone: editForm.phone,
+        userType: editForm.userType,
+        status: editForm.status,
       });
       await fetchUsers();
       setShowEditModal(false);
@@ -171,6 +181,103 @@ const UsersManagement = () => {
         isOpen: true,
         title: 'Lỗi',
         message: err.response?.data?.message || 'Không thể cập nhật người dùng',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLockUnlockUser = (userId, currentStatus) => {
+    setLockUserId(userId);
+    // Determine action based on current status
+    if (currentStatus === 'active' || currentStatus === 'inactive') {
+      setLockAction('lock');
+    } else if (currentStatus === 'locked' || currentStatus === 'suspended') {
+      setLockAction('unlock');
+    } else {
+      setLockAction('lock');
+    }
+    setShowLockConfirm(true);
+  };
+
+  const handleConfirmLockUnlock = async () => {
+    if (!lockUserId || !lockAction) return;
+    const userId = lockUserId;
+    const action = lockAction;
+    setShowLockConfirm(false);
+    setLockUserId(null);
+    setLockAction(null);
+
+    try {
+      setLoading(true);
+      const newStatus = action === 'lock' ? 'locked' : 'active';
+      await apiClient.put(`/users/${userId}`, {
+        status: newStatus
+      });
+      await fetchUsers();
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: action === 'lock' ? 'Đã khóa tài khoản thành công!' : 'Đã mở khóa tài khoản thành công!',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Error locking/unlocking user:', err);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể thay đổi trạng thái tài khoản',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManagePermissions = (user) => {
+    if (user.userType !== 'staff' && user.userType !== 'STAFF') {
+      setAlertModal({
+        isOpen: true,
+        title: 'Thông báo',
+        message: 'Chỉ có thể phân quyền cho nhân viên (staff).',
+        type: 'info'
+      });
+      return;
+    }
+    setSelectedUser(user);
+    setShowPermissionsModal(true);
+  };
+
+  const handleResetPassword = (userId) => {
+    setResetPasswordUserId(userId);
+    setShowResetPasswordModal(true);
+  };
+
+  const handleConfirmResetPassword = async (newPassword) => {
+    if (!resetPasswordUserId) return;
+    const userId = resetPasswordUserId;
+    setShowResetPasswordModal(false);
+    setResetPasswordUserId(null);
+
+    try {
+      setLoading(true);
+      await apiClient.put(`/users/${userId}/reset-password`, {
+        newPassword: newPassword
+      });
+      await fetchUsers();
+      setAlertModal({
+        isOpen: true,
+        title: 'Thành công',
+        message: 'Đã reset mật khẩu thành công!',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Error resetting password:', err);
+      setAlertModal({
+        isOpen: true,
+        title: 'Lỗi',
+        message: err.response?.data?.message || 'Không thể reset mật khẩu',
         type: 'error'
       });
     } finally {
@@ -490,6 +597,35 @@ const UsersManagement = () => {
                         >
                           <i className="fas fa-box"></i>
                         </button>
+                        {(user.userType === 'staff' || user.userType === 'STAFF') && (
+                          <button
+                            className="btn-action btn-permissions"
+                            onClick={() => handleManagePermissions(user)}
+                            title="Phân quyền"
+                            style={{ background: '#f59e0b', color: 'white' }}
+                          >
+                            <i className="fas fa-key"></i>
+                          </button>
+                        )}
+                        <button
+                          className="btn-action btn-lock"
+                          onClick={() => handleLockUnlockUser(user.userId || user.id, user.status)}
+                          title={user.status === 'locked' || user.status === 'suspended' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                          style={{ 
+                            background: (user.status === 'locked' || user.status === 'suspended') ? '#10b981' : '#ef4444', 
+                            color: 'white' 
+                          }}
+                        >
+                          <i className={`fas ${(user.status === 'locked' || user.status === 'suspended') ? 'fa-unlock' : 'fa-lock'}`}></i>
+                        </button>
+                        <button
+                          className="btn-action btn-reset-password"
+                          onClick={() => handleResetPassword(user.userId || user.id)}
+                          title="Reset mật khẩu"
+                          style={{ background: '#06b6d4', color: 'white' }}
+                        >
+                          <i className="fas fa-key"></i>
+                        </button>
                         <button
                           className="btn-action btn-delete"
                           onClick={() => handleDeleteUser(user.userId || user.id)}
@@ -558,6 +694,53 @@ const UsersManagement = () => {
           loading={loading}
         />
       )}
+
+      {/* Permissions Modal */}
+      {showPermissionsModal && selectedUser && (
+        <PermissionsModal
+          user={selectedUser}
+          onClose={() => {
+            setShowPermissionsModal(false);
+            setSelectedUser(null);
+          }}
+          onUpdate={async () => {
+            await fetchUsers();
+            setShowPermissionsModal(false);
+            setSelectedUser(null);
+          }}
+        />
+      )}
+
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && (
+        <ResetPasswordModal
+          userId={resetPasswordUserId}
+          onClose={() => {
+            setShowResetPasswordModal(false);
+            setResetPasswordUserId(null);
+          }}
+          onConfirm={handleConfirmResetPassword}
+          loading={loading}
+        />
+      )}
+
+      {/* Lock/Unlock Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showLockConfirm}
+        onClose={() => {
+          setShowLockConfirm(false);
+          setLockUserId(null);
+          setLockAction(null);
+        }}
+        onConfirm={handleConfirmLockUnlock}
+        title={lockAction === 'lock' ? 'Xác nhận khóa tài khoản' : 'Xác nhận mở khóa tài khoản'}
+        message={lockAction === 'lock' 
+          ? 'Bạn có chắc chắn muốn khóa tài khoản này? Người dùng sẽ không thể đăng nhập sau khi tài khoản bị khóa.'
+          : 'Bạn có chắc chắn muốn mở khóa tài khoản này? Người dùng sẽ có thể đăng nhập lại.'}
+        confirmText={lockAction === 'lock' ? 'Khóa tài khoản' : 'Mở khóa'}
+        cancelText="Hủy"
+        type={lockAction === 'lock' ? 'warning' : 'info'}
+      />
 
       {/* Delete User Confirmation Modal */}
       <ConfirmationModal
@@ -1070,6 +1253,40 @@ const EditUserModal = ({ user, formData, setFormData, onClose, onSubmit, loading
             )}
           </div>
 
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="edit-status" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Trạng thái tài khoản
+            </label>
+            <select
+              id="edit-status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="form-control"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
+            >
+              <option value="active">✅ Hoạt động</option>
+              <option value="inactive">⏸️ Không hoạt động</option>
+              <option value="locked">🔒 Đã khóa</option>
+              <option value="suspended">⛔ Tạm ngưng</option>
+            </select>
+            <p className="form-caption" style={{ 
+              marginTop: '6px', 
+              fontSize: '13px', 
+              color: '#6b7280',
+              fontStyle: 'italic' 
+            }}>
+              💡 Thay đổi trạng thái tài khoản sẽ ảnh hưởng đến khả năng đăng nhập của người dùng
+            </p>
+          </div>
+
           <div className="form-actions" style={{
             display: 'flex',
             justifyContent: 'flex-end',
@@ -1497,6 +1714,424 @@ const CreateUserModal = ({ onClose, onSuccess, loading: parentLoading }) => {
                 <>
                   <i className="fas fa-check"></i>
                   Tạo người dùng
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// Permissions Modal Component
+// ==========================================
+const PermissionsModal = ({ user, onClose, onUpdate }) => {
+  const [permissions, setPermissions] = useState({
+    view_stations: false,
+    manage_sessions: false,
+    handle_payments: false,
+    monitor_stations: false,
+    view_reports: false,
+    manage_incidents: false,
+    update_station_status: false,
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Load current permissions if available
+    if (user.permissions) {
+      setPermissions(user.permissions);
+    }
+  }, [user]);
+
+  const handlePermissionChange = (permission) => {
+    setPermissions(prev => ({
+      ...prev,
+      [permission]: !prev[permission]
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      await apiClient.put(`/users/${user.userId || user.id}/permissions`, {
+        permissions: permissions
+      });
+      await onUpdate();
+      onClose();
+    } catch (err) {
+      console.error('Error updating permissions:', err);
+      alert(err.response?.data?.message || 'Không thể cập nhật quyền');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const permissionLabels = {
+    view_stations: 'Xem trạm sạc',
+    manage_sessions: 'Quản lý phiên sạc',
+    handle_payments: 'Xử lý thanh toán',
+    monitor_stations: 'Giám sát trạm',
+    view_reports: 'Xem báo cáo',
+    manage_incidents: 'Quản lý sự cố',
+    update_station_status: 'Cập nhật trạng thái trạm',
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div 
+        className="modal-content modal-permissions" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '700px' }}
+      >
+        <div className="modal-header">
+          <div>
+            <h3>
+              <i className="fas fa-key" style={{ marginRight: '10px', color: '#f59e0b' }}></i>
+              Phân quyền cho nhân viên
+            </h3>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+              {user.fullName || user.email}
+            </p>
+          </div>
+          <button 
+            className="modal-close" 
+            onClick={onClose} 
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              color: '#6b7280',
+              padding: '8px',
+              borderRadius: '6px'
+            }}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+          <div className="permissions-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '16px',
+            marginBottom: '24px'
+          }}>
+            {Object.entries(permissionLabels).map(([key, label]) => (
+              <label
+                key={key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  background: permissions[key] ? '#f0f9ff' : 'white'
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) e.currentTarget.style.background = permissions[key] ? '#e0f2fe' : '#f9fafb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = permissions[key] ? '#f0f9ff' : 'white';
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={permissions[key]}
+                  onChange={() => handlePermissionChange(key)}
+                  disabled={loading}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    cursor: loading ? 'not-allowed' : 'pointer'
+                  }}
+                />
+                <span style={{ fontWeight: 500, fontSize: '14px' }}>{label}</span>
+              </label>
+            ))}
+          </div>
+          <div className="form-actions" style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                background: '#f3f4f6',
+                color: '#374151',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: loading ? '#9ca3af' : '#f59e0b',
+                color: 'white',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Đang lưu...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check"></i>
+                  Lưu quyền
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ==========================================
+// Reset Password Modal Component
+// ==========================================
+const ResetPasswordModal = ({ userId, onClose, onConfirm, loading }) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!password || password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp');
+      return;
+    }
+
+    onConfirm(password);
+  };
+
+  const generateRandomPassword = () => {
+    const length = 12;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    setPassword(password);
+    setConfirmPassword(password);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1000 }}>
+      <div 
+        className="modal-content modal-reset-password" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: '500px' }}
+      >
+        <div className="modal-header">
+          <div>
+            <h3>
+              <i className="fas fa-key" style={{ marginRight: '10px', color: '#06b6d4' }}></i>
+              Reset mật khẩu
+            </h3>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+              Đặt mật khẩu mới cho người dùng
+            </p>
+          </div>
+          <button 
+            className="modal-close" 
+            onClick={onClose} 
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              fontSize: '24px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              color: '#6b7280',
+              padding: '8px',
+              borderRadius: '6px'
+            }}
+          >
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+          {error && (
+            <div style={{
+              padding: '12px',
+              background: '#fee2e2',
+              color: '#dc2626',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }}></i>
+              {error}
+            </div>
+          )}
+
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="reset-password" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Mật khẩu mới <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="reset-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-control"
+                disabled={loading}
+                required
+                minLength={6}
+                placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                style={{
+                  width: '100%',
+                  padding: '10px 40px 10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #d1d5db',
+                  fontSize: '14px'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#6b7280'
+                }}
+              >
+                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={generateRandomPassword}
+              style={{
+                marginTop: '8px',
+                padding: '6px 12px',
+                fontSize: '12px',
+                background: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                color: '#374151'
+              }}
+            >
+              <i className="fas fa-random" style={{ marginRight: '6px' }}></i>
+              Tạo mật khẩu ngẫu nhiên
+            </button>
+          </div>
+
+          <div className="form-field" style={{ marginBottom: '20px' }}>
+            <label htmlFor="reset-confirm-password" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Xác nhận mật khẩu <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input
+              id="reset-confirm-password"
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="form-control"
+              disabled={loading}
+              required
+              minLength={6}
+              placeholder="Nhập lại mật khẩu"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px'
+              }}
+            />
+          </div>
+
+          <div className="form-actions" style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            paddingTop: '20px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                background: '#f3f4f6',
+                color: '#374151',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: loading ? '#9ca3af' : '#06b6d4',
+                color: 'white',
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  Đang reset...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check"></i>
+                  Reset mật khẩu
                 </>
               )}
             </button>
