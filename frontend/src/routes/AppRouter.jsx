@@ -26,6 +26,7 @@ import NotificationsPage from '../pages/DriverApp/Notifications/NotificationsPag
 import RoutePlanningPage from '../pages/DriverApp/RoutePlanning/RoutePlanningPage.jsx';
 import TransactionsHistory from '../pages/DriverApp/Profile/TransactionsHistory.jsx';
 import DriverAnalyticsPage from '../pages/DriverApp/Analytics/DriverAnalyticsPage.jsx';
+import StationDetailPage from '../pages/DriverApp/Stations/StationDetailPage.jsx';
 
 // Import trang Admin
 import AdminPage from '../pages/AdminPage';
@@ -75,6 +76,9 @@ function AppRouter() {
                     <DriverLayout>
                         <BookingPage />
                     </DriverLayout>
+                } />
+                <Route path="stations/:id" element={
+                    <StationDetailPage />
                 } />
                 <Route path="route-planning" element={
                     <DriverLayout>

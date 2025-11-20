@@ -4,6 +4,7 @@ import BookingModal from './BookingModal';
 import ChargingLoadingModal from './ChargingLoadingModal';
 import ConfirmationModal from './ConfirmationModal';
 import AlertModal from './AlertModal';
+import StationDetailModal from './StationDetailModal';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../config/api';
@@ -11,6 +12,7 @@ import { isFavoriteStation, addFavoriteStation, removeFavoriteStation } from '..
 
 const StationCard = React.memo(({ station }) => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [startingCharge, setStartingCharge] = useState(false);
   const [showChargingVideo, setShowChargingVideo] = useState(false);
   const [isFavorite, setIsFavorite] = useState(() => isFavoriteStation(station.id || station.stationId));
@@ -291,7 +293,7 @@ const StationCard = React.memo(({ station }) => {
           )}
           <button 
             className="btn-detail"
-            onClick={() => navigate(`/stations/${station.id}`)}
+            onClick={() => setIsDetailModalOpen(true)}
           >
             <i className="fas fa-info-circle"></i>
             Chi tiết
@@ -330,6 +332,13 @@ const StationCard = React.memo(({ station }) => {
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+
+      {/* Station Detail Modal */}
+      <StationDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        station={station}
       />
     </>
   );
