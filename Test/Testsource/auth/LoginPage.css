@@ -1,0 +1,174 @@
+/* src/components/loginpage/LoginPage.css */
+
+/* Container chính */
+.login-container {
+    max-width: 520px; /* Hoặc kích thước phù hợp với bạn */
+    margin: 40px auto;
+    padding: 32px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+    font-family: 'Inter', sans-serif; /* Đảm bảo font được tải */
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Các kiểu chung cho input */
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    color: #1e293b;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-sizing: border-box;
+}
+
+.login-container input[type="text"]:focus,
+.login-container input[type="password"]:focus {
+    /* Changed from blue to green border and shadow */
+    border-color: #10B981; /* Emerald 500 */
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1), 0 4px 12px rgba(16, 185, 129, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Trạng thái input (bạn sẽ cần thêm logic để áp dụng các class này) */
+.login-container input.invalid {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+/* Button styling */
+.login-container button.primary-btn {
+    padding: 16px 24px;
+    /* Changed from blue to green gradient */
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%); /* Emerald 500 to Emerald 600 */
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    /* Changed from blue to green shadow */
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.login-container button.primary-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.login-container button.primary-btn:hover::before {
+    left: 100%;
+}
+
+.login-container button.primary-btn:hover {
+    /* Changed from blue to green gradient on hover */
+    background: linear-gradient(135deg, #059669 0%, #047857 100%); /* Emerald 600 to Emerald 700 */
+    transform: translateY(-2px);
+    /* Changed from blue to green shadow on hover */
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.login-container button.primary-btn:disabled {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Message styling */
+.message {
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 16px; /* Thay vì margin-top */
+    animation: messageSlideIn 0.4s ease-out;
+}
+
+.error-message {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* Tiêu đề và mô tả */
+.login-container h1 {
+    text-align: center;
+    color: #1e293b;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.login-container p.description {
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes messageSlideIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Responsive adjustments (tương tự như file recover password) */
+@media (max-width: 768px) {
+    .login-container {
+        margin: 20px 16px;
+        padding: 24px;
+        border-radius: 16px;
+    }
+    .login-container input {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+    .login-container button {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+    .login-container h1 {
+        font-size: 20px;
+    }
+}
+
+/* Ẩn icon hiện/ẩn mật khẩu mặc định của trình duyệt */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+input[type="password"]::-webkit-input-password-toggle-button {
+  display: none !important;
+}
